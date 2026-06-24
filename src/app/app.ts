@@ -16,3 +16,4 @@ export class App {
     { path: '/promotions', label: 'Promotions',   icon: '◈' },
   ];
 }
+
