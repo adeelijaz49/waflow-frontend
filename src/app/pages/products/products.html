@@ -1,0 +1,136 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Products</div>
+      <div class="page-sub">{{ total | number }} products in your store</div>
+    </div>
+    <button class="btn btn-primary" (click)="openAdd()">+ Add Product</button>
+  </div>
+
+  <div class="search-bar">
+    <input placeholder="Search products..." [(ngModel)]="search" (ngModelChange)="onSearch()" />
+    <select [(ngModel)]="filterCategory" (ngModelChange)="onSearch()">
+      <option value="">All Categories</option>
+      @for (cat of categories; track cat) {
+        <option [value]="cat">{{ cat }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="card">
+    @if (loading) {
+      <div class="loading">Loading products...</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Sizes</th>
+              <th>Colors</th>
+              <th>Stock</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of products; track p._id) {
+              <tr>
+                <td>
+                  <div class="fw-600">{{ p.name }}</div>
+                  @if (p.description) {
+                    <div class="text-muted" style="font-size:11px;margin-top:2px">{{ p.description | slice:0:60 }}{{ p.description.length > 60 ? '...' : '' }}</div>
+                  }
+                </td>
+                <td><span class="badge badge-neutral">{{ p.category }}</span></td>
+                <td class="fw-600">{{ p.basePrice | currency:'AUD' }}</td>
+                <td>
+                  @for (s of uniqueSizes(p); track s) {
+                    <span class="chip">{{ s }}</span>
+                  }
+                </td>
+                <td>
+                  @for (c of uniqueColors(p); track c) {
+                    <span class="chip">{{ c }}</span>
+                  }
+                </td>
+                <td>
+                  @if (totalStock(p) === 0) {
+                    <span class="badge badge-danger">Out of stock</span>
+                  } @else {
+                    <span class="badge badge-success">{{ totalStock(p) }} units</span>
+                  }
+                </td>
+                <td>
+                  <button class="btn btn-outline btn-sm" (click)="openEdit(p)">Edit</button>
+                  <button class="btn btn-danger btn-sm" style="margin-left:6px" (click)="remove(p._id)">Remove</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="empty-state">No products found</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (pages > 1) {
+        <div class="pagination">
+          <button class="btn btn-outline btn-sm" (click)="prevPage()" [disabled]="page === 1">← Prev</button>
+          <span>Page {{ page }} of {{ pages }}</span>
+          <button class="btn btn-outline btn-sm" (click)="nextPage()" [disabled]="page === pages">Next →</button>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+@if (showModal) {
+  <div class="modal-overlay" (click)="showModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">{{ editingId ? 'Edit Product' : 'Add Product' }}</span>
+        <button class="close-btn" (click)="showModal = false">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Product Name</label>
+            <input [(ngModel)]="form.name" placeholder="e.g. Classic Oxford Shirt" />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select [(ngModel)]="form.category">
+              <option value="">Select category</option>
+              @for (cat of categories; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+              <option value="Men's Clothing">Men's Clothing</option>
+              <option value="Women's Clothing">Women's Clothing</option>
+              <option value="Kids' Clothing">Kids' Clothing</option>
+              <option value="Footwear">Footwear</option>
+              <option value="Accessories">Accessories</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="form.description" placeholder="Product description..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Base Price (AUD)</label>
+          <input type="number" [(ngModel)]="form.basePrice" placeholder="0.00" min="0" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Image URLs (comma-separated)</label>
+          <input [(ngModel)]="form.images" placeholder="https://example.com/image.jpg, ..." />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="save()" [disabled]="saving || !form.name || !form.category || !form.basePrice">
+          {{ saving ? 'Saving...' : (editingId ? 'Update' : 'Create') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

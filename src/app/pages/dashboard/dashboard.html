@@ -1,0 +1,81 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Welcome back — here's what's happening in your store.</div>
+    </div>
+    <a routerLink="/promotions" class="btn btn-primary">+ New Promotion</a>
+  </div>
+
+  @if (loading) {
+    <div class="loading">Loading dashboard...</div>
+  } @else if (stats) {
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Customers</div>
+        <div class="stat-value">{{ stats.totalCustomers | number }}</div>
+        <div class="stat-change">Registered shoppers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Orders</div>
+        <div class="stat-value">{{ stats.totalOrders | number }}</div>
+        <div class="stat-change">All time</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Revenue (30 days)</div>
+        <div class="stat-value">{{ stats.recentRevenue | currency:'AUD':'symbol':'1.0-0' }}</div>
+        <div class="stat-change">Excluding cancelled</div>
+      </div>
+      @for (s of stats.statusBreakdown; track s._id) {
+        @if (s._id === 'delivered') {
+          <div class="stat-card">
+            <div class="stat-label">Delivered Orders</div>
+            <div class="stat-value">{{ s.count | number }}</div>
+            <div class="stat-change text-success">Completed</div>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Recent Orders</span>
+        <a routerLink="/orders" class="btn btn-outline btn-sm">View All</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of stats.recentOrders; track order._id) {
+              <tr>
+                <td class="text-muted" style="font-family:monospace;font-size:11px">{{ order._id.slice(-8) }}</td>
+                <td class="fw-600">{{ order.customer?.firstname }} {{ order.customer?.lastname }}</td>
+                <td>{{ order.items?.length ?? 0 }} item(s)</td>
+                <td class="fw-600">{{ order.total | currency:'AUD' }}</td>
+                <td><span class="badge {{ statusBadge(order.status) }}">{{ order.status }}</span></td>
+                <td class="text-muted">{{ order.createdAt | date:'dd MMM yyyy' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="empty-state">No orders yet</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="quick-links">
+      <a routerLink="/products"   class="quick-card">📦 Manage Products</a>
+      <a routerLink="/customers"  class="quick-card">👥 View Customers</a>
+      <a routerLink="/promotions" class="quick-card">📣 Run Promotion</a>
+    </div>
+  }
+</div>

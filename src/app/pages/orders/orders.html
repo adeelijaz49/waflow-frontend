@@ -1,0 +1,84 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Orders</div>
+      <div class="page-sub">{{ total | number }} total orders</div>
+    </div>
+    <div class="flex gap-2">
+      <select [(ngModel)]="filterStatus" (ngModelChange)="onFilter()" style="width:160px">
+        <option value="">All Statuses</option>
+        @for (s of statuses.slice(1); track s) {
+          <option [value]="s">{{ s | titlecase }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    @if (loading) {
+      <div class="loading">Loading orders...</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Loyalty Used</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Update Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (o of orders; track o._id) {
+              <tr>
+                <td class="text-muted" style="font-family:monospace;font-size:11px">{{ o._id.slice(-8) }}</td>
+                <td>
+                  <div class="fw-600">{{ o.customer?.firstname }} {{ o.customer?.lastname }}</div>
+                  <div class="text-muted" style="font-size:11px">{{ o.customer?.phone }}</div>
+                </td>
+                <td>
+                  @for (item of o.items?.slice(0,2); track $index) {
+                    <div style="font-size:12px">{{ item.productName }} ({{ item.size }}/{{ item.color }})</div>
+                  }
+                  @if ((o.items?.length ?? 0) > 2) {
+                    <div class="text-muted" style="font-size:11px">+{{ o.items.length - 2 }} more</div>
+                  }
+                </td>
+                <td class="fw-600">{{ o.total | currency:'AUD' }}</td>
+                <td>
+                  @if (o.loyaltyPointsUsed > 0) {
+                    <span class="badge badge-info">{{ o.loyaltyPointsUsed }} pts</span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td><span class="badge {{ statusBadge(o.status) }}">{{ o.status }}</span></td>
+                <td class="text-muted">{{ o.createdAt | date:'dd MMM yyyy' }}</td>
+                <td>
+                  <select class="status-select" [value]="o.status" (change)="updateStatus(o, $any($event.target).value)">
+                    @for (s of statuses.slice(1); track s) {
+                      <option [value]="s">{{ s | titlecase }}</option>
+                    }
+                  </select>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="8" class="empty-state">No orders found</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (pages > 1) {
+        <div class="pagination">
+          <button class="btn btn-outline btn-sm" (click)="prevPage()" [disabled]="page === 1">← Prev</button>
+          <span>Page {{ page }} of {{ pages }}</span>
+          <button class="btn btn-outline btn-sm" (click)="nextPage()" [disabled]="page === pages">Next →</button>
+        </div>
+      }
+    }
+  </div>
+</div>

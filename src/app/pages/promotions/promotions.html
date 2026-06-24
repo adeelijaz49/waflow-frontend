@@ -1,0 +1,237 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Promotions</div>
+      <div class="page-sub">Create promotions and send them to the right customers via WhatsApp</div>
+    </div>
+    <div class="flex gap-2">
+      <button class="btn btn-outline" (click)="showLoyaltyModal = true">💎 Loyalty Reminder</button>
+      <button class="btn btn-primary" (click)="openCreate()">+ New Promotion</button>
+    </div>
+  </div>
+
+  <!-- Promotions List + Campaign Panel -->
+  <div class="promo-layout">
+
+    <!-- Left: Promotion List -->
+    <div>
+      @if (loading) {
+        <div class="loading">Loading promotions...</div>
+      } @else if (promotions.length === 0) {
+        <div class="card">
+          <div class="empty-state">No promotions yet.<br>Create your first promotion to get started.</div>
+        </div>
+      } @else {
+        <div class="promo-list">
+          @for (p of promotions; track p._id) {
+            <div class="promo-card" [class.active-card]="activePromo?._id === p._id">
+              <div class="promo-card-header">
+                <div>
+                  <div class="fw-600" style="font-size:15px">{{ p.name }}</div>
+                  <div class="text-muted" style="font-size:12px;margin-top:2px">{{ p.description }}</div>
+                </div>
+                <span class="badge {{ statusBadge(p.status) }}">{{ p.status }}</span>
+              </div>
+              <div class="promo-meta">
+                <span class="badge badge-warning">{{ p.discountPercent }}% OFF</span>
+                <span class="badge badge-neutral">{{ p.type === 'store_wide' ? '🏪 Store Wide' : '📦 ' + p.products?.length + ' Products' }}</span>
+                @if (p.sentAt) {
+                  <span class="badge badge-success">Sent {{ p.sentCount }} msgs</span>
+                }
+              </div>
+              <div class="promo-actions">
+                <button class="btn btn-primary btn-sm" (click)="openCampaign(p)">🚀 Launch Campaign</button>
+                <button class="btn btn-danger btn-sm" (click)="deletePromotion(p._id)">Delete</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Right: Campaign Panel -->
+    @if (activePromo) {
+      <div class="campaign-panel card">
+        <div class="card-header">
+          <span class="card-title">Campaign: {{ activePromo.name }}</span>
+          <button class="close-btn" (click)="activePromo = null">×</button>
+        </div>
+        <div class="card-body">
+
+          <!-- Products in promo -->
+          @if (activePromo.products?.length) {
+            <div class="section-label">Products in Promotion</div>
+            <div class="product-chips">
+              @for (prod of activePromo.products; track prod._id) {
+                <div class="prod-chip">
+                  <div class="fw-600" style="font-size:12px">{{ prod.name }}</div>
+                  <div class="text-muted" style="font-size:11px">{{ prod.basePrice | currency:'AUD' }} → {{ prod.basePrice * (1 - activePromo.discountPercent/100) | currency:'AUD' }}</div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- RFM Recommendations -->
+          <div class="section-label" style="margin-top:16px">
+            Recommended Customers (RFM Score)
+            <span style="font-weight:400;color:var(--text-muted)"> — {{ recommendedCustomers.length }} found</span>
+          </div>
+
+          <div class="recs-toolbar">
+            <input type="number" [(ngModel)]="recommendLimit" placeholder="100" style="width:80px" min="1" max="500" />
+            <button class="btn btn-outline btn-sm" (click)="loadRecommended()" [disabled]="loadingRecs">Refresh</button>
+            <button class="btn btn-outline btn-sm" (click)="selectAll()">Select All</button>
+            <button class="btn btn-outline btn-sm" (click)="clearAll()">Clear</button>
+            <span class="text-muted" style="font-size:12px">{{ selectedCustomerIds.size }} selected</span>
+          </div>
+
+          @if (loadingRecs) {
+            <div class="loading" style="padding:20px">Calculating RFM scores...</div>
+          } @else {
+            <div class="customer-rec-list">
+              @for (c of recommendedCustomers; track c._id) {
+                <div class="rec-row" [class.selected]="selectedCustomerIds.has(c._id)" (click)="toggleCustomer(c._id)">
+                  <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c._id)" />
+                  <div class="rec-info">
+                    <div class="fw-600" style="font-size:13px">{{ c.firstname }} {{ c.lastname }}</div>
+                    <div class="text-muted" style="font-size:11px">{{ c.orderCount }} orders · {{ c.totalSpent | currency:'AUD' }} spent</div>
+                  </div>
+                  <div class="rfm-score" [style.color]="rfmColor(c.rfmScore)">{{ c.rfmScore }}</div>
+                  @if (c.loyaltyPoints > 0) {
+                    <span class="badge badge-info" style="font-size:10px">{{ c.loyaltyPoints }} pts</span>
+                  }
+                </div>
+              } @empty {
+                <div class="empty-state" style="padding:20px">No customer data available. Run the seed script first.</div>
+              }
+            </div>
+          }
+
+          <!-- Send Button -->
+          @if (sendResult) {
+            @if (sendResult.error) {
+              <div class="result-box result-error">Failed to send. Check backend logs.</div>
+            } @else {
+              <div class="result-box result-success">✅ Sent {{ sendResult.sentCount }} WhatsApp messages successfully!</div>
+            }
+          }
+
+          <div class="send-bar">
+            <button class="btn btn-success" style="width:100%"
+              (click)="sendCampaign()"
+              [disabled]="sending || selectedCustomerIds.size === 0">
+              @if (sending) { Sending... } @else { 📱 Send WhatsApp to {{ selectedCustomerIds.size }} Customers }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Create Promotion Modal -->
+@if (showCreateModal) {
+  <div class="modal-overlay" (click)="showCreateModal = false">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">New Promotion</span>
+        <button class="close-btn" (click)="showCreateModal = false">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Promotion Name</label>
+          <input [(ngModel)]="form.name" placeholder="e.g. Summer Sale 2025" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="form.description" placeholder="Tell customers what this promotion is about..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Type</label>
+            <select [(ngModel)]="form.type">
+              <option value="specific_products">Specific Products</option>
+              <option value="store_wide">Store Wide %</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Discount %</label>
+            <input type="number" [(ngModel)]="form.discountPercent" min="1" max="100" placeholder="20" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" [(ngModel)]="form.startDate" />
+          </div>
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" [(ngModel)]="form.endDate" />
+          </div>
+        </div>
+
+        @if (form.type === 'specific_products') {
+          <div class="form-group">
+            <label>Select Products</label>
+            <div class="product-picker">
+              @for (p of allProducts; track p._id) {
+                <div class="picker-item" [class.picked]="form.selectedProducts.includes(p._id)" (click)="toggleProduct(p._id)">
+                  <input type="checkbox" [checked]="form.selectedProducts.includes(p._id)" (click)="$event.stopPropagation()" />
+                  <div>
+                    <div style="font-size:12px;font-weight:600">{{ p.name }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">{{ p.category }} · {{ p.basePrice | currency:'AUD' }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+            <div class="text-muted" style="font-size:11px;margin-top:6px">{{ form.selectedProducts.length }} product(s) selected</div>
+          </div>
+        } @else {
+          <div class="form-group">
+            <label>Target Categories (optional — leave empty for all)</label>
+            <div class="cat-picker">
+              @for (cat of categories; track cat) {
+                <div class="picker-item" [class.picked]="form.categories.includes(cat)" (click)="toggleCategory(cat)">
+                  <input type="checkbox" [checked]="form.categories.includes(cat)" (click)="$event.stopPropagation()" />
+                  <span style="font-size:13px">{{ cat }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showCreateModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="savePromotion()" [disabled]="saving || !form.name || !form.discountPercent">
+          {{ saving ? 'Creating...' : 'Create Promotion' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Loyalty Reminder Modal -->
+@if (showLoyaltyModal) {
+  <div class="modal-overlay" (click)="showLoyaltyModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">💎 Loyalty Points Reminder</span>
+        <button class="close-btn" (click)="showLoyaltyModal = false">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px">
+          This will send a WhatsApp message to all customers who have loyalty points, reminding them to come in and use them.
+        </p>
+        @if (loyaltyResult) {
+          <div class="result-box result-success">✅ Sent {{ loyaltyResult.sentCount }} loyalty reminder messages!</div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showLoyaltyModal = false">Close</button>
+        <button class="btn btn-primary" (click)="sendLoyaltyReminder()" [disabled]="sendingLoyalty">
+          {{ sendingLoyalty ? 'Sending...' : '📱 Send Reminders to All' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

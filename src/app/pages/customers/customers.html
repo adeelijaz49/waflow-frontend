@@ -1,0 +1,142 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Customers</div>
+      <div class="page-sub">{{ total | number }} registered customers</div>
+    </div>
+    <button class="btn btn-primary" (click)="openAdd()">+ Add Customer</button>
+  </div>
+
+  <div class="layout">
+    <!-- Customer List -->
+    <div class="list-panel">
+      <div class="search-bar">
+        <input placeholder="Search by name or phone..." [(ngModel)]="search" (ngModelChange)="onSearch()" />
+      </div>
+
+      <div class="card">
+        @if (loading) {
+          <div class="loading">Loading customers...</div>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Orders</th>
+                  <th>Total Spent</th>
+                  <th>Loyalty Pts</th>
+                  <th>Last Order</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of customers; track c._id) {
+                  <tr (click)="viewDetail(c)" style="cursor:pointer">
+                    <td class="fw-600">{{ c.firstname }} {{ c.lastname }}</td>
+                    <td class="text-muted">{{ c.phone }}</td>
+                    <td>{{ c.orderCount }}</td>
+                    <td>{{ c.totalSpent | currency:'AUD' }}</td>
+                    <td>
+                      @if (c.loyaltyPoints > 0) {
+                        <span class="badge badge-info">{{ c.loyaltyPoints }} pts</span>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
+                    <td class="text-muted">{{ c.lastOrder ? (c.lastOrder | date:'dd MMM yy') : '—' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6" class="empty-state">No customers found</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (pages > 1) {
+            <div class="pagination">
+              <button class="btn btn-outline btn-sm" (click)="prevPage()" [disabled]="page === 1">← Prev</button>
+              <span>{{ page }} / {{ pages }}</span>
+              <button class="btn btn-outline btn-sm" (click)="nextPage()" [disabled]="page === pages">Next →</button>
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Customer Detail Panel -->
+    @if (detailLoading) {
+      <div class="detail-panel card"><div class="loading">Loading...</div></div>
+    } @else if (selectedCustomer) {
+      <div class="detail-panel card">
+        <div class="card-header">
+          <span class="card-title">{{ selectedCustomer.firstname }} {{ selectedCustomer.lastname }}</span>
+          <button class="close-btn" (click)="selectedCustomer = null">×</button>
+        </div>
+        <div class="card-body">
+          <div class="customer-meta">
+            <div class="meta-item"><span class="meta-label">Phone</span><span>{{ selectedCustomer.phone }}</span></div>
+            <div class="meta-item"><span class="meta-label">Total Spent</span><span class="fw-600">{{ selectedCustomer.totalSpent | currency:'AUD' }}</span></div>
+            <div class="meta-item">
+              <span class="meta-label">Loyalty Points</span>
+              <span class="badge badge-info">{{ selectedCustomer.loyaltyPoints }} pts = {{ selectedCustomer.loyaltyPoints / 10 | currency:'AUD' }}</span>
+            </div>
+          </div>
+
+          <div style="margin-top:18px">
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px">Order History ({{ selectedCustomer.orders?.length }})</div>
+            <div class="order-list">
+              @for (o of selectedCustomer.orders; track o._id) {
+                <div class="order-row">
+                  <div>
+                    <div class="fw-600" style="font-size:12px">{{ o.items?.length }} item(s) · {{ o.total | currency:'AUD' }}</div>
+                    <div class="text-muted" style="font-size:11px">{{ o.createdAt | date:'dd MMM yyyy' }}</div>
+                  </div>
+                  <span class="badge {{ statusBadge(o.status) }}">{{ o.status }}</span>
+                </div>
+              } @empty {
+                <div class="text-muted" style="font-size:13px">No orders yet</div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+@if (showAddModal) {
+  <div class="modal-overlay" (click)="showAddModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">Add Customer</span>
+        <button class="close-btn" (click)="showAddModal = false">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input [(ngModel)]="form.firstname" placeholder="John" />
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input [(ngModel)]="form.lastname" placeholder="Smith" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>WhatsApp Phone (with country code)</label>
+          <input [(ngModel)]="form.phone" placeholder="61412345678" />
+        </div>
+        <div class="form-group">
+          <label>Email (optional)</label>
+          <input [(ngModel)]="form.email" placeholder="john@example.com" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showAddModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="saveCustomer()" [disabled]="saving || !form.firstname || !form.phone">
+          {{ saving ? 'Saving...' : 'Add Customer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

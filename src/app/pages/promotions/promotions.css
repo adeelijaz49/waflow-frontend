@@ -1,0 +1,121 @@
+.promo-layout {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 20px;
+  align-items: start;
+}
+
+.promo-list { display: flex; flex-direction: column; gap: 12px; }
+
+.promo-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  transition: box-shadow 0.15s;
+}
+
+.promo-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.promo-card.active-card { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+
+.promo-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.promo-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.promo-actions { display: flex; gap: 8px; }
+
+/* Campaign panel */
+.campaign-panel { position: sticky; top: 20px; max-height: calc(100vh - 100px); overflow-y: auto; }
+
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.product-chips { display: flex; flex-direction: column; gap: 6px; }
+.prod-chip {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.recs-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+
+.customer-rec-list {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.rec-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.rec-row:last-child { border-bottom: none; }
+.rec-row:hover { background: #f8fafc; }
+.rec-row.selected { background: #eff6ff; }
+
+.rec-info { flex: 1; min-width: 0; }
+
+.rfm-score {
+  font-size: 13px;
+  font-weight: 700;
+  width: 36px;
+  text-align: right;
+}
+
+.send-bar { margin-top: 14px; }
+
+.result-box {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.result-success { background: #d1fae5; color: #065f46; }
+.result-error   { background: #fee2e2; color: #991b1b; }
+
+/* Product picker in modal */
+.product-picker {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.cat-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.picker-item:last-child { border-bottom: none; }
+.picker-item:hover { background: #f8fafc; }
+.picker-item.picked { background: #eff6ff; }
+
+.cat-picker .picker-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+.cat-picker .picker-item.picked { border-color: var(--primary); background: #eff6ff; }
+
+@media (max-width: 900px) {
+  .promo-layout { grid-template-columns: 1fr; }
+  .campaign-panel { position: static; max-height: none; }
+}
