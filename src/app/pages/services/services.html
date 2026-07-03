@@ -19,7 +19,7 @@
         </div>
       } @else {
         @for (s of services; track s._id) {
-          <div class="service-card" [class.active-card]="activeService?._id === s._id" (click)="selectService(s)">
+          <div class="service-card" [class.active-card]="activeService?._id === s._id">
             <div class="service-card-header">
               <div>
                 <div class="fw-600">{{ s.name }}</div>
@@ -38,6 +38,10 @@
             @if (s.description) {
               <div class="text-muted" style="font-size:12px;margin-top:6px">{{ s.description | slice:0:80 }}{{ s.description.length > 80 ? '...' : '' }}</div>
             }
+            <div class="service-tab-btns">
+              <button class="btn btn-primary btn-sm" (click)="openTab(s, 'slots')">📅 Manage Slots</button>
+              <button class="btn btn-outline btn-sm" (click)="openTab(s, 'bookings')">📋 Bookings</button>
+            </div>
           </div>
         }
       }

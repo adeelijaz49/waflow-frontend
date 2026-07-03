@@ -62,6 +62,12 @@ export class Services implements OnInit {
     this.loadDetail();
   }
 
+  openTab(s: any, tab: 'slots' | 'bookings') {
+    this.activeService = s;
+    this.activeTab = tab;
+    this.loadDetail();
+  }
+
   loadDetail() {
     this.loadingDetail = true;
     this.slots = [];
