@@ -1,14 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-settings',
-  imports: [CommonModule, DatePipe],
+  imports: [CommonModule, DatePipe, FormsModule],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
 })
 export class Settings implements OnInit {
+  loyaltySettings: any = { loyaltyPointsPerUnit: 100, minPointsPerPurchase: 100, currency: 'AUD' };
+  loyaltySaving  = false;
+  loyaltySaved   = false;
+
   tokenStatus: any = null;
   tokenLoading  = false;
   tokenError    = false;
@@ -27,8 +32,24 @@ export class Settings implements OnInit {
   constructor(private api: ApiService) {}
 
   ngOnInit() {
+    this.loadLoyaltySettings();
     this.loadTokenStatus();
     this.loadTemplates();
+  }
+
+  loadLoyaltySettings() {
+    this.api.getLoyaltySettings().subscribe({
+      next: (s) => { this.loyaltySettings = s; },
+      error: () => {},
+    });
+  }
+
+  saveLoyalty() {
+    this.loyaltySaving = true;
+    this.api.saveLoyaltySettings(this.loyaltySettings).subscribe({
+      next: (s) => { this.loyaltySettings = s; this.loyaltySaving = false; this.loyaltySaved = true; setTimeout(() => this.loyaltySaved = false, 3000); },
+      error: () => { this.loyaltySaving = false; },
+    });
   }
 
   loadTokenStatus() {

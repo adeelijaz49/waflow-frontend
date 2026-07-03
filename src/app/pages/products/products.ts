@@ -63,9 +63,17 @@ export class Products implements OnInit {
       category: p.category,
       basePrice: p.basePrice,
       images: p.images?.join(', ') || '',
-      variants: [],
+      variants: (p.variants || []).map((v: any) => ({ size: v.size || '', color: v.color || '', stock: v.stock || 0, sku: v.sku || '' })),
     };
     this.showModal = true;
+  }
+
+  addVariant() {
+    this.form.variants.push({ size: '', color: '', stock: 0, sku: '' });
+  }
+
+  removeVariant(i: number) {
+    this.form.variants.splice(i, 1);
   }
 
   save() {

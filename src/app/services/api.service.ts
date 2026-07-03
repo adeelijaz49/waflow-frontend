@@ -58,6 +58,14 @@ export class ApiService {
     return this.http.put(`${API}/orders/${id}/status`, { status });
   }
 
+  // ── Settings ─────────────────────────────────────────────────────────────
+  getLoyaltySettings(): Observable<any> {
+    return this.http.get(`${API}/settings/loyalty`);
+  }
+  saveLoyaltySettings(data: any): Observable<any> {
+    return this.http.put(`${API}/settings/loyalty`, data);
+  }
+
   // ── WhatsApp ──────────────────────────────────────────────────────────────
   getTokenStatus(): Observable<any> {
     return this.http.get(`${API}/whatsapp/token-status`);

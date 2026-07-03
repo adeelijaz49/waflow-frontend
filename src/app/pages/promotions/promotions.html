@@ -33,7 +33,12 @@
                 <span class="badge {{ statusBadge(p.status) }}">{{ p.status }}</span>
               </div>
               <div class="promo-meta">
-                <span class="badge badge-warning">{{ p.discountPercent }}% OFF</span>
+                @if (p.customerType === 'points') {
+                  <span class="badge badge-info">💎 {{ p.pointsPrice }} pts</span>
+                } @else {
+                  <span class="badge badge-warning">{{ p.discountPercent }}% OFF</span>
+                }
+                <span class="badge badge-neutral">{{ p.customerType === 'points' ? '💎 Points' : '💵 Cash' }}</span>
                 <span class="badge badge-neutral">{{ p.type === 'store_wide' ? '🏪 Store Wide' : '📦 ' + p.products?.length + ' Products' }}</span>
                 @if (p.sentAt) {
                   <span class="badge badge-success">Sent {{ p.sentCount }} msgs</span>
@@ -65,7 +70,11 @@
               @for (prod of activePromo.products; track prod._id) {
                 <div class="prod-chip">
                   <div class="fw-600" style="font-size:12px">{{ prod.name }}</div>
-                  <div class="text-muted" style="font-size:11px">{{ prod.basePrice | currency:'AUD' }} → {{ prod.basePrice * (1 - activePromo.discountPercent/100) | currency:'AUD' }}</div>
+                  @if (activePromo.customerType === 'points') {
+                    <div class="text-muted" style="font-size:11px">{{ activePromo.pointsPrice }} pts (worth {{ prod.basePrice | currency:'AUD' }})</div>
+                  } @else {
+                    <div class="text-muted" style="font-size:11px">{{ prod.basePrice | currency:'AUD' }} → {{ prod.basePrice * (1 - activePromo.discountPercent/100) | currency:'AUD' }}</div>
+                  }
                 </div>
               }
             </div>
@@ -90,16 +99,24 @@
           } @else {
             <div class="customer-rec-list">
               @for (c of recommendedCustomers; track c._id) {
-                <div class="rec-row" [class.selected]="selectedCustomerIds.has(c._id)" (click)="toggleCustomer(c._id)">
-                  <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c._id)" />
+                <div class="rec-row"
+                  [class.selected]="selectedCustomerIds.has(c._id)"
+                  [class.disabled]="!customerCanAfford(c)"
+                  [style.opacity]="customerCanAfford(c) ? '1' : '0.45'"
+                  (click)="toggleCustomer(c)">
+                  <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" [disabled]="!customerCanAfford(c)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c)" />
                   <div class="rec-info">
                     <div class="fw-600" style="font-size:13px">{{ c.firstname }} {{ c.lastname }}</div>
-                    <div class="text-muted" style="font-size:11px">{{ c.orderCount }} orders · {{ c.totalSpent | currency:'AUD' }} spent</div>
+                    @if (isPointsPromo()) {
+                      <div class="text-muted" style="font-size:11px">{{ c.loyaltyPoints }} pts available
+                        @if (!customerCanAfford(c)) { <span style="color:#dc2626"> — Not enough points</span> }
+                      </div>
+                    } @else {
+                      <div class="text-muted" style="font-size:11px">{{ c.orderCount }} orders · {{ c.totalSpent | currency:'AUD' }} spent</div>
+                    }
                   </div>
-                  <div class="rfm-score" [style.color]="rfmColor(c.rfmScore)">{{ c.rfmScore }}</div>
-                  @if (c.loyaltyPoints > 0) {
-                    <span class="badge badge-info" style="font-size:10px">{{ c.loyaltyPoints }} pts</span>
-                  }
+                  <div class="rfm-score" [style.color]="rfmColor(c.rfmScore)">{{ isPointsPromo() ? '' : c.rfmScore }}</div>
+                  <span class="badge badge-info" style="font-size:10px">{{ c.loyaltyPoints }} pts</span>
                 </div>
               } @empty {
                 <div class="empty-state" style="padding:20px">No customer data available. Run the seed script first.</div>
@@ -148,16 +165,33 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Type</label>
-            <select [(ngModel)]="form.type">
-              <option value="specific_products">Specific Products</option>
-              <option value="store_wide">Store Wide %</option>
+            <label>Customer Type</label>
+            <select [(ngModel)]="form.customerType">
+              <option value="cash">💵 Cash Customers</option>
+              <option value="points">💎 Points Customers</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Discount %</label>
-            <input type="number" [(ngModel)]="form.discountPercent" min="1" max="100" placeholder="20" />
+            <label>Product Scope</label>
+            <select [(ngModel)]="form.type">
+              <option value="specific_products">Specific Products</option>
+              <option value="store_wide">Store Wide</option>
+            </select>
           </div>
+        </div>
+        <div class="form-row">
+          @if (form.customerType === 'cash') {
+            <div class="form-group">
+              <label>Discount %</label>
+              <input type="number" [(ngModel)]="form.discountPercent" min="1" max="100" placeholder="20" />
+            </div>
+          } @else {
+            <div class="form-group">
+              <label>Points price per item</label>
+              <input type="number" [(ngModel)]="form.pointsPrice" min="1" placeholder="100" />
+              <div class="text-muted" style="font-size:11px;margin-top:4px">Points a customer needs to redeem each product</div>
+            </div>
+          }
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -202,7 +236,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="showCreateModal = false">Cancel</button>
-        <button class="btn btn-primary" (click)="savePromotion()" [disabled]="saving || !form.name || !form.discountPercent">
+        <button class="btn btn-primary" (click)="savePromotion()" [disabled]="saving || !form.name || (form.customerType === 'cash' ? !form.discountPercent : !form.pointsPrice)">
           {{ saving ? 'Creating...' : 'Create Promotion' }}
         </button>
       </div>

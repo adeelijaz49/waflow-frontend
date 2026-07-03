@@ -44,8 +44,8 @@ export class Promotions implements OnInit {
 
   emptyForm() {
     return {
-      name: '', description: '', type: 'specific_products',
-      discountPercent: 20, categories: [] as string[],
+      name: '', description: '', customerType: 'cash', type: 'specific_products',
+      discountPercent: 20, pointsPrice: 100, categories: [] as string[],
       selectedProducts: [] as string[], startDate: '', endDate: '', status: 'draft',
     };
   }
@@ -78,15 +78,17 @@ export class Promotions implements OnInit {
   savePromotion() {
     this.saving = true;
     const payload = {
-      name: this.form.name,
-      description: this.form.description,
-      type: this.form.type,
-      discountPercent: +this.form.discountPercent,
-      products: this.form.selectedProducts,
-      categories: this.form.categories,
-      startDate: this.form.startDate || undefined,
-      endDate: this.form.endDate || undefined,
-      status: this.form.status,
+      name:            this.form.name,
+      description:     this.form.description,
+      customerType:    this.form.customerType,
+      type:            this.form.type,
+      discountPercent: this.form.customerType === 'cash' ? +this.form.discountPercent : 0,
+      pointsPrice:     this.form.customerType === 'points' ? +this.form.pointsPrice : 0,
+      products:        this.form.selectedProducts,
+      categories:      this.form.categories,
+      startDate:       this.form.startDate || undefined,
+      endDate:         this.form.endDate || undefined,
+      status:          this.form.status,
     };
     this.api.createPromotion(payload).subscribe({
       next: () => { this.showCreateModal = false; this.saving = false; this.loadPromotions(); },
@@ -115,12 +117,13 @@ export class Promotions implements OnInit {
     });
   }
 
-  toggleCustomer(id: string) {
-    if (this.selectedCustomerIds.has(id)) this.selectedCustomerIds.delete(id);
-    else this.selectedCustomerIds.add(id);
+  toggleCustomer(c: any) {
+    if (!this.customerCanAfford(c)) return;
+    if (this.selectedCustomerIds.has(c._id)) this.selectedCustomerIds.delete(c._id);
+    else this.selectedCustomerIds.add(c._id);
   }
 
-  selectAll() { this.recommendedCustomers.forEach(c => this.selectedCustomerIds.add(c._id)); }
+  selectAll() { this.recommendedCustomers.filter(c => this.customerCanAfford(c)).forEach(c => this.selectedCustomerIds.add(c._id)); }
   clearAll()  { this.selectedCustomerIds.clear(); }
 
   sendCampaign() {
@@ -141,6 +144,15 @@ export class Promotions implements OnInit {
       next: (res) => { this.loyaltyResult = res; this.sendingLoyalty = false; },
       error: () => { this.sendingLoyalty = false; },
     });
+  }
+
+  isPointsPromo(): boolean {
+    return this.activePromo?.customerType === 'points';
+  }
+
+  customerCanAfford(c: any): boolean {
+    if (!this.isPointsPromo()) return true;
+    return c.hasEnoughPoints !== false;
   }
 
   statusBadge(status: string): string {

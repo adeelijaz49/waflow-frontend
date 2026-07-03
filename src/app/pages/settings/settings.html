@@ -6,6 +6,35 @@
     </div>
   </div>
 
+  <!-- Loyalty Points Settings -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <span class="card-title">💎 Loyalty Points Settings</span>
+      @if (loyaltySaved) { <span class="badge badge-success">Saved!</span> }
+    </div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Points earned per 1 unit of currency</label>
+          <input type="number" [(ngModel)]="loyaltySettings.loyaltyPointsPerUnit" min="1" />
+          <div class="text-muted" style="font-size:12px;margin-top:4px">e.g. 100 means 1 AUD = 100 points earned on purchase</div>
+        </div>
+        <div class="form-group">
+          <label>Minimum points per purchase</label>
+          <input type="number" [(ngModel)]="loyaltySettings.minPointsPerPurchase" min="0" />
+          <div class="text-muted" style="font-size:12px;margin-top:4px">Guaranteed minimum points awarded even for small orders</div>
+        </div>
+      </div>
+      <div class="form-group" style="max-width:160px">
+        <label>Currency code</label>
+        <input [(ngModel)]="loyaltySettings.currency" placeholder="AUD" />
+      </div>
+      <button class="btn btn-primary" (click)="saveLoyalty()" [disabled]="loyaltySaving">
+        {{ loyaltySaving ? 'Saving...' : 'Save Settings' }}
+      </button>
+    </div>
+  </div>
+
   <!-- Token Status -->
   <div class="card mb-4">
     <div class="card-header">
