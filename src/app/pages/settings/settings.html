@@ -1,0 +1,171 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Settings</div>
+      <div class="page-sub">WhatsApp integration status and configuration</div>
+    </div>
+  </div>
+
+  <!-- Token Status -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <span class="card-title">📱 WhatsApp Token</span>
+      @if (tokenStatus) {
+        <span class="badge {{ tokenBadgeClass() }}">{{ tokenBadgeLabel() }}</span>
+      }
+    </div>
+    <div class="card-body">
+      @if (tokenLoading) {
+        <div class="loading" style="padding:16px">Checking token...</div>
+      } @else if (tokenError) {
+        <div class="hint-box">Cannot reach backend. Make sure the backend server is running, then <button class="btn btn-outline btn-sm" (click)="loadTokenStatus()">retry</button></div>
+      } @else if (tokenStatus) {
+        <div class="status-grid">
+          <div class="status-row">
+            <span class="status-label">Valid</span>
+            <span>{{ tokenStatus.isValid ? '✅ Yes' : '❌ No' }}</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Expires</span>
+            <span>{{ tokenStatus.neverExpires ? 'Never (System User token)' : (tokenStatus.expiresAt | date:'d MMM y, HH:mm') ?? 'Unknown' }}</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Last checked</span>
+            <span>{{ tokenStatus.checkedAt ? (tokenStatus.checkedAt | date:'d MMM y, HH:mm') : 'Not yet checked' }}</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Auto-refresh</span>
+            <span>{{ tokenStatus.hasAppCredentials ? '✅ Enabled (WA_APP_ID + WA_APP_SECRET set)' : '⚠️ Disabled — set WA_APP_ID and WA_APP_SECRET' }}</span>
+          </div>
+        </div>
+
+        @if (refreshResult) {
+          <div class="result-box {{ refreshResult.error ? 'result-error' : 'result-success' }}" style="margin-top:14px">
+            {{ refreshResult.error ?? '✅ Token refreshed successfully' }}
+          </div>
+        }
+
+        <div style="margin-top:14px;display:flex;gap:10px">
+          <button class="btn btn-primary" (click)="refreshToken()" [disabled]="refreshing || !tokenStatus.hasAppCredentials">
+            {{ refreshing ? 'Refreshing...' : '🔄 Refresh Token Now' }}
+          </button>
+          <button class="btn btn-outline" (click)="loadTokenStatus()">Re-check</button>
+        </div>
+
+        @if (!tokenStatus.hasAppCredentials) {
+          <div class="hint-box">
+            To enable auto-refresh, add <code>WA_APP_ID</code> and <code>WA_APP_SECRET</code> to your environment variables.<br>
+            Find them in: Meta Developer Portal → Your App → <strong>Settings → Basic</strong>.
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <!-- Templates -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📋 WhatsApp Message Templates</span>
+      <button class="btn btn-outline btn-sm" (click)="loadTemplates()" [disabled]="templatesLoading">Refresh</button>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+        Templates bypass the 24-hour conversation window, so promotions reach customers whether or not they've messaged you before.
+        Templates must be <strong>APPROVED</strong> by Meta before use — approval usually takes a few minutes to a few hours.
+      </p>
+
+      @if (templateResult) {
+        <div class="result-box {{ templateResult.ok ? 'result-success' : 'result-error' }}" style="margin-bottom:14px">
+          {{ templateResult.msg }}
+        </div>
+      }
+
+      <!-- Promo template -->
+      <div class="template-card">
+        <div class="template-header">
+          <div>
+            <div class="fw-600">Promotion Template</div>
+            <div class="text-muted" style="font-size:12px;margin-top:2px">Name: <code>{{ promoTemplate }}</code></div>
+          </div>
+          @if (templateForName(promoTemplate); as t) {
+            <span class="badge {{ statusBadgeClass(t.status) }}">{{ t.status }}</span>
+          } @else {
+            <span class="badge badge-neutral">Not created</span>
+          }
+        </div>
+        <div class="template-body">
+          Hi [name]! 🏷️ <strong>[Product]</strong> is now <strong>[X]% OFF</strong> — only $[price] AUD. [Promo name]. Tap below to browse all products in this sale!<br>
+          <em style="font-size:11px;color:#6366f1">→ Includes "Shop Now 🛍️" quick-reply button</em>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-primary btn-sm" (click)="createPromoTemplate()" [disabled]="creatingPromo">
+            {{ creatingPromo ? 'Working...' : 'Create Template' }}
+          </button>
+          <button class="btn btn-outline btn-sm" (click)="recreatePromoTemplate()" [disabled]="creatingPromo">
+            {{ creatingPromo ? 'Working...' : '🔄 Delete & Recreate' }}
+          </button>
+          <span class="text-muted" style="font-size:11px">Use "Delete & Recreate" if it already exists but is missing the Shop Now button</span>
+        </div>
+      </div>
+
+      <!-- Loyalty template -->
+      <div class="template-card">
+        <div class="template-header">
+          <div>
+            <div class="fw-600">Loyalty Reminder Template</div>
+            <div class="text-muted" style="font-size:12px;margin-top:2px">Name: <code>{{ loyaltyTemplate }}</code></div>
+          </div>
+          @if (templateForName(loyaltyTemplate); as t) {
+            <span class="badge {{ statusBadgeClass(t.status) }}">{{ t.status }}</span>
+          } @else {
+            <span class="badge badge-neutral">Not created</span>
+          }
+        </div>
+        <div class="template-body">
+          Hi [name]! 💎 You have <strong>[X] loyalty points</strong> worth $[Y] AUD. Pop in and use them on your next purchase — we'd love to see you! 🛍️
+        </div>
+        @if (!templateForName(loyaltyTemplate)) {
+          <button class="btn btn-primary btn-sm" (click)="createLoyaltyTemplate()" [disabled]="creatingLoyalty">
+            {{ creatingLoyalty ? 'Creating...' : 'Create Template' }}
+          </button>
+        }
+      </div>
+
+      <!-- All templates table -->
+      @if (!templatesLoading && templates.length > 0) {
+        <div style="margin-top:20px">
+          <div class="section-label">All Templates ({{ templates.length }})</div>
+          <div class="table-wrap" style="margin-top:8px">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Category</th>
+                  <th>Language</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (t of templates; track t.name) {
+                  <tr>
+                    <td>
+                      <span class="fw-600">{{ t.name }}</span>
+                      @if (t.waflowRole) {
+                        <span class="badge badge-primary" style="margin-left:6px;font-size:10px">{{ t.waflowRole }}</span>
+                      }
+                    </td>
+                    <td><span class="badge {{ statusBadgeClass(t.status) }}">{{ t.status }}</span></td>
+                    <td>{{ t.category }}</td>
+                    <td>{{ t.language }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      } @else if (templatesLoading) {
+        <div class="loading" style="padding:20px">Loading templates...</div>
+      }
+    </div>
+  </div>
+</div>

@@ -157,7 +157,7 @@ label {
   letter-spacing: 0.4px;
 }
 
-input, select, textarea {
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--border);
@@ -169,7 +169,7 @@ input, select, textarea {
   transition: border-color 0.15s;
   font-family: inherit;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus { border-color: var(--primary); }
 textarea { resize: vertical; min-height: 80px; }
 
 /* ── Search bar ── */

@@ -58,6 +58,26 @@ export class ApiService {
     return this.http.put(`${API}/orders/${id}/status`, { status });
   }
 
+  // ── WhatsApp ──────────────────────────────────────────────────────────────
+  getTokenStatus(): Observable<any> {
+    return this.http.get(`${API}/whatsapp/token-status`);
+  }
+  refreshToken(): Observable<any> {
+    return this.http.post(`${API}/whatsapp/refresh-token`, {});
+  }
+  getTemplates(): Observable<any> {
+    return this.http.get(`${API}/whatsapp/templates`);
+  }
+  createPromoTemplate(): Observable<any> {
+    return this.http.post(`${API}/whatsapp/create-promo-template`, {});
+  }
+  createLoyaltyTemplate(): Observable<any> {
+    return this.http.post(`${API}/whatsapp/create-loyalty-template`, {});
+  }
+  deleteTemplate(name: string): Observable<any> {
+    return this.http.delete(`${API}/whatsapp/templates/${name}`);
+  }
+
   // ── Promotions ────────────────────────────────────────────────────────────
   getPromotions(): Observable<any[]> {
     return this.http.get<any[]>(`${API}/promotions`);
