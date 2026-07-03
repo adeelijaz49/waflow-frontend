@@ -49,7 +49,10 @@
                 }
               </div>
               <div class="promo-actions">
-                <button class="btn btn-primary btn-sm" (click)="openCampaign(p)">🚀 Launch Campaign</button>
+                <button class="btn btn-outline btn-sm" (click)="openViewEdit(p)">
+                  {{ (p.sentCount || 0) > 0 ? '👁 View' : '✏️ Edit' }}
+                </button>
+                <button class="btn btn-primary btn-sm" (click)="openCampaign(p)">🚀 Launch</button>
                 <button class="btn btn-danger btn-sm" (click)="deletePromotion(p._id)">Delete</button>
               </div>
             </div>
@@ -150,15 +153,28 @@
   </div>
 </div>
 
-<!-- Create Promotion Modal -->
+<!-- Create / Edit / View Promotion Modal -->
 @if (showCreateModal) {
-  <div class="modal-overlay" (click)="showCreateModal = false">
+  <div class="modal-overlay" (click)="closeModal()">
     <div class="modal modal-lg" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <span class="modal-title">New Promotion</span>
-        <button class="close-btn" (click)="showCreateModal = false">×</button>
+        <span class="modal-title">
+          {{ viewMode ? '👁 View Promotion' : (editingPromoId ? '✏️ Edit Promotion' : 'New Promotion') }}
+        </span>
+        <button class="close-btn" (click)="closeModal()">×</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" [class.readonly-form]="viewMode">
+
+        @if (viewMode && viewingPromo) {
+          <div class="view-mode-banner">
+            <span class="badge {{ statusBadge(viewingPromo.status) }}">{{ viewingPromo.status }}</span>
+            <span style="font-size:13px">
+              📱 <strong>{{ viewingPromo.sentCount }}</strong> messages sent
+              @if (viewingPromo.sentAt) { on {{ viewingPromo.sentAt | date:'d MMM y' }} }
+            </span>
+            <span class="text-muted" style="font-size:12px">Sent promotions cannot be edited.</span>
+          </div>
+        }
         <div class="form-group">
           <label>Promotion Name</label>
           <input [(ngModel)]="form.name" placeholder="e.g. Summer Sale 2025" />
@@ -264,10 +280,12 @@
         }
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" (click)="showCreateModal = false">Cancel</button>
-        <button class="btn btn-primary" (click)="savePromotion()" [disabled]="saving || !form.name || (form.scope === 'services' ? !form.selectedServices.length : (form.customerType === 'cash' ? !form.discountPercent : !form.pointsPrice))">
-          {{ saving ? 'Creating...' : 'Create Promotion' }}
-        </button>
+        <button class="btn btn-outline" (click)="closeModal()">{{ viewMode ? 'Close' : 'Cancel' }}</button>
+        @if (!viewMode) {
+          <button class="btn btn-primary" (click)="savePromotion()" [disabled]="saving || !form.name || (form.scope === 'services' ? !form.selectedServices.length : (form.customerType === 'cash' ? !form.discountPercent : !form.pointsPrice))">
+            {{ saving ? 'Saving...' : (editingPromoId ? 'Update Promotion' : 'Create Promotion') }}
+          </button>
+        }
       </div>
     </div>
   </div>

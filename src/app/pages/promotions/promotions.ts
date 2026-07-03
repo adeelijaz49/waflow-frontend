@@ -16,9 +16,12 @@ export class Promotions implements OnInit {
   allServices: any[] = [];
   loading = false;
 
-  // Create form
+  // Create / Edit / View form
   showCreateModal = false;
   saving = false;
+  editingPromoId: string | null = null;
+  viewMode = false;
+  viewingPromo: any = null;
   form: any = this.emptyForm();
 
   // Campaign panel
@@ -61,8 +64,40 @@ export class Promotions implements OnInit {
   }
 
   openCreate() {
+    this.editingPromoId = null;
+    this.viewMode = false;
+    this.viewingPromo = null;
     this.form = this.emptyForm();
     this.showCreateModal = true;
+  }
+
+  openViewEdit(p: any) {
+    this.editingPromoId = p._id;
+    this.viewMode = (p.sentCount || 0) > 0;
+    this.viewingPromo = p;
+    this.form = {
+      name:             p.name,
+      description:      p.description || '',
+      scope:            p.scope || 'products',
+      customerType:     p.customerType || 'cash',
+      type:             p.type || 'specific_products',
+      discountPercent:  p.discountPercent ?? 0,
+      pointsPrice:      p.pointsPrice ?? 0,
+      categories:       [...(p.categories || [])],
+      selectedProducts: (p.products  || []).map((x: any) => x._id  ?? x),
+      selectedServices: (p.services  || []).map((x: any) => x._id  ?? x),
+      startDate:        p.startDate ? p.startDate.slice(0, 10) : '',
+      endDate:          p.endDate   ? p.endDate.slice(0, 10)   : '',
+      status:           p.status || 'draft',
+    };
+    this.showCreateModal = true;
+  }
+
+  closeModal() {
+    this.showCreateModal = false;
+    this.editingPromoId = null;
+    this.viewMode = false;
+    this.viewingPromo = null;
   }
 
   toggleProduct(id: string) {
@@ -100,8 +135,11 @@ export class Promotions implements OnInit {
       endDate:         this.form.endDate || undefined,
       status:          this.form.status,
     };
-    this.api.createPromotion(payload).subscribe({
-      next: () => { this.showCreateModal = false; this.saving = false; this.loadPromotions(); },
+    const req = this.editingPromoId
+      ? this.api.updatePromotion(this.editingPromoId, payload)
+      : this.api.createPromotion(payload);
+    req.subscribe({
+      next: () => { this.closeModal(); this.saving = false; this.loadPromotions(); },
       error: () => { this.saving = false; },
     });
   }
