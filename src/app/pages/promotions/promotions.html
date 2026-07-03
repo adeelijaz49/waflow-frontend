@@ -210,7 +210,7 @@
             <div class="product-picker">
               @for (p of allProducts; track p._id) {
                 <div class="picker-item" [class.picked]="form.selectedProducts.includes(p._id)" (click)="toggleProduct(p._id)">
-                  <input type="checkbox" [checked]="form.selectedProducts.includes(p._id)" (click)="$event.stopPropagation()" />
+                  <input type="checkbox" [checked]="form.selectedProducts.includes(p._id)" (click)="$event.stopPropagation()" (change)="toggleProduct(p._id)" />
                   <div>
                     <div style="font-size:12px;font-weight:600">{{ p.name }}</div>
                     <div style="font-size:11px;color:var(--text-muted)">{{ p.category }} · {{ p.basePrice | currency:'AUD' }}</div>

@@ -64,15 +64,13 @@ export class Promotions implements OnInit {
   }
 
   toggleProduct(id: string) {
-    const idx = this.form.selectedProducts.indexOf(id);
-    if (idx >= 0) this.form.selectedProducts.splice(idx, 1);
-    else this.form.selectedProducts.push(id);
+    const s: string[] = this.form.selectedProducts;
+    this.form.selectedProducts = s.includes(id) ? s.filter((x: string) => x !== id) : [...s, id];
   }
 
   toggleCategory(cat: string) {
-    const idx = this.form.categories.indexOf(cat);
-    if (idx >= 0) this.form.categories.splice(idx, 1);
-    else this.form.categories.push(cat);
+    const c: string[] = this.form.categories;
+    this.form.categories = c.includes(cat) ? c.filter((x: string) => x !== cat) : [...c, cat];
   }
 
   savePromotion() {
