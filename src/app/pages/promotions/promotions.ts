@@ -13,6 +13,7 @@ export class Promotions implements OnInit {
   promotions: any[] = [];
   categories: string[] = [];
   allProducts: any[] = [];
+  allServices: any[] = [];
   loading = false;
 
   // Create form
@@ -40,13 +41,14 @@ export class Promotions implements OnInit {
     this.loadPromotions();
     this.api.getProductCategories().subscribe(cats => this.categories = cats);
     this.api.getProducts({ limit: 500 }).subscribe(res => this.allProducts = res.products);
+    this.api.getServices().subscribe(svcs => this.allServices = svcs);
   }
 
   emptyForm() {
     return {
-      name: '', description: '', customerType: 'cash', type: 'specific_products',
+      name: '', description: '', scope: 'products', customerType: 'cash', type: 'specific_products',
       discountPercent: 20, pointsPrice: 100, categories: [] as string[],
-      selectedProducts: [] as string[], startDate: '', endDate: '', status: 'draft',
+      selectedProducts: [] as string[], selectedServices: [] as string[], startDate: '', endDate: '', status: 'draft',
     };
   }
 
@@ -73,16 +75,26 @@ export class Promotions implements OnInit {
     this.form.categories = c.includes(cat) ? c.filter((x: string) => x !== cat) : [...c, cat];
   }
 
+  toggleService(id: string) {
+    const s: string[] = this.form.selectedServices;
+    this.form.selectedServices = s.includes(id) ? s.filter((x: string) => x !== id) : [...s, id];
+  }
+
+  isServicePromo(): boolean { return this.form.scope === 'services'; }
+
   savePromotion() {
     this.saving = true;
+    const isService = this.form.scope === 'services';
     const payload = {
       name:            this.form.name,
       description:     this.form.description,
+      scope:           this.form.scope,
       customerType:    this.form.customerType,
-      type:            this.form.type,
+      type:            isService ? 'specific_services' : this.form.type,
       discountPercent: this.form.customerType === 'cash' ? +this.form.discountPercent : 0,
       pointsPrice:     this.form.customerType === 'points' ? +this.form.pointsPrice : 0,
-      products:        this.form.selectedProducts,
+      products:        isService ? [] : this.form.selectedProducts,
+      services:        isService ? this.form.selectedServices : [],
       categories:      this.form.categories,
       startDate:       this.form.startDate || undefined,
       endDate:         this.form.endDate || undefined,

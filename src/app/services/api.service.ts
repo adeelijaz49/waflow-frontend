@@ -111,4 +111,49 @@ export class ApiService {
   sendLoyaltyReminders(customerIds?: string[]): Observable<any> {
     return this.http.post(`${API}/promotions/loyalty/remind`, { customerIds: customerIds || [] });
   }
+
+  // ── Services ──────────────────────────────────────────────────────────────
+  getServices(): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/services`);
+  }
+  getService(id: string): Observable<any> {
+    return this.http.get(`${API}/services/${id}`);
+  }
+  createService(data: any): Observable<any> {
+    return this.http.post(`${API}/services`, data);
+  }
+  updateService(id: string, data: any): Observable<any> {
+    return this.http.put(`${API}/services/${id}`, data);
+  }
+  deleteService(id: string): Observable<any> {
+    return this.http.delete(`${API}/services/${id}`);
+  }
+
+  // ── Time Slots ────────────────────────────────────────────────────────────
+  getSlots(serviceId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/services/${serviceId}/slots`);
+  }
+  createSlot(serviceId: string, data: any): Observable<any> {
+    return this.http.post(`${API}/services/${serviceId}/slots`, data);
+  }
+  updateSlot(serviceId: string, slotId: string, data: any): Observable<any> {
+    return this.http.put(`${API}/services/${serviceId}/slots/${slotId}`, data);
+  }
+  deleteSlot(serviceId: string, slotId: string): Observable<any> {
+    return this.http.delete(`${API}/services/${serviceId}/slots/${slotId}`);
+  }
+
+  // ── Bookings ──────────────────────────────────────────────────────────────
+  getBookings(serviceId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/services/${serviceId}/bookings`);
+  }
+  cancelBooking(bookingId: string): Observable<any> {
+    return this.http.post(`${API}/services/bookings/${bookingId}/cancel`, {});
+  }
+  rescheduleBooking(bookingId: string, newSlotId: string): Observable<any> {
+    return this.http.post(`${API}/services/bookings/${bookingId}/reschedule`, { newSlotId });
+  }
+  completeBooking(bookingId: string): Observable<any> {
+    return this.http.post(`${API}/services/bookings/${bookingId}/complete`, {});
+  }
 }

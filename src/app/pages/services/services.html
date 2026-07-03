@@ -1,0 +1,263 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Services</div>
+      <div class="page-sub">Manage bookable services, time slots, and appointments</div>
+    </div>
+    <button class="btn btn-primary" (click)="openAddService()">+ Add Service</button>
+  </div>
+
+  <div class="services-layout">
+
+    <!-- Left: Service list -->
+    <div class="services-list-col">
+      @if (loading) {
+        <div class="loading">Loading services...</div>
+      } @else if (services.length === 0) {
+        <div class="card">
+          <div class="empty-state">No services yet.<br>Add your first service to get started.</div>
+        </div>
+      } @else {
+        @for (s of services; track s._id) {
+          <div class="service-card" [class.active-card]="activeService?._id === s._id" (click)="selectService(s)">
+            <div class="service-card-header">
+              <div>
+                <div class="fw-600">{{ s.name }}</div>
+                @if (s.category) { <div class="text-muted" style="font-size:12px">{{ s.category }}</div> }
+              </div>
+              <div class="service-actions">
+                <button class="btn btn-outline btn-sm" (click)="openEditService(s, $event)">Edit</button>
+                <button class="btn btn-danger btn-sm" (click)="deleteService(s, $event)">Remove</button>
+              </div>
+            </div>
+            <div class="service-meta">
+              <span class="badge badge-neutral">⏱ {{ s.duration }} min</span>
+              @if (s.basePrice) { <span class="badge badge-neutral">💰 {{ s.basePrice | currency:'AUD' }}</span> }
+              @if (s.pointsPrice) { <span class="badge badge-info">💎 {{ s.pointsPrice }} pts</span> }
+            </div>
+            @if (s.description) {
+              <div class="text-muted" style="font-size:12px;margin-top:6px">{{ s.description | slice:0:80 }}{{ s.description.length > 80 ? '...' : '' }}</div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Right: Detail panel -->
+    @if (activeService) {
+      <div class="service-detail card">
+        <div class="card-header">
+          <span class="card-title">{{ activeService.name }}</span>
+          <button class="close-btn" (click)="activeService = null">×</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="detail-tabs">
+          <button class="tab-btn" [class.active]="activeTab === 'slots'" (click)="activeTab = 'slots'">📅 Time Slots</button>
+          <button class="tab-btn" [class.active]="activeTab === 'bookings'" (click)="activeTab = 'bookings'">📋 Bookings</button>
+        </div>
+
+        @if (loadingDetail) {
+          <div class="loading" style="padding:24px">Loading...</div>
+        } @else {
+
+          <!-- ── Slots Tab ─────────────────────────────────────────────────── -->
+          @if (activeTab === 'slots') {
+            <div class="card-body">
+              <div class="section-toolbar">
+                <span class="section-label">Available Time Slots ({{ slots.length }})</span>
+                <button class="btn btn-primary btn-sm" (click)="openAddSlot()">+ Add Slot</button>
+              </div>
+
+              @if (slots.length === 0) {
+                <div class="empty-state" style="padding:20px">No slots yet. Add time slots so customers can book.</div>
+              } @else {
+                <div class="slot-list">
+                  @for (slot of slots; track slot._id) {
+                    <div class="slot-row">
+                      <div class="slot-info">
+                        <div class="fw-600" style="font-size:13px">{{ slot.date }}</div>
+                        <div class="text-muted" style="font-size:12px">{{ slot.startTime }} – {{ slot.endTime }}</div>
+                      </div>
+                      <div class="slot-capacity">
+                        <span class="badge {{ spotsLeft(slot) === 0 ? 'badge-danger' : spotsLeft(slot) <= 1 ? 'badge-warning' : 'badge-success' }}">
+                          {{ slot.bookedCount }}/{{ slot.capacity }} booked
+                        </span>
+                      </div>
+                      <div class="slot-actions">
+                        <button class="btn btn-outline btn-sm" (click)="openEditSlot(slot)">Edit</button>
+                        <button class="btn btn-danger btn-sm" (click)="deleteSlot(slot._id)">×</button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ── Bookings Tab ──────────────────────────────────────────────── -->
+          @if (activeTab === 'bookings') {
+            <div class="card-body">
+              <div class="section-label" style="margin-bottom:12px">Bookings ({{ bookings.length }})</div>
+
+              @if (bookings.length === 0) {
+                <div class="empty-state" style="padding:20px">No bookings yet.</div>
+              } @else {
+                <div class="booking-list">
+                  @for (b of bookings; track b._id) {
+                    <div class="booking-row">
+                      <div class="booking-info">
+                        <div class="fw-600" style="font-size:13px">
+                          {{ b.customerId?.firstname || b.customerName || b.phone }}
+                          {{ b.customerId?.lastname || '' }}
+                        </div>
+                        <div class="text-muted" style="font-size:11px">
+                          {{ b.slotId?.date }} · {{ b.slotId?.startTime }}–{{ b.slotId?.endTime }}
+                        </div>
+                        <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
+                          <span class="badge {{ statusBadge(b.status) }}">{{ b.status }}</span>
+                          <span class="badge badge-neutral">{{ paymentBadge(b.paymentType) }}</span>
+                          @if (b.amount) { <span class="badge badge-neutral">{{ b.amount | currency:'AUD' }}</span> }
+                          @if (b.pointsUsed) { <span class="badge badge-info">{{ b.pointsUsed }} pts</span> }
+                        </div>
+                      </div>
+                      @if (b.status === 'confirmed') {
+                        <div class="booking-actions">
+                          <button class="btn btn-outline btn-sm" (click)="openReschedule(b._id)">Reschedule</button>
+                          <button class="btn btn-outline btn-sm" (click)="completeBooking(b._id)">✓ Done</button>
+                          <button class="btn btn-danger btn-sm" (click)="cancelBooking(b._id)">Cancel</button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ── Add/Edit Service Modal ─────────────────────────────────────────────── -->
+@if (showServiceModal) {
+  <div class="modal-overlay" (click)="showServiceModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">{{ editingServiceId ? 'Edit Service' : 'Add Service' }}</span>
+        <button class="close-btn" (click)="showServiceModal = false">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Service Name</label>
+            <input [(ngModel)]="serviceForm.name" placeholder="e.g. Men's Haircut" />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <input [(ngModel)]="serviceForm.category" placeholder="e.g. Hair Salon, Beauty Parlour" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="serviceForm.description" placeholder="Describe the service..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Duration (minutes)</label>
+            <input type="number" [(ngModel)]="serviceForm.duration" min="5" step="5" />
+          </div>
+          <div class="form-group">
+            <label>Cash Price (AUD)</label>
+            <input type="number" [(ngModel)]="serviceForm.basePrice" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Points Price</label>
+            <input type="number" [(ngModel)]="serviceForm.pointsPrice" min="0" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Image URLs (comma-separated)</label>
+          <input [(ngModel)]="serviceForm.images" placeholder="https://..." />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showServiceModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="saveService()" [disabled]="savingService || !serviceForm.name">
+          {{ savingService ? 'Saving...' : (editingServiceId ? 'Update' : 'Create') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Add/Edit Slot Modal ────────────────────────────────────────────────── -->
+@if (showSlotModal) {
+  <div class="modal-overlay" (click)="showSlotModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">{{ editingSlotId ? 'Edit Slot' : 'Add Time Slot' }}</span>
+        <button class="close-btn" (click)="showSlotModal = false">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" [(ngModel)]="slotForm.date" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Time</label>
+            <input type="time" [(ngModel)]="slotForm.startTime" />
+          </div>
+          <div class="form-group">
+            <label>End Time</label>
+            <input type="time" [(ngModel)]="slotForm.endTime" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Capacity (max bookings for this slot)</label>
+          <input type="number" [(ngModel)]="slotForm.capacity" min="1" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showSlotModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="saveSlot()" [disabled]="savingSlot || !slotForm.date || !slotForm.startTime || !slotForm.endTime">
+          {{ savingSlot ? 'Saving...' : (editingSlotId ? 'Update' : 'Add Slot') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Reschedule Modal ───────────────────────────────────────────────────── -->
+@if (showRescheduleModal) {
+  <div class="modal-overlay" (click)="showRescheduleModal = null">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">Reschedule Booking</span>
+        <button class="close-btn" (click)="showRescheduleModal = null">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted" style="font-size:13px;margin-bottom:16px">
+          Select a new slot. The customer will receive a WhatsApp confirmation. No additional charge.
+        </p>
+        <div class="form-group">
+          <label>New Time Slot</label>
+          <select [(ngModel)]="selectedNewSlotId">
+            <option value="">— Select a slot —</option>
+            @for (s of availableSlots(); track s._id) {
+              <option [value]="s._id">{{ s.date }} · {{ s.startTime }}–{{ s.endTime }} ({{ spotsLeft(s) }} spot{{ spotsLeft(s) !== 1 ? 's' : '' }} left)</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showRescheduleModal = null">Cancel</button>
+        <button class="btn btn-primary" (click)="confirmReschedule()" [disabled]="rescheduling || !selectedNewSlotId">
+          {{ rescheduling ? 'Rescheduling...' : 'Confirm Reschedule' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -39,7 +39,11 @@
                   <span class="badge badge-warning">{{ p.discountPercent }}% OFF</span>
                 }
                 <span class="badge badge-neutral">{{ p.customerType === 'points' ? '💎 Points' : '💵 Cash' }}</span>
-                <span class="badge badge-neutral">{{ p.type === 'store_wide' ? '🏪 Store Wide' : '📦 ' + p.products?.length + ' Products' }}</span>
+                @if (p.scope === 'services') {
+                  <span class="badge badge-info">✂️ {{ p.services?.length }} Service{{ p.services?.length !== 1 ? 's' : '' }}</span>
+                } @else {
+                  <span class="badge badge-neutral">{{ p.type === 'store_wide' ? '🏪 Store Wide' : '📦 ' + p.products?.length + ' Products' }}</span>
+                }
                 @if (p.sentAt) {
                   <span class="badge badge-success">Sent {{ p.sentCount }} msgs</span>
                 }
@@ -165,19 +169,28 @@
         </div>
         <div class="form-row">
           <div class="form-group">
+            <label>Promotion Scope</label>
+            <select [(ngModel)]="form.scope">
+              <option value="products">🛍️ Products</option>
+              <option value="services">✂️ Services</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label>Customer Type</label>
             <select [(ngModel)]="form.customerType">
               <option value="cash">💵 Cash Customers</option>
               <option value="points">💎 Points Customers</option>
             </select>
           </div>
-          <div class="form-group">
-            <label>Product Scope</label>
-            <select [(ngModel)]="form.type">
-              <option value="specific_products">Specific Products</option>
-              <option value="store_wide">Store Wide</option>
-            </select>
-          </div>
+          @if (form.scope === 'products') {
+            <div class="form-group">
+              <label>Product Scope</label>
+              <select [(ngModel)]="form.type">
+                <option value="specific_products">Specific Products</option>
+                <option value="store_wide">Store Wide</option>
+              </select>
+            </div>
+          }
         </div>
         <div class="form-row">
           @if (form.customerType === 'cash') {
@@ -204,7 +217,23 @@
           </div>
         </div>
 
-        @if (form.type === 'specific_products') {
+        @if (form.scope === 'services') {
+          <div class="form-group">
+            <label>Select Services</label>
+            <div class="product-picker">
+              @for (s of allServices; track s._id) {
+                <div class="picker-item" [class.picked]="form.selectedServices.includes(s._id)" (click)="toggleService(s._id)">
+                  <input type="checkbox" [checked]="form.selectedServices.includes(s._id)" (click)="$event.stopPropagation()" (change)="toggleService(s._id)" />
+                  <div>
+                    <div style="font-size:12px;font-weight:600">{{ s.name }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">{{ s.category }} · {{ s.duration }} min · {{ s.basePrice | currency:'AUD' }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+            <div class="text-muted" style="font-size:11px;margin-top:6px">{{ form.selectedServices.length }} service(s) selected</div>
+          </div>
+        } @else if (form.type === 'specific_products') {
           <div class="form-group">
             <label>Select Products</label>
             <div class="product-picker">
@@ -220,7 +249,7 @@
             </div>
             <div class="text-muted" style="font-size:11px;margin-top:6px">{{ form.selectedProducts.length }} product(s) selected</div>
           </div>
-        } @else {
+        } @else if (form.scope === 'products') {
           <div class="form-group">
             <label>Target Categories (optional — leave empty for all)</label>
             <div class="cat-picker">
@@ -236,7 +265,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="showCreateModal = false">Cancel</button>
-        <button class="btn btn-primary" (click)="savePromotion()" [disabled]="saving || !form.name || (form.customerType === 'cash' ? !form.discountPercent : !form.pointsPrice)">
+        <button class="btn btn-primary" (click)="savePromotion()" [disabled]="saving || !form.name || (form.scope === 'services' ? !form.selectedServices.length : (form.customerType === 'cash' ? !form.discountPercent : !form.pointsPrice))">
           {{ saving ? 'Creating...' : 'Create Promotion' }}
         </button>
       </div>
