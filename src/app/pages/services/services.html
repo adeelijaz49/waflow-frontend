@@ -32,7 +32,7 @@
             </div>
             <div class="service-meta">
               <span class="badge badge-neutral">⏱ {{ s.duration }} min</span>
-              @if (s.basePrice) { <span class="badge badge-neutral">💰 {{ s.basePrice | currency:'AUD' }}</span> }
+              @if (s.basePrice) { <span class="badge badge-neutral">💰 {{ s.basePrice | appCurrency }}</span> }
               @if (s.pointsPrice) { <span class="badge badge-info">💎 {{ s.pointsPrice }} pts</span> }
             </div>
             @if (s.description) {
@@ -121,7 +121,7 @@
                         <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
                           <span class="badge {{ statusBadge(b.status) }}">{{ b.status }}</span>
                           <span class="badge badge-neutral">{{ paymentBadge(b.paymentType) }}</span>
-                          @if (b.amount) { <span class="badge badge-neutral">{{ b.amount | currency:'AUD' }}</span> }
+                          @if (b.amount) { <span class="badge badge-neutral">{{ b.amount | appCurrency }}</span> }
                           @if (b.pointsUsed) { <span class="badge badge-info">{{ b.pointsUsed }} pts</span> }
                         </div>
                       </div>
@@ -173,7 +173,7 @@
             <input type="number" [(ngModel)]="serviceForm.duration" min="5" step="5" />
           </div>
           <div class="form-group">
-            <label>Cash Price (AUD)</label>
+            <label>Cash Price ({{ currencyCode }})</label>
             <input type="number" [(ngModel)]="serviceForm.basePrice" min="0" step="0.01" />
           </div>
           <div class="form-group">

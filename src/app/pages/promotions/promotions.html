@@ -78,9 +78,9 @@
                 <div class="prod-chip">
                   <div class="fw-600" style="font-size:12px">{{ prod.name }}</div>
                   @if (activePromo.customerType === 'points') {
-                    <div class="text-muted" style="font-size:11px">{{ activePromo.pointsPrice }} pts (worth {{ prod.basePrice | currency:'AUD' }})</div>
+                    <div class="text-muted" style="font-size:11px">{{ activePromo.pointsPrice }} pts (worth {{ prod.basePrice | appCurrency }})</div>
                   } @else {
-                    <div class="text-muted" style="font-size:11px">{{ prod.basePrice | currency:'AUD' }} → {{ prod.basePrice * (1 - activePromo.discountPercent/100) | currency:'AUD' }}</div>
+                    <div class="text-muted" style="font-size:11px">{{ prod.basePrice | appCurrency }} → {{ prod.basePrice * (1 - activePromo.discountPercent/100) | appCurrency }}</div>
                   }
                 </div>
               }
@@ -119,7 +119,7 @@
                         @if (!customerCanAfford(c)) { <span style="color:#dc2626"> — Not enough points</span> }
                       </div>
                     } @else {
-                      <div class="text-muted" style="font-size:11px">{{ c.orderCount }} orders · {{ c.totalSpent | currency:'AUD' }} spent</div>
+                      <div class="text-muted" style="font-size:11px">{{ c.orderCount }} orders · {{ c.totalSpent | appCurrency }} spent</div>
                     }
                   </div>
                   <div class="rfm-score" [style.color]="rfmColor(c.rfmScore)">{{ isPointsPromo() ? '' : c.rfmScore }}</div>
@@ -242,7 +242,7 @@
                   <input type="checkbox" [checked]="form.selectedServices.includes(s._id)" (click)="$event.stopPropagation()" (change)="toggleService(s._id)" />
                   <div>
                     <div style="font-size:12px;font-weight:600">{{ s.name }}</div>
-                    <div style="font-size:11px;color:var(--text-muted)">{{ s.category }} · {{ s.duration }} min · {{ s.basePrice | currency:'AUD' }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">{{ s.category }} · {{ s.duration }} min · {{ s.basePrice | appCurrency }}</div>
                   </div>
                 </div>
               }
@@ -258,7 +258,7 @@
                   <input type="checkbox" [checked]="form.selectedProducts.includes(p._id)" (click)="$event.stopPropagation()" (change)="toggleProduct(p._id)" />
                   <div>
                     <div style="font-size:12px;font-weight:600">{{ p.name }}</div>
-                    <div style="font-size:11px;color:var(--text-muted)">{{ p.category }} · {{ p.basePrice | currency:'AUD' }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">{{ p.category }} · {{ p.basePrice | appCurrency }}</div>
                   </div>
                 </div>
               }

@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
+import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 
 @Component({
   selector: 'app-promotions',
-  imports: [CommonModule, FormsModule, CurrencyPipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe],
   templateUrl: './promotions.html',
   styleUrl: './promotions.css',
 })

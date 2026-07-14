@@ -36,7 +36,7 @@
                     <td class="fw-600">{{ c.firstname }} {{ c.lastname }}</td>
                     <td class="text-muted">{{ c.phone }}</td>
                     <td>{{ c.orderCount }}</td>
-                    <td>{{ c.totalSpent | currency:'AUD' }}</td>
+                    <td>{{ c.totalSpent | appCurrency }}</td>
                     <td>
                       @if (c.loyaltyPoints > 0) {
                         <span class="badge badge-info">{{ c.loyaltyPoints }} pts</span>
@@ -75,10 +75,10 @@
         <div class="card-body">
           <div class="customer-meta">
             <div class="meta-item"><span class="meta-label">Phone</span><span>{{ selectedCustomer.phone }}</span></div>
-            <div class="meta-item"><span class="meta-label">Total Spent</span><span class="fw-600">{{ selectedCustomer.totalSpent | currency:'AUD' }}</span></div>
+            <div class="meta-item"><span class="meta-label">Total Spent</span><span class="fw-600">{{ selectedCustomer.totalSpent | appCurrency }}</span></div>
             <div class="meta-item">
               <span class="meta-label">Loyalty Points</span>
-              <span class="badge badge-info">{{ selectedCustomer.loyaltyPoints }} pts = {{ selectedCustomer.loyaltyPoints / 10 | currency:'AUD' }}</span>
+              <span class="badge badge-info">{{ selectedCustomer.loyaltyPoints }} pts = {{ selectedCustomer.loyaltyPoints / 10 | appCurrency }}</span>
             </div>
           </div>
 
@@ -88,7 +88,7 @@
               @for (o of selectedCustomer.orders; track o._id) {
                 <div class="order-row">
                   <div>
-                    <div class="fw-600" style="font-size:12px">{{ o.items?.length }} item(s) · {{ o.total | currency:'AUD' }}</div>
+                    <div class="fw-600" style="font-size:12px">{{ o.items?.length }} item(s) · {{ o.total | appCurrency }}</div>
                     <div class="text-muted" style="font-size:11px">{{ o.createdAt | date:'dd MMM yyyy' }}</div>
                   </div>
                   <span class="badge {{ statusBadge(o.status) }}">{{ o.status }}</span>

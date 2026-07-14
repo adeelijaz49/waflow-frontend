@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
+import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 
 @Component({
   selector: 'app-customers',
-  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, DatePipe],
   templateUrl: './customers.html',
   styleUrl: './customers.css',
 })

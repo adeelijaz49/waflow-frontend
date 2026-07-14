@@ -48,7 +48,7 @@
                     <div class="text-muted" style="font-size:11px">+{{ o.items.length - 2 }} more</div>
                   }
                 </td>
-                <td class="fw-600">{{ o.total | currency:'AUD' }}</td>
+                <td class="fw-600">{{ o.total | appCurrency }}</td>
                 <td>
                   @if (o.loyaltyPointsUsed > 0) {
                     <span class="badge badge-info">{{ o.loyaltyPointsUsed }} pts</span>

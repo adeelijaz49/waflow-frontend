@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
+import { SettingsService } from '../../shared/settings.service';
 
 @Component({
   selector: 'app-settings',
@@ -29,7 +30,7 @@ export class Settings implements OnInit {
   creatingLoyalty  = false;
   templateResult: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private settings: SettingsService) {}
 
   ngOnInit() {
     this.loadLoyaltySettings();
@@ -47,7 +48,13 @@ export class Settings implements OnInit {
   saveLoyalty() {
     this.loyaltySaving = true;
     this.api.saveLoyaltySettings(this.loyaltySettings).subscribe({
-      next: (s) => { this.loyaltySettings = s; this.loyaltySaving = false; this.loyaltySaved = true; setTimeout(() => this.loyaltySaved = false, 3000); },
+      next: (s) => {
+        this.loyaltySettings = s;
+        this.loyaltySaving = false;
+        this.loyaltySaved = true;
+        this.settings.refresh(); // so the currency pipe elsewhere picks up the change immediately
+        setTimeout(() => this.loyaltySaved = false, 3000);
+      },
       error: () => { this.loyaltySaving = false; },
     });
   }

@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterLink, CurrencyPipe, DatePipe],
+  imports: [CommonModule, RouterLink, AppCurrencyPipe, DatePipe],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })

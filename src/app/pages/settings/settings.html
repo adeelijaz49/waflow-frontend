@@ -17,7 +17,7 @@
         <div class="form-group">
           <label>Points earned per 1 unit of currency</label>
           <input type="number" [(ngModel)]="loyaltySettings.loyaltyPointsPerUnit" min="1" />
-          <div class="text-muted" style="font-size:12px;margin-top:4px">e.g. 100 means 1 AUD = 100 points earned on purchase</div>
+          <div class="text-muted" style="font-size:12px;margin-top:4px">e.g. 100 means 1 {{ loyaltySettings.currency }} = 100 points earned on purchase</div>
         </div>
         <div class="form-group">
           <label>Minimum points per purchase</label>
@@ -123,8 +123,8 @@
           }
         </div>
         <div class="template-body">
-          Hi [name]! 🏷️ <strong>[Product]</strong> is now <strong>[X]% OFF</strong> — only $[price] AUD. [Promo name]. Tap below to browse all products in this sale!<br>
-          <em style="font-size:11px;color:#6366f1">→ Includes "Shop Now 🛍️" quick-reply button</em>
+          Hi [name]! 🏷️ <strong>[Product]</strong> is now <strong>[X]% OFF</strong> — only [price] {{ loyaltySettings.currency }}. [Promo name]. Tap below to browse all products in this sale!<br>
+          <em style="font-size:11px;color:#6366f1">→ Includes "Shop Now" quick-reply button</em>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-primary btn-sm" (click)="createPromoTemplate()" [disabled]="creatingPromo">
@@ -151,7 +151,7 @@
           }
         </div>
         <div class="template-body">
-          Hi [name]! 💎 You have <strong>[X] loyalty points</strong> worth $[Y] AUD. Pop in and use them on your next purchase — we'd love to see you! 🛍️
+          Hi [name]! 💎 You have <strong>[X] loyalty points</strong> worth [Y] {{ loyaltySettings.currency }}. Pop in and use them on your next purchase — we'd love to see you! 🛍️
         </div>
         @if (!templateForName(loyaltyTemplate)) {
           <button class="btn btn-primary btn-sm" (click)="createLoyaltyTemplate()" [disabled]="creatingLoyalty">

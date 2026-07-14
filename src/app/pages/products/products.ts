@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
+import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
+import { SettingsService } from '../../shared/settings.service';
 
 @Component({
   selector: 'app-products',
-  imports: [CommonModule, FormsModule, CurrencyPipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe],
   templateUrl: './products.html',
   styleUrl: './products.css',
 })
@@ -25,7 +27,11 @@ export class Products implements OnInit {
 
   form: any = this.emptyForm();
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private settings: SettingsService) {}
+
+  get currencyCode(): string {
+    return this.settings.currencySnapshot;
+  }
 
   ngOnInit() {
     this.load();
