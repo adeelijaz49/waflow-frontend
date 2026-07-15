@@ -111,6 +111,9 @@ export class ApiService {
   sendLoyaltyReminders(customerIds?: string[]): Observable<any> {
     return this.http.post(`${API}/promotions/loyalty/remind`, { customerIds: customerIds || [] });
   }
+  getCampaignReport(promotionId: string): Observable<any> {
+    return this.http.get(`${API}/promotions/${promotionId}/report`);
+  }
 
   // ── Services ──────────────────────────────────────────────────────────────
   getServices(): Observable<any[]> {

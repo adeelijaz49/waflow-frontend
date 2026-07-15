@@ -87,6 +87,28 @@
             </div>
           }
 
+          <!-- Campaign report (only once this promo has actually been sent) -->
+          @if (activePromo.sentCount > 0) {
+            <div class="section-label" style="margin-top:16px">Campaign Report</div>
+            @if (loadingReport) {
+              <div class="loading" style="padding:12px">Loading report...</div>
+            } @else if (campaignReport) {
+              <div class="report-funnel">
+                <div class="report-stat"><div class="report-value">{{ campaignReport.messagesSent }}</div><div class="report-label">Sent</div></div>
+                <div class="report-stat"><div class="report-value">{{ campaignReport.messagesDelivered }}</div><div class="report-label">Delivered</div></div>
+                <div class="report-stat"><div class="report-value">{{ campaignReport.messagesRead }}</div><div class="report-label">Read</div></div>
+                <div class="report-stat"><div class="report-value">{{ campaignReport.clicked }}</div><div class="report-label">Clicked</div></div>
+                <div class="report-stat"><div class="report-value">{{ campaignReport.ordersCreated }}</div><div class="report-label">Orders</div></div>
+                <div class="report-stat"><div class="report-value">{{ campaignReport.revenue | appCurrency }}</div><div class="report-label">Revenue</div></div>
+                <div class="report-stat"><div class="report-value">{{ campaignReport.pointsIssued }}</div><div class="report-label">Points Issued</div></div>
+                <div class="report-stat"><div class="report-value">{{ campaignReport.conversionRate }}%</div><div class="report-label">Conversion</div></div>
+              </div>
+              @if (campaignReport.messagesFailed > 0) {
+                <div class="text-muted" style="font-size:11px;margin-top:6px">⚠️ {{ campaignReport.messagesFailed }} message(s) failed to deliver</div>
+              }
+            }
+          }
+
           <!-- RFM Recommendations -->
           <div class="section-label" style="margin-top:16px">
             Recommended Customers (RFM Score)
