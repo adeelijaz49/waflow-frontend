@@ -5,6 +5,12 @@
       <div class="page-sub">{{ total | number }} total orders</div>
     </div>
     <div class="flex gap-2">
+      <select [(ngModel)]="filterSource" (ngModelChange)="onFilter()" style="width:150px">
+        <option value="">All Sources</option>
+        @for (s of sources.slice(1); track s) {
+          <option [value]="s">{{ sourceLabel(s) }}</option>
+        }
+      </select>
       <select [(ngModel)]="filterStatus" (ngModelChange)="onFilter()" style="width:160px">
         <option value="">All Statuses</option>
         @for (s of statuses.slice(1); track s) {
@@ -27,9 +33,12 @@
               <th>Items</th>
               <th>Total</th>
               <th>Loyalty Used</th>
+              <th>Source</th>
               <th>Status</th>
+              <th>Payment</th>
               <th>Date</th>
               <th>Update Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -56,7 +65,9 @@
                     <span class="text-muted">—</span>
                   }
                 </td>
+                <td class="text-muted" style="font-size:12px">{{ sourceLabel(o.source) }}</td>
                 <td><span class="badge {{ statusBadge(o.status) }}">{{ o.status }}</span></td>
+                <td><span class="badge {{ paymentBadge(o.paymentStatus) }}">{{ o.paymentStatus || 'pending' }}</span></td>
                 <td class="text-muted">{{ o.createdAt | date:'dd MMM yyyy' }}</td>
                 <td>
                   <select class="status-select" [value]="o.status" (change)="updateStatus(o, $any($event.target).value)">
@@ -65,9 +76,10 @@
                     }
                   </select>
                 </td>
+                <td><button class="btn btn-outline btn-sm" (click)="openDetail(o)">View</button></td>
               </tr>
             } @empty {
-              <tr><td colspan="8" class="empty-state">No orders found</td></tr>
+              <tr><td colspan="11" class="empty-state">No orders found</td></tr>
             }
           </tbody>
         </table>
@@ -82,3 +94,37 @@
     }
   </div>
 </div>
+
+<!-- Order Detail Modal -->
+@if (selectedOrder) {
+  <div class="modal-overlay" (click)="closeDetail()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">Order #{{ selectedOrder._id.slice(-8) }}</span>
+        <button class="close-btn" (click)="closeDetail()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-row"><span class="detail-label">Customer</span><span>{{ selectedOrder.customer?.firstname }} {{ selectedOrder.customer?.lastname }} · {{ selectedOrder.customer?.phone }}</span></div>
+        <div class="detail-row"><span class="detail-label">Source</span><span>{{ sourceLabel(selectedOrder.source) }}</span></div>
+        <div class="detail-row"><span class="detail-label">Order Status</span><span class="badge {{ statusBadge(selectedOrder.status) }}">{{ selectedOrder.status }}</span></div>
+        <div class="detail-row"><span class="detail-label">Payment Status</span><span class="badge {{ paymentBadge(selectedOrder.paymentStatus) }}">{{ selectedOrder.paymentStatus || 'pending' }}</span></div>
+        <div class="detail-row"><span class="detail-label">Total</span><span class="fw-600">{{ selectedOrder.total | appCurrency }}</span></div>
+        @if (selectedOrder.stripePaymentIntentId) {
+          <div class="detail-row"><span class="detail-label">Stripe Reference</span><span style="font-family:monospace;font-size:12px">{{ selectedOrder.stripePaymentIntentId }}</span></div>
+        }
+        @if (selectedOrder.paidAt) {
+          <div class="detail-row"><span class="detail-label">Paid On</span><span>{{ selectedOrder.paidAt | date:'d MMM y, h:mm a' }}</span></div>
+        }
+        <div class="detail-row"><span class="detail-label">Created</span><span>{{ selectedOrder.createdAt | date:'d MMM y, h:mm a' }}</span></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeDetail()">Close</button>
+        @if (selectedOrder.paymentStatus === 'paid') {
+          <button class="btn btn-danger" (click)="refundOrder(selectedOrder)" [disabled]="refunding">
+            {{ refunding ? 'Refunding...' : '↩ Refund Payment' }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

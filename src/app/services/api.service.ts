@@ -57,6 +57,9 @@ export class ApiService {
   updateOrderStatus(id: string, status: string): Observable<any> {
     return this.http.put(`${API}/orders/${id}/status`, { status });
   }
+  refundOrder(id: string): Observable<any> {
+    return this.http.post(`${API}/orders/${id}/refund`, {});
+  }
 
   // ── Settings ─────────────────────────────────────────────────────────────
   getLoyaltySettings(): Observable<any> {
