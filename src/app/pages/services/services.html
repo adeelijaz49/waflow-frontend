@@ -41,6 +41,7 @@
             <div class="service-tab-btns">
               <button class="btn btn-primary btn-sm" (click)="openTab(s, 'slots')">📅 Manage Slots</button>
               <button class="btn btn-outline btn-sm" (click)="openTab(s, 'bookings')">📋 Bookings</button>
+              <button class="btn btn-outline btn-sm" (click)="openTab(s, 'requests')">🔔 Requests</button>
             </div>
           </div>
         }
@@ -59,6 +60,10 @@
         <div class="detail-tabs">
           <button class="tab-btn" [class.active]="activeTab === 'slots'" (click)="activeTab = 'slots'">📅 Time Slots</button>
           <button class="tab-btn" [class.active]="activeTab === 'bookings'" (click)="activeTab = 'bookings'">📋 Bookings</button>
+          <button class="tab-btn" [class.active]="activeTab === 'requests'" (click)="activeTab = 'requests'">
+            🔔 Requests
+            @if (pendingRequests.length > 0) { <span class="badge badge-warning" style="margin-left:4px">{{ pendingRequests.length }}</span> }
+          </button>
         </div>
 
         @if (loadingDetail) {
@@ -129,9 +134,49 @@
                         <div class="booking-actions">
                           <button class="btn btn-outline btn-sm" (click)="openReschedule(b._id)">Reschedule</button>
                           <button class="btn btn-outline btn-sm" (click)="completeBooking(b._id)">✓ Done</button>
+                          <button class="btn btn-outline btn-sm" (click)="markNoShow(b._id)">No-Show</button>
                           <button class="btn btn-danger btn-sm" (click)="cancelBooking(b._id)">Cancel</button>
                         </div>
                       }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ── Requests Tab ──────────────────────────────────────────────── -->
+          @if (activeTab === 'requests') {
+            <div class="card-body">
+              <div class="section-label" style="margin-bottom:12px">Pending Reservation Requests ({{ pendingRequests.length }})</div>
+              <div class="text-muted" style="font-size:12px;margin-bottom:12px">
+                Customers who chose "Reserve, Pay in Person" instead of paying online. Their slot is already held — approve or decline below.
+              </div>
+
+              @if (pendingRequests.length === 0) {
+                <div class="empty-state" style="padding:20px">No pending requests.</div>
+              } @else {
+                <div class="booking-list">
+                  @for (b of pendingRequests; track b._id) {
+                    <div class="booking-row">
+                      <div class="booking-info">
+                        <div class="fw-600" style="font-size:13px">
+                          {{ b.customerId?.firstname || b.customerName || b.phone }}
+                          {{ b.customerId?.lastname || '' }}
+                        </div>
+                        <div class="text-muted" style="font-size:11px">
+                          {{ b.slotId?.date }} · {{ b.slotId?.startTime }}–{{ b.slotId?.endTime }}
+                        </div>
+                        <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
+                          <span class="badge {{ statusBadge(b.status) }}">{{ b.status }}</span>
+                          <span class="badge badge-neutral">{{ paymentBadge(b.paymentType) }}</span>
+                          @if (b.amount) { <span class="badge badge-neutral">{{ b.amount | appCurrency }}</span> }
+                        </div>
+                      </div>
+                      <div class="booking-actions">
+                        <button class="btn btn-success btn-sm" (click)="confirmRequest(b._id)">✓ Confirm</button>
+                        <button class="btn btn-danger btn-sm" (click)="declineRequest(b._id)">Decline</button>
+                      </div>
                     </div>
                   }
                 </div>

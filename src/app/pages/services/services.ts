@@ -16,7 +16,7 @@ export class Services implements OnInit {
   loading = false;
 
   activeService: any = null;
-  activeTab: 'slots' | 'bookings' = 'slots';
+  activeTab: 'slots' | 'bookings' | 'requests' = 'slots';
   slots: any[] = [];
   bookings: any[] = [];
   loadingDetail = false;
@@ -68,10 +68,14 @@ export class Services implements OnInit {
     this.loadDetail();
   }
 
-  openTab(s: any, tab: 'slots' | 'bookings') {
+  openTab(s: any, tab: 'slots' | 'bookings' | 'requests') {
     this.activeService = s;
     this.activeTab = tab;
     this.loadDetail();
+  }
+
+  get pendingRequests(): any[] {
+    return this.bookings.filter(b => b.status === 'requested');
   }
 
   loadDetail() {
@@ -187,6 +191,20 @@ export class Services implements OnInit {
     this.api.completeBooking(bookingId).subscribe(() => this.loadDetail());
   }
 
+  confirmRequest(bookingId: string) {
+    this.api.confirmBookingRequest(bookingId).subscribe(() => this.loadDetail());
+  }
+
+  declineRequest(bookingId: string) {
+    if (!confirm('Decline this reservation request? The slot will be freed and the customer notified.')) return;
+    this.api.declineBookingRequest(bookingId).subscribe(() => this.loadDetail());
+  }
+
+  markNoShow(bookingId: string) {
+    if (!confirm('Mark this booking as a no-show?')) return;
+    this.api.markNoShow(bookingId).subscribe(() => this.loadDetail());
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────────
   availableSlots(): any[] {
     return this.slots.filter(s => s.bookedCount < s.capacity && s.date >= new Date().toISOString().slice(0, 10));
@@ -198,12 +216,12 @@ export class Services implements OnInit {
   }
 
   statusBadge(status: string): string {
-    const map: any = { confirmed: 'badge-success', cancelled: 'badge-danger', rescheduled: 'badge-warning', completed: 'badge-info' };
+    const map: any = { requested: 'badge-warning', confirmed: 'badge-success', cancelled: 'badge-danger', rescheduled: 'badge-warning', completed: 'badge-info', 'no-show': 'badge-danger' };
     return map[status] ?? 'badge-neutral';
   }
 
   paymentBadge(type: string): string {
-    const map: any = { cash: '💰 Cash', points: '💎 Points', free: '🔄 Free' };
+    const map: any = { cash: '💰 Cash', points: '💎 Points', free: '🔄 Free', pay_later: '🕓 Pay Later' };
     return map[type] ?? type;
   }
 

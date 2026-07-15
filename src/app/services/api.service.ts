@@ -168,4 +168,13 @@ export class ApiService {
   completeBooking(bookingId: string): Observable<any> {
     return this.http.post(`${API}/services/bookings/${bookingId}/complete`, {});
   }
+  confirmBookingRequest(bookingId: string): Observable<any> {
+    return this.http.post(`${API}/services/bookings/${bookingId}/confirm`, {});
+  }
+  declineBookingRequest(bookingId: string): Observable<any> {
+    return this.http.post(`${API}/services/bookings/${bookingId}/decline`, {});
+  }
+  markNoShow(bookingId: string): Observable<any> {
+    return this.http.post(`${API}/services/bookings/${bookingId}/no-show`, {});
+  }
 }
