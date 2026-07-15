@@ -114,6 +114,12 @@ export class ApiService {
   getCampaignReport(promotionId: string): Observable<any> {
     return this.http.get(`${API}/promotions/${promotionId}/report`);
   }
+  previewPromotionMessage(promotionId: string): Observable<any> {
+    return this.http.get(`${API}/promotions/${promotionId}/preview`);
+  }
+  sendTestMessage(promotionId: string, phone: string): Observable<any> {
+    return this.http.post(`${API}/promotions/${promotionId}/test-send`, { phone });
+  }
 
   // ── Services ──────────────────────────────────────────────────────────────
   getServices(): Observable<any[]> {

@@ -35,6 +35,11 @@ export class Promotions implements OnInit {
   sendResult: any = null;
   campaignReport: any = null;
   loadingReport = false;
+  preview: any = null;
+  loadingPreview = false;
+  testPhone = '';
+  sendingTest = false;
+  testResult: any = null;
 
   // Loyalty reminder
   showLoyaltyModal = false;
@@ -158,7 +163,10 @@ export class Promotions implements OnInit {
     this.recommendedCustomers = [];
     this.sendResult = null;
     this.campaignReport = null;
+    this.preview = null;
+    this.testResult = null;
     this.loadRecommended();
+    this.loadPreview();
     if (promo.sentCount > 0) this.loadCampaignReport();
   }
 
@@ -167,6 +175,24 @@ export class Promotions implements OnInit {
     this.api.getCampaignReport(this.activePromo._id).subscribe({
       next: (data) => { this.campaignReport = data; this.loadingReport = false; },
       error: () => { this.loadingReport = false; },
+    });
+  }
+
+  loadPreview() {
+    this.loadingPreview = true;
+    this.api.previewPromotionMessage(this.activePromo._id).subscribe({
+      next: (data) => { this.preview = data; this.loadingPreview = false; },
+      error: () => { this.loadingPreview = false; },
+    });
+  }
+
+  sendTestMessage() {
+    if (!this.testPhone.trim()) return;
+    this.sendingTest = true;
+    this.testResult = null;
+    this.api.sendTestMessage(this.activePromo._id, this.testPhone.trim()).subscribe({
+      next: () => { this.sendingTest = false; this.testResult = { ok: true }; },
+      error: () => { this.sendingTest = false; this.testResult = { ok: false }; },
     });
   }
 

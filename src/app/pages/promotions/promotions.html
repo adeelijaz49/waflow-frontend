@@ -87,6 +87,38 @@
             </div>
           }
 
+          <!-- WhatsApp message preview -->
+          <div class="section-label" style="margin-top:16px">Message Preview</div>
+          @if (loadingPreview) {
+            <div class="loading" style="padding:12px">Building preview...</div>
+          } @else if (preview) {
+            <div class="wa-bubble">
+              @if (preview.header) {
+                <img [src]="preview.header" class="wa-bubble-image" alt="" />
+              }
+              <div class="wa-bubble-text">{{ preview.body }}</div>
+              <div class="wa-bubble-button">{{ preview.buttonLabel }}</div>
+            </div>
+            @if (preview.fallbackText) {
+              <div class="text-muted" style="font-size:11px;margin-top:4px">
+                If the customer hasn't messaged in the last 24h, they'll get a plain-text version instead.
+              </div>
+            }
+            <div class="test-send-row">
+              <input type="text" [(ngModel)]="testPhone" placeholder="Phone number, e.g. 61412345678" />
+              <button class="btn btn-outline btn-sm" (click)="sendTestMessage()" [disabled]="sendingTest || !testPhone.trim()">
+                {{ sendingTest ? 'Sending...' : 'Show Test Message' }}
+              </button>
+            </div>
+            @if (testResult) {
+              @if (testResult.ok) {
+                <div class="text-muted" style="font-size:11px;color:#10b981">✅ Test message sent</div>
+              } @else {
+                <div class="text-muted" style="font-size:11px;color:#dc2626">Failed to send test message</div>
+              }
+            }
+          }
+
           <!-- Campaign report (only once this promo has actually been sent) -->
           @if (activePromo.sentCount > 0) {
             <div class="section-label" style="margin-top:16px">Campaign Report</div>
