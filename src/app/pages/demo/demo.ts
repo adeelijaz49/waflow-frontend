@@ -22,6 +22,7 @@ export class Demo implements OnInit, OnDestroy {
 
   demoPromotions: any[] = [];
   demoCustomers: any[] = [];
+  fallbackProducts: any[] = [];
 
   selectedPromotion: any = null;
   selectedCustomerIds = new Set<string>();
@@ -52,6 +53,12 @@ export class Demo implements OnInit, OnDestroy {
       next: (res) => { this.demoCustomers = res.customers; },
       error: () => {},
     });
+    // Store-wide promotions carry no specific products/services — this fills in a
+    // real representative item for the flow preview instead of showing a blank one.
+    this.api.getProducts({ limit: 5 }).subscribe({
+      next: (res) => { this.fallbackProducts = res.products; },
+      error: () => {},
+    });
   }
 
   pickPromotion(p: any) {
@@ -72,6 +79,23 @@ export class Demo implements OnInit, OnDestroy {
       next: (data) => { this.preview = data; this.loadingPreview = false; },
       error: () => { this.loadingPreview = false; },
     });
+  }
+
+  // The rest of the conversation past the first message is never sent for
+  // real here — the presenter walks through this exact flow live on the
+  // phone instead. This is a mocked illustration of it (product vs. service,
+  // cash vs. points) so it can be shown up front, scrollable, in one place.
+  readonly fakeSlotLabel = 'Tomorrow, 10:00 AM';
+
+  get isServicePromo(): boolean { return this.selectedPromotion?.scope === 'services'; }
+  get isPointsPromo(): boolean { return this.selectedPromotion?.customerType === 'points'; }
+  get firstProduct(): any { return this.selectedPromotion?.products?.[0] || this.fallbackProducts?.[0]; }
+  get firstService(): any { return this.selectedPromotion?.services?.[0]; }
+
+  get discountedPrice(): number {
+    const p = this.firstProduct;
+    if (!p) return 0;
+    return +(p.basePrice * (1 - (this.selectedPromotion.discountPercent || 0) / 100)).toFixed(2);
   }
 
   toggleCustomer(c: any) {

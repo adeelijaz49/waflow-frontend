@@ -81,15 +81,78 @@
       </div>
 
       <div class="card">
-        <div class="card-header"><span class="card-title">Message Preview</span></div>
+        <div class="card-header">
+          <span class="card-title">Message Preview</span>
+          <span class="text-muted" style="font-size:11px">Full flow — illustrative past step 1</span>
+        </div>
         <div class="card-body">
           @if (loadingPreview) {
             <div class="loading" style="padding:12px">Building preview...</div>
           } @else if (preview) {
-            <div class="wa-bubble">
-              @if (preview.header) { <img [src]="preview.header" class="wa-bubble-image" alt="" /> }
-              <div class="wa-bubble-text">{{ preview.body }}</div>
-              <div class="wa-bubble-button">{{ preview.buttonLabel }}</div>
+            <div class="wa-chat">
+              <!-- 1. The real announcement — exactly what gets sent -->
+              <div class="wa-bubble wa-bubble-business">
+                @if (preview.header) { <img [src]="preview.header" class="wa-bubble-image" alt="" /> }
+                <div class="wa-bubble-text">{{ preview.body }}</div>
+                <div class="wa-bubble-button">{{ preview.buttonLabel }}</div>
+              </div>
+              <div class="wa-bubble wa-bubble-customer">{{ preview.buttonLabel }}</div>
+
+              @if (isServicePromo) {
+                <!-- ── Service flow ─────────────────────────────────────── -->
+                <div class="wa-bubble wa-bubble-business">
+                  <div class="wa-bubble-text">📅 Choose a time for <strong>{{ firstService?.name }}</strong>:<br>• {{ fakeSlotLabel }}<br>• Fri, 2:00 PM</div>
+                </div>
+                <div class="wa-bubble wa-bubble-customer">{{ fakeSlotLabel }}</div>
+
+                @if (isPointsPromo) {
+                  <div class="wa-bubble wa-bubble-business">
+                    <div class="wa-bubble-text">💎 <strong>Booking Summary</strong><br><br>📋 {{ firstService?.name }}<br>📅 {{ fakeSlotLabel }}<br><br><strong>{{ selectedPromotion.pointsPrice }} points will be deducted</strong><br><br>Reply YES to confirm.</div>
+                  </div>
+                  <div class="wa-bubble wa-bubble-customer">YES</div>
+                  <div class="wa-bubble wa-bubble-business">
+                    <div class="wa-bubble-text">✅ <strong>Booking Confirmed!</strong><br>💎 {{ selectedPromotion.pointsPrice }} points redeemed. See you then! 🎉</div>
+                  </div>
+                } @else {
+                  <div class="wa-bubble wa-bubble-business">
+                    <div class="wa-bubble-text">📋 {{ firstService?.name }}<br>📅 {{ fakeSlotLabel }}<br>💰 {{ firstService?.basePrice | appCurrency }}<br><br>Pay securely to confirm your booking:<br>[payment link]</div>
+                  </div>
+                  <div class="wa-bubble wa-bubble-business">
+                    <div class="wa-bubble-text">Prefer to pay when you arrive?</div>
+                    <div class="wa-bubble-button">Reserve, Pay in Person</div>
+                  </div>
+                  <div class="wa-bubble wa-bubble-customer">Reserve, Pay in Person</div>
+                  <div class="wa-bubble wa-bubble-business">
+                    <div class="wa-bubble-text">📝 <strong>Reservation Requested!</strong><br><br>📋 {{ firstService?.name }}<br>📅 {{ fakeSlotLabel }}<br><br>We'll confirm your slot shortly. Pay in person on the day.</div>
+                  </div>
+                }
+              } @else {
+                <!-- ── Product flow ─────────────────────────────────────── -->
+                <div class="wa-bubble wa-bubble-business">
+                  @if (firstProduct?.images?.[0]) { <img [src]="firstProduct.images[0]" class="wa-bubble-image" alt="" /> }
+                  @if (isPointsPromo) {
+                    <div class="wa-bubble-text"><strong>{{ firstProduct?.name }}</strong><br>💎 Redeem for {{ selectedPromotion.pointsPrice }} pts</div>
+                  } @else {
+                    <div class="wa-bubble-text"><strong>{{ firstProduct?.name }}</strong><br>{{ firstProduct?.basePrice | appCurrency }} → <strong>{{ discountedPrice | appCurrency }}</strong></div>
+                  }
+                  <div class="wa-bubble-button">Add to Cart 🛒</div>
+                </div>
+                <div class="wa-bubble wa-bubble-customer">Add to Cart 🛒</div>
+                <div class="wa-bubble wa-bubble-business">
+                  <div class="wa-bubble-text">Great choice! 🎉 What would you like to do next?</div>
+                  <div class="wa-bubble-button">Checkout ✅</div>
+                </div>
+                <div class="wa-bubble wa-bubble-customer">Checkout ✅</div>
+                @if (isPointsPromo) {
+                  <div class="wa-bubble wa-bubble-business">
+                    <div class="wa-bubble-text">💎 <strong>Order Confirmed!</strong><br>{{ selectedPromotion.pointsPrice }} points redeemed successfully. Thank you for shopping with us! 🎉</div>
+                  </div>
+                } @else {
+                  <div class="wa-bubble wa-bubble-business">
+                    <div class="wa-bubble-text">🛒 <strong>Your Order Summary</strong><br><br>1. {{ firstProduct?.name }} — {{ discountedPrice | appCurrency }}<br><br>Pay securely:<br>[payment link]</div>
+                  </div>
+                }
+              }
             </div>
           }
           <div class="send-bar">
