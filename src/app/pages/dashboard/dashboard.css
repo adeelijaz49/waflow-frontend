@@ -1,6 +1,57 @@
+.primary-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.primary-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+}
+.primary-action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.16); }
+
+.primary-action-btn.run-promotion { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+.primary-action-btn.loyalty-reminder { background: linear-gradient(135deg, #a855f7, #7e22ce); }
+
+.stat-card-hero {
+  grid-column: span 2;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border: none;
+  color: white;
+}
+.stat-card-hero .stat-label { color: #94a3b8; }
+.stat-card-hero .stat-value { color: white; font-size: 34px; }
+.stat-card-hero .stat-change { color: #94a3b8; }
+.stat-card-hero .view-revenue-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #93c5fd;
+  text-decoration: none;
+}
+.stat-card-hero .view-revenue-link:hover { text-decoration: underline; }
+
+@media (max-width: 640px) {
+  .stat-card-hero { grid-column: span 1; }
+}
+
 .quick-links {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 14px;
   margin-top: 20px;
 }

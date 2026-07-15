@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
@@ -86,13 +87,14 @@ export class Promotions implements OnInit {
   sendingLoyalty = false;
   loyaltyResult: any = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private route: ActivatedRoute) {}
 
   ngOnInit() {
     this.loadPromotions();
     this.api.getProductCategories().subscribe(cats => this.categories = cats);
     this.api.getProducts({ limit: 500 }).subscribe(res => this.allProducts = res.products);
     this.api.getServices().subscribe(svcs => this.allServices = svcs);
+    if (this.route.snapshot.queryParamMap.get('openLoyalty') === 'true') this.showLoyaltyModal = true;
   }
 
   emptyForm() {

@@ -4,13 +4,23 @@
       <div class="page-title">Dashboard</div>
       <div class="page-sub">Welcome back — here's what's happening in your store.</div>
     </div>
-    <a routerLink="/promotions" class="btn btn-primary">+ New Promotion</a>
+  </div>
+
+  <div class="primary-actions">
+    <a routerLink="/promotions" class="primary-action-btn run-promotion">🚀 Run Promotion</a>
+    <a routerLink="/promotions" [queryParams]="{openLoyalty: true}" class="primary-action-btn loyalty-reminder">💎 Create Loyalty Reminder</a>
   </div>
 
   @if (loading) {
     <div class="loading">Loading dashboard...</div>
   } @else if (stats) {
     <div class="stats-grid">
+      <div class="stat-card stat-card-hero">
+        <div class="stat-label">Revenue (30 days)</div>
+        <div class="stat-value">{{ stats.recentRevenue | appCurrency:'symbol':'1.0-0' }}</div>
+        <div class="stat-change">Excluding cancelled</div>
+        <a routerLink="/orders" class="view-revenue-link">View Revenue →</a>
+      </div>
       <div class="stat-card">
         <div class="stat-label">Total Customers</div>
         <div class="stat-value">{{ stats.totalCustomers | number }}</div>
@@ -20,11 +30,6 @@
         <div class="stat-label">Total Orders</div>
         <div class="stat-value">{{ stats.totalOrders | number }}</div>
         <div class="stat-change">All time</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Revenue (30 days)</div>
-        <div class="stat-value">{{ stats.recentRevenue | appCurrency:'symbol':'1.0-0' }}</div>
-        <div class="stat-change">Excluding cancelled</div>
       </div>
       @for (s of stats.statusBreakdown; track s._id) {
         @if (s._id === 'delivered') {
@@ -105,7 +110,6 @@
     <div class="quick-links">
       <a routerLink="/products"   class="quick-card">📦 Manage Products</a>
       <a routerLink="/customers"  class="quick-card">👥 View Customers</a>
-      <a routerLink="/promotions" class="quick-card">📣 Run Promotion</a>
     </div>
   }
 </div>

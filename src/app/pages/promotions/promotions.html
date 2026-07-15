@@ -5,7 +5,7 @@
       <div class="page-sub">Create promotions and send them to the right customers via WhatsApp</div>
     </div>
     <div class="flex gap-2">
-      <button class="btn btn-outline" (click)="showLoyaltyModal = true">💎 Loyalty Reminder</button>
+      <button class="btn btn-loyalty" (click)="showLoyaltyModal = true">💎 Loyalty Reminder</button>
       <button class="btn btn-primary" (click)="openCreate()">+ New Promotion</button>
     </div>
   </div>
@@ -197,7 +197,7 @@
           }
 
           <div class="send-bar">
-            <button class="btn btn-success" style="width:100%"
+            <button class="btn btn-success btn-send-whatsapp" style="width:100%"
               (click)="sendCampaign()"
               [disabled]="sending || selectedCustomerIds.size === 0">
               @if (sending) { Sending... } @else { 📱 Send WhatsApp to {{ selectedCustomerIds.size }} Customers }
