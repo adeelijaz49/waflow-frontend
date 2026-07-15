@@ -15,15 +15,17 @@
     <div class="card-body">
       <div class="form-row">
         <div class="form-group">
-          <label>Points earned per 1 unit of currency</label>
+          <label>How many points should customers earn per {{ loyaltySettings.currency }} spent?</label>
           <input type="number" [(ngModel)]="loyaltySettings.loyaltyPointsPerUnit" min="1" />
-          <div class="text-muted" style="font-size:12px;margin-top:4px">e.g. 100 means 1 {{ loyaltySettings.currency }} = 100 points earned on purchase</div>
         </div>
         <div class="form-group">
-          <label>Minimum points per purchase</label>
+          <label>Minimum points guaranteed per purchase</label>
           <input type="number" [(ngModel)]="loyaltySettings.minPointsPerPurchase" min="0" />
-          <div class="text-muted" style="font-size:12px;margin-top:4px">Guaranteed minimum points awarded even for small orders</div>
+          <div class="text-muted" style="font-size:12px;margin-top:4px">Every purchase earns at least this many points — even a tiny one.</div>
         </div>
+      </div>
+      <div class="hint-box">
+        💡 Example: Customer spends <strong>{{ exampleSpend }} {{ loyaltySettings.currency }}</strong> → earns <strong>{{ examplePoints() }} points</strong>
       </div>
       <div class="form-group" style="max-width:160px">
         <label>Currency code</label>

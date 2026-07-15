@@ -45,6 +45,14 @@ export class Settings implements OnInit {
     });
   }
 
+  // Mirrors the backend formula exactly (server.js): points = max(minimum, round(spend * perUnit)).
+  exampleSpend = 100;
+  examplePoints(): number {
+    const perUnit = +this.loyaltySettings.loyaltyPointsPerUnit || 0;
+    const minPts  = +this.loyaltySettings.minPointsPerPurchase || 0;
+    return Math.max(minPts, Math.round(this.exampleSpend * perUnit));
+  }
+
   saveLoyalty() {
     this.loyaltySaving = true;
     this.api.saveLoyaltySettings(this.loyaltySettings).subscribe({
