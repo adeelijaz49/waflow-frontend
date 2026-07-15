@@ -215,11 +215,32 @@
     <div class="modal modal-lg" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <span class="modal-title">
-          {{ viewMode ? '👁 View Promotion' : (editingPromoId ? '✏️ Edit Promotion' : 'New Promotion') }}
+          {{ viewMode ? '👁 View Promotion' : (pickingType ? 'New Promotion — Choose a Campaign Type' : (editingPromoId ? '✏️ Edit Promotion' : 'New Promotion')) }}
         </span>
         <button class="close-btn" (click)="closeModal()">×</button>
       </div>
+
+      @if (pickingType) {
+        <div class="modal-body">
+          <div class="campaign-type-grid">
+            @for (ct of campaignTypes; track ct.value) {
+              <div class="campaign-type-card" (click)="selectCampaignType(ct)">
+                <div class="campaign-type-icon">{{ ct.icon }}</div>
+                <div class="fw-600" style="font-size:14px">{{ ct.label }}</div>
+                <div class="text-muted" style="font-size:12px;margin-top:4px">{{ ct.blurb }}</div>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" (click)="closeModal()">Cancel</button>
+        </div>
+      } @else {
       <div class="modal-body" [class.readonly-form]="viewMode">
+
+        @if (!viewMode && !editingPromoId) {
+          <button class="btn btn-outline btn-sm" style="margin-bottom:12px" (click)="pickingType = true">← Change Campaign Type</button>
+        }
 
         @if (viewMode && viewingPromo) {
           <div class="view-mode-banner">
@@ -238,6 +259,9 @@
         <div class="form-group">
           <label>Description</label>
           <textarea [(ngModel)]="form.description" placeholder="Tell customers what this promotion is about..."></textarea>
+          @if (form.campaignType && !editingPromoId) {
+            <div class="text-muted" style="font-size:11px;margin-top:4px">💡 Suggested message for this campaign type — this is what gets sent, feel free to edit it.</div>
+          }
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -343,6 +367,7 @@
           </button>
         }
       </div>
+      }
     </div>
   </div>
 }

@@ -135,6 +135,26 @@
 .result-success { background: #d1fae5; color: #065f46; }
 .result-error   { background: #fee2e2; color: #991b1b; }
 
+/* Campaign type picker (guided creation) */
+.campaign-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.campaign-type-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.campaign-type-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.campaign-type-icon { font-size: 24px; margin-bottom: 6px; }
+
+@media (max-width: 640px) {
+  .campaign-type-grid { grid-template-columns: 1fr; }
+}
+
 /* Product picker in modal */
 .product-picker {
   max-height: 280px;

@@ -4,6 +4,43 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 
+// Guided creation paths — picking one pre-fills sensible defaults + a suggested
+// message (dropped into `description`, which the WhatsApp send now includes)
+// so a merchant can start from something reasonable instead of a blank form.
+const CAMPAIGN_TYPES = [
+  {
+    value: 'product_promotion', icon: '🛍️', label: 'Product Promotion',
+    blurb: 'Discount on specific products or a category.',
+    defaults: { scope: 'products', customerType: 'cash', type: 'specific_products', discountPercent: 20 },
+    suggestedMessage: "Check out our latest offer — handpicked products at a special price, just for you!",
+  },
+  {
+    value: 'service_booking_campaign', icon: '✂️', label: 'Service Booking Campaign',
+    blurb: 'Fill appointment slots for your services.',
+    defaults: { scope: 'services', customerType: 'cash', discountPercent: 15 },
+    suggestedMessage: 'Treat yourself! Book an appointment with us this week and enjoy a special rate.',
+  },
+  {
+    value: 'loyalty_reminder', icon: '💎', label: 'Loyalty Points Campaign',
+    blurb: 'Encourage points customers to redeem their balance.',
+    defaults: { scope: 'products', customerType: 'points', type: 'specific_products', pointsPrice: 100 },
+    suggestedMessage: "You've earned it! Redeem your loyalty points on these items before they're gone.",
+  },
+  {
+    value: 'inactive_customer_comeback', icon: '💌', label: 'Win Back Inactive Customers',
+    blurb: "Targets customers who haven't ordered in a while, with a stronger offer.",
+    defaults: { scope: 'products', customerType: 'cash', type: 'store_wide', discountPercent: 25 },
+    targetSegment: 'Inactive customers',
+    suggestedMessage: 'We miss you! Come back and enjoy an exclusive discount, on us.',
+  },
+  {
+    value: 'store_wide_offer', icon: '🏪', label: 'Store-Wide Offer',
+    blurb: 'One broad discount across everything, for everyone.',
+    defaults: { scope: 'products', customerType: 'cash', type: 'store_wide', discountPercent: 15 },
+    suggestedMessage: "Everything's on sale! Don't miss this store-wide offer.",
+  },
+];
+
 @Component({
   selector: 'app-promotions',
   imports: [CommonModule, FormsModule, AppCurrencyPipe],
@@ -24,6 +61,8 @@ export class Promotions implements OnInit {
   viewMode = false;
   viewingPromo: any = null;
   form: any = this.emptyForm();
+  campaignTypes = CAMPAIGN_TYPES;
+  pickingType = false;
 
   // Campaign panel
   activePromo: any = null;
@@ -58,6 +97,7 @@ export class Promotions implements OnInit {
   emptyForm() {
     return {
       name: '', description: '', scope: 'products', customerType: 'cash', type: 'specific_products',
+      campaignType: null as string | null,
       discountPercent: 20, pointsPrice: 100, categories: [] as string[],
       selectedProducts: [] as string[], selectedServices: [] as string[], startDate: '', endDate: '', status: 'draft',
     };
@@ -76,19 +116,27 @@ export class Promotions implements OnInit {
     this.viewMode = false;
     this.viewingPromo = null;
     this.form = this.emptyForm();
+    this.pickingType = true;
     this.showCreateModal = true;
+  }
+
+  selectCampaignType(ct: typeof CAMPAIGN_TYPES[number]) {
+    this.form = { ...this.emptyForm(), ...ct.defaults, campaignType: ct.value, description: ct.suggestedMessage };
+    this.pickingType = false;
   }
 
   openViewEdit(p: any) {
     this.editingPromoId = p._id;
     this.viewMode = (p.sentCount || 0) > 0;
     this.viewingPromo = p;
+    this.pickingType = false;
     this.form = {
       name:             p.name,
       description:      p.description || '',
       scope:            p.scope || 'products',
       customerType:     p.customerType || 'cash',
       type:             p.type || 'specific_products',
+      campaignType:     p.campaignType || null,
       discountPercent:  p.discountPercent ?? 0,
       pointsPrice:      p.pointsPrice ?? 0,
       categories:       [...(p.categories || [])],
@@ -106,6 +154,7 @@ export class Promotions implements OnInit {
     this.editingPromoId = null;
     this.viewMode = false;
     this.viewingPromo = null;
+    this.pickingType = false;
   }
 
   toggleProduct(id: string) {
@@ -134,6 +183,7 @@ export class Promotions implements OnInit {
       scope:           this.form.scope,
       customerType:    this.form.customerType,
       type:            isService ? 'specific_services' : this.form.type,
+      campaignType:    this.form.campaignType || undefined,
       discountPercent: this.form.customerType === 'cash' ? +this.form.discountPercent : 0,
       pointsPrice:     this.form.customerType === 'points' ? +this.form.pointsPrice : 0,
       products:        isService ? [] : this.form.selectedProducts,
@@ -165,7 +215,7 @@ export class Promotions implements OnInit {
     this.campaignReport = null;
     this.preview = null;
     this.testResult = null;
-    this.loadRecommended();
+    this.loadRecommended(true);
     this.loadPreview();
     if (promo.sentCount > 0) this.loadCampaignReport();
   }
@@ -196,12 +246,30 @@ export class Promotions implements OnInit {
     });
   }
 
-  loadRecommended() {
+  loadRecommended(applyDefaultTargeting = false) {
     this.loadingRecs = true;
     this.api.getRecommendedCustomers(this.activePromo._id, this.recommendLimit).subscribe({
-      next: (data) => { this.recommendedCustomers = data; this.loadingRecs = false; },
+      next: (data) => {
+        this.recommendedCustomers = data;
+        this.loadingRecs = false;
+        if (applyDefaultTargeting) this.applyDefaultTargeting();
+      },
       error: () => { this.loadingRecs = false; },
     });
+  }
+
+  // A campaign type like "Win Back Inactive Customers" has an obvious default
+  // audience (its whole point is the segment) — pre-select it on first open of
+  // a not-yet-sent campaign, so the merchant isn't hand-picking from scratch.
+  // Still fully editable — just a starting point, not forced.
+  private applyDefaultTargeting() {
+    if (this.activePromo.sentCount > 0) return;
+    const ct = this.campaignTypes.find(c => c.value === this.activePromo.campaignType) as any;
+    const segment = ct?.targetSegment;
+    if (!segment) return;
+    this.recommendedCustomers
+      .filter(c => c.segment === segment && this.customerCanAfford(c))
+      .forEach(c => this.selectedCustomerIds.add(c._id));
   }
 
   toggleCustomer(c: any) {
