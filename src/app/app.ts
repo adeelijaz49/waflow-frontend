@@ -10,6 +10,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 export class App {
   navItems = [
     { path: '/dashboard',  label: 'Dashboard',   icon: '◈' },
+    { path: '/demo',       label: 'Demo Mode',    icon: '▶' },
     { path: '/products',   label: 'Products',     icon: '⊞' },
     { path: '/customers',  label: 'Customers',    icon: '◎' },
     { path: '/orders',     label: 'Orders',       icon: '▤' },

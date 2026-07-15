@@ -1,0 +1,147 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Demo Mode</div>
+      <div class="page-sub">A guided, real WhatsApp send to a demo customer — no simulation, tap along on the phone.</div>
+    </div>
+    @if (step !== 'promotion') {
+      <button class="btn btn-outline" (click)="resetDemo()">↺ Restart Demo</button>
+    }
+  </div>
+
+  <!-- Step indicator -->
+  <div class="demo-steps">
+    <div class="demo-step" [class.active]="step === 'promotion'" [class.done]="step !== 'promotion'">1. Pick Promotion</div>
+    <div class="demo-step-arrow">→</div>
+    <div class="demo-step" [class.active]="step === 'customers'" [class.done]="step === 'funnel'">2. Pick Customer(s)</div>
+    <div class="demo-step-arrow">→</div>
+    <div class="demo-step" [class.active]="step === 'funnel'">3. Live Funnel</div>
+  </div>
+
+  @if (loading) {
+    <div class="loading">Loading demo data...</div>
+  }
+
+  <!-- ── Step 1: Pick Promotion ──────────────────────────────────────────── -->
+  @if (step === 'promotion' && !loading) {
+    @if (demoPromotions.length === 0) {
+      <div class="card">
+        <div class="empty-state">
+          No demo promotions found.<br>
+          Run <code>npm run seed:demo</code> on the backend to create demo data (isDemo: true).
+        </div>
+      </div>
+    } @else {
+      <div class="demo-card-grid">
+        @for (p of demoPromotions; track p._id) {
+          <div class="demo-pick-card" (click)="pickPromotion(p)">
+            <div class="fw-600" style="font-size:15px">{{ p.name }}</div>
+            <div class="text-muted" style="font-size:12px;margin-top:4px">{{ p.description }}</div>
+            <div class="promo-meta" style="margin-top:10px">
+              @if (p.customerType === 'points') {
+                <span class="badge badge-info">💎 {{ p.pointsPrice }} pts</span>
+              } @else {
+                <span class="badge badge-warning">{{ p.discountPercent }}% OFF</span>
+              }
+              <span class="badge badge-neutral">{{ p.scope === 'services' ? '✂️ Services' : '🛍️ Products' }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ── Step 2: Pick Customers + Preview ────────────────────────────────── -->
+  @if (step === 'customers') {
+    <div class="demo-layout">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{{ selectedPromotion.name }}</span>
+          <button class="close-btn" (click)="changePromotion()">×</button>
+        </div>
+        <div class="card-body">
+          <div class="section-label">Real Demo Customers</div>
+          <div class="text-muted" style="font-size:12px;margin-bottom:10px">
+            These are tagged demo customers with real WhatsApp numbers. Selecting one will send them a real message.
+          </div>
+          <div class="demo-customer-list">
+            @for (c of demoCustomers; track c._id) {
+              <div class="demo-customer-row" [class.selected]="selectedCustomerIds.has(c._id)" (click)="toggleCustomer(c)">
+                <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c)" />
+                <div>
+                  <div class="fw-600" style="font-size:13px">{{ c.firstname }} {{ c.lastname }}</div>
+                  <div class="text-muted" style="font-size:12px;font-family:monospace">{{ c.phone }}</div>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-state" style="padding:20px">No demo customers found. Run the seed script first.</div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Message Preview</span></div>
+        <div class="card-body">
+          @if (loadingPreview) {
+            <div class="loading" style="padding:12px">Building preview...</div>
+          } @else if (preview) {
+            <div class="wa-bubble">
+              @if (preview.header) { <img [src]="preview.header" class="wa-bubble-image" alt="" /> }
+              <div class="wa-bubble-text">{{ preview.body }}</div>
+              <div class="wa-bubble-button">{{ preview.buttonLabel }}</div>
+            </div>
+          }
+          <div class="send-bar">
+            <button class="btn btn-success btn-send-whatsapp" style="width:100%"
+              (click)="sendNow()"
+              [disabled]="sending || selectedCustomerIds.size === 0">
+              @if (sending) { Sending... } @else { 📱 Send Real WhatsApp to {{ selectedCustomerIds.size }} Customer(s) }
+            </button>
+          </div>
+          @if (sendResult?.error) {
+            <div class="result-box result-error" style="margin-top:10px">Failed to send. Check backend logs.</div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Step 3: Live Funnel ──────────────────────────────────────────────── -->
+  @if (step === 'funnel') {
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Live: {{ selectedPromotion.name }}</span>
+        @if (polling) { <span class="badge badge-success">● Polling live</span> }
+      </div>
+      <div class="card-body">
+        <div class="text-muted" style="font-size:13px;margin-bottom:16px">
+          Sent to: {{ selectedCustomers.length }} customer(s) — now go tap the message on the real phone(s) to watch this update.
+        </div>
+
+        @if (!report) {
+          <div class="loading">Waiting for first report...</div>
+        } @else {
+          <div class="demo-funnel">
+            <div class="demo-funnel-stat"><div class="demo-funnel-value">{{ report.messagesSent }}</div><div class="demo-funnel-label">Sent</div></div>
+            <div class="demo-funnel-arrow">→</div>
+            <div class="demo-funnel-stat"><div class="demo-funnel-value">{{ report.messagesDelivered }}</div><div class="demo-funnel-label">Delivered</div></div>
+            <div class="demo-funnel-arrow">→</div>
+            <div class="demo-funnel-stat"><div class="demo-funnel-value">{{ report.messagesRead }}</div><div class="demo-funnel-label">Read</div></div>
+            <div class="demo-funnel-arrow">→</div>
+            <div class="demo-funnel-stat"><div class="demo-funnel-value">{{ report.clicked }}</div><div class="demo-funnel-label">Clicked</div></div>
+            <div class="demo-funnel-arrow">→</div>
+            <div class="demo-funnel-stat"><div class="demo-funnel-value">{{ report.ordersCreated }}</div><div class="demo-funnel-label">Ordered</div></div>
+          </div>
+
+          @if (report.ordersCreated > 0) {
+            <div class="result-box result-success" style="margin-top:16px">
+              🎉 An order came in! Revenue so far: {{ report.revenue | appCurrency }} · Points issued: {{ report.pointsIssued }}
+              — <a routerLink="/orders">view in Orders</a>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>

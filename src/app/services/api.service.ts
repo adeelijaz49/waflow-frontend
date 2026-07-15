@@ -96,8 +96,8 @@ export class ApiService {
   }
 
   // ── Promotions ────────────────────────────────────────────────────────────
-  getPromotions(): Observable<any[]> {
-    return this.http.get<any[]>(`${API}/promotions`);
+  getPromotions(params: any = {}): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/promotions`, { params });
   }
   getPromotion(id: string): Observable<any> {
     return this.http.get(`${API}/promotions/${id}`);
