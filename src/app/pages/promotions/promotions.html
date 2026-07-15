@@ -109,9 +109,9 @@
             }
           }
 
-          <!-- RFM Recommendations -->
+          <!-- Recommended customers -->
           <div class="section-label" style="margin-top:16px">
-            Recommended Customers (RFM Score)
+            Recommended Customers
             <span style="font-weight:400;color:var(--text-muted)"> — {{ recommendedCustomers.length }} found</span>
           </div>
 
@@ -124,7 +124,7 @@
           </div>
 
           @if (loadingRecs) {
-            <div class="loading" style="padding:20px">Calculating RFM scores...</div>
+            <div class="loading" style="padding:20px">Finding the best customers to target...</div>
           } @else {
             <div class="customer-rec-list">
               @for (c of recommendedCustomers; track c._id) {
@@ -144,7 +144,9 @@
                       <div class="text-muted" style="font-size:11px">{{ c.orderCount }} orders · {{ c.totalSpent | appCurrency }} spent</div>
                     }
                   </div>
-                  <div class="rfm-score" [style.color]="rfmColor(c.rfmScore)">{{ isPointsPromo() ? '' : c.rfmScore }}</div>
+                  @if (!isPointsPromo()) {
+                    <div class="segment-badge" [style.color]="segmentColor(c.segment)" [title]="'RFM score: ' + c.rfmScore">{{ c.segment }}</div>
+                  }
                   <span class="badge badge-info" style="font-size:10px">{{ c.loyaltyPoints }} pts</span>
                 </div>
               } @empty {

@@ -82,11 +82,12 @@
 
 .rec-info { flex: 1; min-width: 0; }
 
-.rfm-score {
-  font-size: 13px;
+.segment-badge {
+  font-size: 11px;
   font-weight: 700;
-  width: 36px;
   text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .send-bar { margin-top: 14px; }

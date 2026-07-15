@@ -221,9 +221,13 @@ export class Promotions implements OnInit {
     return map[status] ?? 'badge-neutral';
   }
 
-  rfmColor(score: number): string {
-    if (score >= 70) return '#10b981';
-    if (score >= 40) return '#f59e0b';
-    return '#94a3b8';
+  segmentColor(segment: string): string {
+    const map: any = {
+      'High-value customers':        '#10b981',
+      'Best customers to target':    '#3b82f6',
+      'Customers likely to return':  '#f59e0b',
+      'Inactive customers':          '#94a3b8',
+    };
+    return map[segment] ?? '#94a3b8';
   }
 }
