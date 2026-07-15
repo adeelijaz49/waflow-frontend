@@ -33,7 +33,10 @@
               <tbody>
                 @for (c of customers; track c._id) {
                   <tr (click)="viewDetail(c)" style="cursor:pointer">
-                    <td class="fw-600">{{ c.firstname }} {{ c.lastname }}</td>
+                    <td class="fw-600">
+                      {{ c.firstname }} {{ c.lastname }}
+                      @if (c.optedOut) { <span class="badge badge-danger" style="margin-left:6px;font-size:10px">Opted Out</span> }
+                    </td>
                     <td class="text-muted">{{ c.phone }}</td>
                     <td>{{ c.orderCount }}</td>
                     <td>{{ c.totalSpent | appCurrency }}</td>
@@ -69,7 +72,10 @@
     } @else if (selectedCustomer) {
       <div class="detail-panel card">
         <div class="card-header">
-          <span class="card-title">{{ selectedCustomer.firstname }} {{ selectedCustomer.lastname }}</span>
+          <span class="card-title">
+            {{ selectedCustomer.firstname }} {{ selectedCustomer.lastname }}
+            @if (selectedCustomer.optedOut) { <span class="badge badge-danger" style="margin-left:6px">Opted Out</span> }
+          </span>
           <button class="close-btn" (click)="selectedCustomer = null">×</button>
         </div>
         <div class="card-body">
@@ -80,9 +86,27 @@
               <span class="meta-label">Loyalty Points</span>
               <span class="badge badge-info">{{ selectedCustomer.loyaltyPoints }} pts = {{ selectedCustomer.loyaltyPoints / 10 | appCurrency }}</span>
             </div>
+            <div class="meta-item">
+              <span class="meta-label">WhatsApp Consent</span>
+              @if (selectedCustomer.optedOut) {
+                <span class="badge badge-danger">Opted out{{ selectedCustomer.optedOutAt ? (' · ' + (selectedCustomer.optedOutAt | date:'d MMM y')) : '' }}</span>
+              } @else {
+                <span class="badge badge-success">Subscribed</span>
+              }
+            </div>
           </div>
+        </div>
 
-          <div style="margin-top:18px">
+        <div class="detail-tabs">
+          <button class="tab-btn" [class.active]="detailTab === 'orders'" (click)="openDetailTab('orders')">Orders</button>
+          <button class="tab-btn" [class.active]="detailTab === 'whatsapp'" (click)="openDetailTab('whatsapp')">WhatsApp History</button>
+          <button class="tab-btn" [class.active]="detailTab === 'products'" (click)="openDetailTab('products')">Products</button>
+          <button class="tab-btn" [class.active]="detailTab === 'campaigns'" (click)="openDetailTab('campaigns')">Campaigns</button>
+          <button class="tab-btn" [class.active]="detailTab === 'services'" (click)="openDetailTab('services')">Services Booked</button>
+        </div>
+
+        <div class="card-body">
+          @if (detailTab === 'orders') {
             <div style="font-size:13px;font-weight:600;margin-bottom:10px">Order History ({{ selectedCustomer.orders?.length }})</div>
             <div class="order-list">
               @for (o of selectedCustomer.orders; track o._id) {
@@ -91,13 +115,90 @@
                     <div class="fw-600" style="font-size:12px">{{ o.items?.length }} item(s) · {{ o.total | appCurrency }}</div>
                     <div class="text-muted" style="font-size:11px">{{ o.createdAt | date:'dd MMM yyyy' }}</div>
                   </div>
-                  <span class="badge {{ statusBadge(o.status) }}">{{ o.status }}</span>
+                  <span class="badge {{ o.status | statusBadge:'order' }}">{{ o.status }}</span>
                 </div>
               } @empty {
                 <div class="text-muted" style="font-size:13px">No orders yet</div>
               }
             </div>
-          </div>
+          }
+
+          @if (detailTab === 'whatsapp') {
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px">WhatsApp History ({{ whatsappHistory.length }})</div>
+            @if (loadingHistory) {
+              <div class="loading">Loading...</div>
+            } @else {
+              <div class="order-list">
+                @for (h of whatsappHistory; track h._id) {
+                  <div class="order-row">
+                    <div>
+                      <div class="fw-600" style="font-size:12px">{{ waKindLabel(h.kind) }}{{ h.promotion?.name ? ' — ' + h.promotion.name : '' }}</div>
+                      <div class="text-muted" style="font-size:11px">{{ h.createdAt | date:'dd MMM yyyy, h:mm a' }}</div>
+                    </div>
+                    <span class="badge badge-neutral">{{ h.status }}</span>
+                  </div>
+                } @empty {
+                  <div class="text-muted" style="font-size:13px">No WhatsApp messages yet</div>
+                }
+              </div>
+            }
+          }
+
+          @if (detailTab === 'products') {
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px">Products Purchased ({{ productsPurchased.length }})</div>
+            <div class="order-list">
+              @for (p of productsPurchased; track p.name) {
+                <div class="order-row">
+                  <div class="fw-600" style="font-size:12px">{{ p.name }}</div>
+                  <span class="text-muted" style="font-size:12px">{{ p.quantity }} unit(s) · {{ p.orders }} order(s)</span>
+                </div>
+              } @empty {
+                <div class="text-muted" style="font-size:13px">No products purchased yet</div>
+              }
+            </div>
+          }
+
+          @if (detailTab === 'campaigns') {
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px">Campaigns Received ({{ campaignsReceived.length }})</div>
+            @if (loadingHistory) {
+              <div class="loading">Loading...</div>
+            } @else {
+              <div class="order-list">
+                @for (h of campaignsReceived; track h._id) {
+                  <div class="order-row">
+                    <div>
+                      <div class="fw-600" style="font-size:12px">{{ h.promotion?.name || 'Promotion' }}</div>
+                      <div class="text-muted" style="font-size:11px">{{ h.createdAt | date:'dd MMM yyyy, h:mm a' }}</div>
+                    </div>
+                    <span class="badge badge-neutral">{{ h.status }}</span>
+                  </div>
+                } @empty {
+                  <div class="text-muted" style="font-size:13px">No campaigns received yet</div>
+                }
+              </div>
+            }
+          }
+
+          @if (detailTab === 'services') {
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px">Services Booked ({{ bookings.length }})</div>
+            @if (loadingBookings) {
+              <div class="loading">Loading...</div>
+            } @else {
+              <div class="order-list">
+                @for (b of bookings; track b._id) {
+                  <div class="order-row">
+                    <div>
+                      <div class="fw-600" style="font-size:12px">{{ b.serviceId?.name }}</div>
+                      <div class="text-muted" style="font-size:11px">{{ b.slotId?.date }} · {{ b.slotId?.startTime }}</div>
+                    </div>
+                    <span class="badge {{ b.status | statusBadge:'booking' }}">{{ b.status }}</span>
+                  </div>
+                } @empty {
+                  <div class="text-muted" style="font-size:13px">No services booked yet</div>
+                }
+              </div>
+            }
+          }
         </div>
       </div>
     }

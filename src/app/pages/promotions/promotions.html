@@ -30,7 +30,7 @@
                   <div class="fw-600" style="font-size:15px">{{ p.name }}</div>
                   <div class="text-muted" style="font-size:12px;margin-top:2px">{{ p.description }}</div>
                 </div>
-                <span class="badge {{ statusBadge(p.status) }}">{{ p.status }}</span>
+                <span class="badge {{ p.status | statusBadge:'promotion' }}">{{ p.status }}</span>
               </div>
               <div class="promo-meta">
                 @if (p.customerType === 'points') {
@@ -244,7 +244,7 @@
 
         @if (viewMode && viewingPromo) {
           <div class="view-mode-banner">
-            <span class="badge {{ statusBadge(viewingPromo.status) }}">{{ viewingPromo.status }}</span>
+            <span class="badge {{ viewingPromo.status | statusBadge:'promotion' }}">{{ viewingPromo.status }}</span>
             <span style="font-size:13px">
               📱 <strong>{{ viewingPromo.sentCount }}</strong> messages sent
               @if (viewingPromo.sentAt) { on {{ viewingPromo.sentAt | date:'d MMM y' }} }

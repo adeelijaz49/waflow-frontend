@@ -124,7 +124,7 @@
                           {{ b.slotId?.date }} · {{ b.slotId?.startTime }}–{{ b.slotId?.endTime }}
                         </div>
                         <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
-                          <span class="badge {{ statusBadge(b.status) }}">{{ b.status }}</span>
+                          <span class="badge {{ b.status | statusBadge:'booking' }}">{{ b.status }}</span>
                           <span class="badge badge-neutral">{{ paymentBadge(b.paymentType) }}</span>
                           @if (b.amount) { <span class="badge badge-neutral">{{ b.amount | appCurrency }}</span> }
                           @if (b.pointsUsed) { <span class="badge badge-info">{{ b.pointsUsed }} pts</span> }
@@ -168,7 +168,7 @@
                           {{ b.slotId?.date }} · {{ b.slotId?.startTime }}–{{ b.slotId?.endTime }}
                         </div>
                         <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
-                          <span class="badge {{ statusBadge(b.status) }}">{{ b.status }}</span>
+                          <span class="badge {{ b.status | statusBadge:'booking' }}">{{ b.status }}</span>
                           <span class="badge badge-neutral">{{ paymentBadge(b.paymentType) }}</span>
                           @if (b.amount) { <span class="badge badge-neutral">{{ b.amount | appCurrency }}</span> }
                         </div>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
+import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 
 // Guided creation paths — picking one pre-fills sensible defaults + a suggested
 // message (dropped into `description`, which the WhatsApp send now includes)
@@ -43,7 +44,7 @@ const CAMPAIGN_TYPES = [
 
 @Component({
   selector: 'app-promotions',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe],
   templateUrl: './promotions.html',
   styleUrl: './promotions.css',
 })
@@ -310,10 +311,6 @@ export class Promotions implements OnInit {
     return c.hasEnoughPoints !== false;
   }
 
-  statusBadge(status: string): string {
-    const map: any = { active: 'badge-success', draft: 'badge-neutral', expired: 'badge-danger' };
-    return map[status] ?? 'badge-neutral';
-  }
 
   segmentColor(segment: string): string {
     const map: any = {

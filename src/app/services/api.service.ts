@@ -43,6 +43,12 @@ export class ApiService {
   updateCustomer(id: string, data: any): Observable<any> {
     return this.http.put(`${API}/customers/${id}`, data);
   }
+  getCustomerWhatsAppHistory(id: string): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/customers/${id}/whatsapp-history`);
+  }
+  getCustomerBookings(id: string): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/customers/${id}/bookings`);
+  }
 
   // ── Orders ────────────────────────────────────────────────────────────────
   getOrders(params: any = {}): Observable<any> {

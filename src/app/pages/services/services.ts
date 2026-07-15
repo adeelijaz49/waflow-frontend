@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { SettingsService } from '../../shared/settings.service';
+import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 
 @Component({
   selector: 'app-services',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe],
   templateUrl: './services.html',
   styleUrl: './services.css',
 })
@@ -213,11 +214,6 @@ export class Services implements OnInit {
   slotLabel(slotId: string): string {
     const s = this.slots.find(sl => sl._id === slotId);
     return s ? `${s.date} · ${s.startTime}–${s.endTime}` : slotId;
-  }
-
-  statusBadge(status: string): string {
-    const map: any = { requested: 'badge-warning', confirmed: 'badge-success', cancelled: 'badge-danger', rescheduled: 'badge-warning', completed: 'badge-info', 'no-show': 'badge-danger' };
-    return map[status] ?? 'badge-neutral';
   }
 
   paymentBadge(type: string): string {

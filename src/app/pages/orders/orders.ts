@@ -3,10 +3,11 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
+import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 
 @Component({
   selector: 'app-orders',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, DatePipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, DatePipe, StatusBadgePipe],
   templateUrl: './orders.html',
   styleUrl: './orders.css',
 })
@@ -46,11 +47,6 @@ export class Orders implements OnInit {
     this.api.updateOrderStatus(order._id, status).subscribe(() => {
       order.status = status;
     });
-  }
-
-  statusBadge(status: string): string {
-    const map: any = { delivered: 'badge-success', shipped: 'badge-primary', confirmed: 'badge-info', pending: 'badge-warning', cancelled: 'badge-danger' };
-    return map[status] ?? 'badge-neutral';
   }
 
   paymentBadge(status: string): string {

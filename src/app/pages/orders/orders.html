@@ -66,7 +66,7 @@
                   }
                 </td>
                 <td class="text-muted" style="font-size:12px">{{ sourceLabel(o.source) }}</td>
-                <td><span class="badge {{ statusBadge(o.status) }}">{{ o.status }}</span></td>
+                <td><span class="badge {{ o.status | statusBadge:'order' }}">{{ o.status }}</span></td>
                 <td><span class="badge {{ paymentBadge(o.paymentStatus) }}">{{ o.paymentStatus || 'pending' }}</span></td>
                 <td class="text-muted">{{ o.createdAt | date:'dd MMM yyyy' }}</td>
                 <td>
@@ -106,7 +106,7 @@
       <div class="modal-body">
         <div class="detail-row"><span class="detail-label">Customer</span><span>{{ selectedOrder.customer?.firstname }} {{ selectedOrder.customer?.lastname }} · {{ selectedOrder.customer?.phone }}</span></div>
         <div class="detail-row"><span class="detail-label">Source</span><span>{{ sourceLabel(selectedOrder.source) }}</span></div>
-        <div class="detail-row"><span class="detail-label">Order Status</span><span class="badge {{ statusBadge(selectedOrder.status) }}">{{ selectedOrder.status }}</span></div>
+        <div class="detail-row"><span class="detail-label">Order Status</span><span class="badge {{ selectedOrder.status | statusBadge:'order' }}">{{ selectedOrder.status }}</span></div>
         <div class="detail-row"><span class="detail-label">Payment Status</span><span class="badge {{ paymentBadge(selectedOrder.paymentStatus) }}">{{ selectedOrder.paymentStatus || 'pending' }}</span></div>
         <div class="detail-row"><span class="detail-label">Total</span><span class="fw-600">{{ selectedOrder.total | appCurrency }}</span></div>
         @if (selectedOrder.stripePaymentIntentId) {
