@@ -90,6 +90,13 @@
                 <div class="empty-state" style="padding:20px">No customers enrolled yet.</div>
               }
             </div>
+            @if (enrollmentsPages > 1) {
+              <div class="enrollment-pager">
+                <button class="btn btn-outline btn-sm" [disabled]="enrollmentsPage <= 1" (click)="enrollmentsPrevPage()">← Prev</button>
+                <span class="text-muted" style="font-size:12px">Page {{ enrollmentsPage }} of {{ enrollmentsPages }} ({{ enrollmentsTotal }} total)</span>
+                <button class="btn btn-outline btn-sm" [disabled]="enrollmentsPage >= enrollmentsPages" (click)="enrollmentsNextPage()">Next →</button>
+              </div>
+            }
           }
         </div>
       </div>
@@ -142,6 +149,18 @@
             <div class="text-muted" style="font-size:11px;margin-top:4px">{{ selectedTrigger?.configHint }}</div>
           </div>
         }
+
+        <div class="form-group">
+          <label>Message Preview</label>
+          @if (previewLoading) {
+            <div class="text-muted" style="font-size:12px">Loading preview...</div>
+          } @else if (preview) {
+            <div class="flow-preview">
+              <div class="flow-preview-body">{{ preview.body }}</div>
+              <div class="flow-preview-button">{{ preview.buttonLabel }}</div>
+            </div>
+          }
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="closeModal()">Cancel</button>

@@ -52,6 +52,12 @@ export class Flows implements OnInit {
   loadingReport = false;
   enrollments: any[] = [];
   loadingEnrollments = false;
+  enrollmentsPage = 1;
+  enrollmentsPages = 1;
+  enrollmentsTotal = 0;
+
+  preview: any = null;
+  previewLoading = false;
 
   constructor(private api: ApiService) {}
 
@@ -73,6 +79,16 @@ export class Flows implements OnInit {
     this.form.triggerType = value;
     const t = this.triggerTypes.find(x => x.value === value);
     if (t) this.form[t.configField] = t.defaultValue;
+    this.loadPreview();
+  }
+
+  loadPreview() {
+    this.previewLoading = true;
+    this.preview = null;
+    this.api.previewFlowMessage(this.form.triggerType).subscribe({
+      next: (data) => { this.preview = data; this.previewLoading = false; },
+      error: () => { this.previewLoading = false; },
+    });
   }
 
   load() {
@@ -87,6 +103,7 @@ export class Flows implements OnInit {
     this.editingId = null;
     this.form = this.emptyForm();
     this.showModal = true;
+    this.loadPreview();
   }
 
   openEdit(f: any, event: Event) {
@@ -98,6 +115,7 @@ export class Flows implements OnInit {
       delayHours: f.delayHours ?? 2,
     };
     this.showModal = true;
+    this.loadPreview();
   }
 
   closeModal() {
@@ -138,6 +156,7 @@ export class Flows implements OnInit {
     this.activeFlow = f;
     this.report = null;
     this.enrollments = [];
+    this.enrollmentsPage = 1;
     this.loadReport();
     this.loadEnrollments();
   }
@@ -152,10 +171,27 @@ export class Flows implements OnInit {
 
   loadEnrollments() {
     this.loadingEnrollments = true;
-    this.api.getFlowEnrollments(this.activeFlow._id).subscribe({
-      next: (data) => { this.enrollments = data.enrollments; this.loadingEnrollments = false; },
+    this.api.getFlowEnrollments(this.activeFlow._id, { page: this.enrollmentsPage, limit: 50 }).subscribe({
+      next: (data) => {
+        this.enrollments = data.enrollments;
+        this.enrollmentsTotal = data.total;
+        this.enrollmentsPages = data.pages || 1;
+        this.loadingEnrollments = false;
+      },
       error: () => { this.loadingEnrollments = false; },
     });
+  }
+
+  enrollmentsPrevPage() {
+    if (this.enrollmentsPage <= 1) return;
+    this.enrollmentsPage--;
+    this.loadEnrollments();
+  }
+
+  enrollmentsNextPage() {
+    if (this.enrollmentsPage >= this.enrollmentsPages) return;
+    this.enrollmentsPage++;
+    this.loadEnrollments();
   }
 
   triggerLabel(type: string): string {

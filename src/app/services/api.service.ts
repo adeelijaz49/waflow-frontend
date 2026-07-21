@@ -170,6 +170,9 @@ export class ApiService {
   getFlowReport(id: string): Observable<any> {
     return this.http.get(`${API}/flows/${id}/report`);
   }
+  previewFlowMessage(triggerType: string): Observable<any> {
+    return this.http.get(`${API}/flows/preview`, { params: { triggerType } });
+  }
 
   // ── Services ──────────────────────────────────────────────────────────────
   getServices(): Observable<any[]> {
