@@ -151,6 +151,12 @@
         }
 
         <div class="form-group">
+          <label>Cooldown Override (days)</label>
+          <input type="number" [(ngModel)]="form.cooldownDaysOverride" min="0" placeholder="Use global default" />
+          <div class="text-muted" style="font-size:11px;margin-top:4px">Leave blank to use the global cross-flow cooldown (Settings). Set a number to override it just for this flow.</div>
+        </div>
+
+        <div class="form-group">
           <label>Message Preview</label>
           @if (previewLoading) {
             <div class="text-muted" style="font-size:12px">Loading preview...</div>

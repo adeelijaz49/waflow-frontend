@@ -64,7 +64,7 @@ export class Flows implements OnInit {
   ngOnInit() { this.load(); }
 
   emptyForm() {
-    return { name: '', triggerType: 'inactive_customer', inactivityDays: 60, delayHours: 2 };
+    return { name: '', triggerType: 'inactive_customer', inactivityDays: 60, delayHours: 2, cooldownDaysOverride: null };
   }
 
   get selectedTrigger() {
@@ -113,6 +113,7 @@ export class Flows implements OnInit {
       name: f.name, triggerType: f.triggerType,
       inactivityDays: f.inactivityDays || 60,
       delayHours: f.delayHours ?? 2,
+      cooldownDaysOverride: f.cooldownDaysOverride ?? null,
     };
     this.showModal = true;
     this.loadPreview();
@@ -128,6 +129,8 @@ export class Flows implements OnInit {
     const payload: any = { name: this.form.name };
     if (this.configField === 'delayHours') payload.delayHours = +this.form.delayHours;
     else payload.inactivityDays = +this.form.inactivityDays;
+    payload.cooldownDaysOverride = this.form.cooldownDaysOverride === null || this.form.cooldownDaysOverride === ''
+      ? null : +this.form.cooldownDaysOverride;
     const req = this.editingId
       ? this.api.updateFlow(this.editingId, payload)
       : this.api.createFlow({ ...payload, triggerType: this.form.triggerType });
