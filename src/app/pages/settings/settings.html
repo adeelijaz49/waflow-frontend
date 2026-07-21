@@ -162,6 +162,29 @@
         }
       </div>
 
+      <!-- Automated Flow templates (see /flows) -->
+      @for (ft of flowTemplates; track ft.key) {
+        <div class="template-card">
+          <div class="template-header">
+            <div>
+              <div class="fw-600">{{ ft.label }}</div>
+              <div class="text-muted" style="font-size:12px;margin-top:2px">Name: <code>{{ ft.templateName }}</code></div>
+            </div>
+            @if (templateForName(ft.templateName); as t) {
+              <span class="badge {{ statusBadgeClass(t.status) }}">{{ t.status }}</span>
+            } @else {
+              <span class="badge badge-neutral">Not created</span>
+            }
+          </div>
+          <div class="template-body">{{ ft.body }}</div>
+          @if (!templateForName(ft.templateName)) {
+            <button class="btn btn-primary btn-sm" (click)="createFlowTemplate(ft)" [disabled]="ft.creating">
+              {{ ft.creating ? 'Creating...' : 'Create Template' }}
+            </button>
+          }
+        </div>
+      }
+
       <!-- All templates table -->
       @if (!templatesLoading && templates.length > 0) {
         <div style="margin-top:20px">

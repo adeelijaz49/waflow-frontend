@@ -129,15 +129,24 @@
           </div>
         }
 
-        <div class="form-group">
-          <label>Inactivity threshold (days)</label>
-          <input type="number" [(ngModel)]="form.inactivityDays" min="1" />
-          <div class="text-muted" style="font-size:11px;margin-top:4px">Customers with no order in this many days become eligible.</div>
-        </div>
+        @if (configField === 'delayHours') {
+          <div class="form-group">
+            <label>Delay after purchase (hours)</label>
+            <input type="number" [(ngModel)]="form.delayHours" min="0" />
+            <div class="text-muted" style="font-size:11px;margin-top:4px">How long to wait after an order is paid before sending.</div>
+          </div>
+        } @else {
+          <div class="form-group">
+            <label>Inactivity threshold (days)</label>
+            <input type="number" [(ngModel)]="form.inactivityDays" min="1" />
+            <div class="text-muted" style="font-size:11px;margin-top:4px">Customers with no order in this many days become eligible.</div>
+          </div>
+        }
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="closeModal()">Cancel</button>
-        <button class="btn btn-primary" (click)="save()" [disabled]="saving || !form.name || !form.inactivityDays">
+        <button class="btn btn-primary" (click)="save()"
+          [disabled]="saving || !form.name || (configField === 'delayHours' ? form.delayHours === null || form.delayHours === undefined : !form.inactivityDays)">
           {{ saving ? 'Saving...' : (editingId ? 'Update Flow' : 'Create Flow') }}
         </button>
       </div>

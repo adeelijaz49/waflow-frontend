@@ -30,6 +30,20 @@ export class Settings implements OnInit {
   creatingLoyalty  = false;
   templateResult: any = null;
 
+  // Automated Flow templates (see /flows) — a small data-driven list rather
+  // than one hand-duplicated block per template like promo/loyalty above,
+  // since there are already 2 of these with more triggers adding more later.
+  flowTemplates: Array<{ key: string; label: string; templateName: string; responseKey: string; body: string; creating: boolean }> = [
+    {
+      key: 'winback', label: 'Win-Back (Inactive Customer)', templateName: 'waflow_winback', responseKey: 'winbackTemplate', creating: false,
+      body: "Hi [name]! 👋 It's been a while since we've seen you.\n\nCome back and check out what's new — we'd love to have you again! 🛍️",
+    },
+    {
+      key: 'post_purchase', label: 'Post-Purchase Points Reminder', templateName: 'waflow_post_purchase', responseKey: 'postPurchaseTemplate', creating: false,
+      body: 'Hi [name]! 🎉 Thanks for your order!\n\nYou now have [X] loyalty points — come back and use them on your next visit!',
+    },
+  ];
+
   constructor(private api: ApiService, private settings: SettingsService) {}
 
   ngOnInit() {
@@ -93,6 +107,7 @@ export class Settings implements OnInit {
         this.templates        = res.templates;
         this.promoTemplate    = res.promoTemplate   || this.promoTemplate;
         this.loyaltyTemplate  = res.loyaltyTemplate || this.loyaltyTemplate;
+        this.flowTemplates.forEach(ft => { ft.templateName = res[ft.responseKey] || ft.templateName; });
         this.templatesLoading = false;
       },
       error: () => { this.templatesLoading = false; this.templatesError = true; },
@@ -129,6 +144,19 @@ export class Settings implements OnInit {
     this.api.createLoyaltyTemplate().subscribe({
       next:  () => { this.templateResult = { ok: true, msg: 'Loyalty template submitted for review. Refresh in a few minutes to check approval status.' }; this.creatingLoyalty = false; this.loadTemplates(); },
       error: (err) => { this.templateResult = { ok: false, msg: err.error?.error?.error_user_msg || err.error?.error || 'Failed' }; this.creatingLoyalty = false; },
+    });
+  }
+
+  createFlowTemplate(ft: { key: string; label: string; creating: boolean }) {
+    ft.creating = true;
+    this.templateResult = null;
+    const create$ = ft.key === 'winback' ? this.api.createWinbackTemplate()
+      : ft.key === 'post_purchase' ? this.api.createPostPurchaseTemplate()
+      : null;
+    if (!create$) { ft.creating = false; return; }
+    create$.subscribe({
+      next:  () => { this.templateResult = { ok: true, msg: `${ft.label} template submitted for review. Refresh in a few minutes to check approval status.` }; ft.creating = false; this.loadTemplates(); },
+      error: (err: any) => { this.templateResult = { ok: false, msg: err.error?.error?.error_user_msg || err.error?.error || 'Failed' }; ft.creating = false; },
     });
   }
 

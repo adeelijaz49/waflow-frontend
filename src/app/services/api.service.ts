@@ -91,6 +91,12 @@ export class ApiService {
   createLoyaltyTemplate(): Observable<any> {
     return this.http.post(`${API}/whatsapp/create-loyalty-template`, {});
   }
+  createWinbackTemplate(): Observable<any> {
+    return this.http.post(`${API}/whatsapp/create-winback-template`, {});
+  }
+  createPostPurchaseTemplate(): Observable<any> {
+    return this.http.post(`${API}/whatsapp/create-post-purchase-template`, {});
+  }
   deleteTemplate(name: string): Observable<any> {
     return this.http.delete(`${API}/whatsapp/templates/${name}`);
   }
