@@ -100,6 +100,9 @@ export class ApiService {
   createPointsNudgeTemplate(): Observable<any> {
     return this.http.post(`${API}/whatsapp/create-points-nudge-template`, {});
   }
+  createNoShowTemplate(): Observable<any> {
+    return this.http.post(`${API}/whatsapp/create-no-show-template`, {});
+  }
   deleteTemplate(name: string): Observable<any> {
     return this.http.delete(`${API}/whatsapp/templates/${name}`);
   }

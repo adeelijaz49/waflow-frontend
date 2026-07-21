@@ -5,13 +5,10 @@ import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 
-// inactive_customer, post_purchase_points, and points_balance_reminder have
-// working backend triggers so far (Phases 1-3) — booking_no_show is listed so
-// the merchant knows it's coming, but isn't selectable yet. Extend this as
-// its own phase ships. configField picks which input the create/edit form
-// shows: triggers keyed on "how long since an event" use delayHours, triggers
-// keyed on "how long since the customer's own state stopped changing" use
-// inactivityDays.
+// All 4 trigger types now have working backend triggers (Phases 1-4).
+// configField picks which input the create/edit form shows: triggers keyed on
+// "how long since an event" use delayHours, triggers keyed on "how long since
+// the customer's own state stopped changing" use inactivityDays.
 // defaultValue mirrors shared/operations.js#FLOW_TYPE_DEFAULTS on the backend
 // exactly, so picking a trigger type pre-fills the same number the backend
 // would've applied anyway if the field were left blank.
@@ -29,7 +26,7 @@ const TRIGGER_TYPES = [
     configField: 'inactivityDays', defaultValue: 30, configLabel: 'Inactivity threshold (days)', configHint: "Customers whose points balance hasn't changed in this many days become eligible.",
   },
   {
-    value: 'booking_no_show', icon: '📅', label: 'No-Show Follow-Up', blurb: 'Follow up after a customer misses a booked appointment.', available: false,
+    value: 'booking_no_show', icon: '📅', label: 'No-Show Follow-Up', blurb: 'Follow up after a customer misses a booked appointment.', available: true,
     configField: 'delayHours', defaultValue: 1, configLabel: 'Delay after no-show (hours)', configHint: 'How long to wait after a booking is marked no-show before sending.',
   },
 ];

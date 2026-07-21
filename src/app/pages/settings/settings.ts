@@ -46,6 +46,10 @@ export class Settings implements OnInit {
       key: 'points_nudge', label: 'Points Balance Reminder', templateName: 'waflow_points_nudge', responseKey: 'pointsNudgeTemplate', creating: false,
       body: 'Hi [name]! 💎 You still have [X] loyalty points waiting to be used.\n\nCome in and redeem them before you forget!',
     },
+    {
+      key: 'no_show', label: 'No-Show Follow-Up', templateName: 'waflow_no_show', responseKey: 'noShowTemplate', creating: false,
+      body: 'Hi [name]! We missed you at your [service] appointment.\n\nNo worries — tap below to grab a new time, on us!',
+    },
   ];
 
   constructor(private api: ApiService, private settings: SettingsService) {}
@@ -157,6 +161,7 @@ export class Settings implements OnInit {
     const create$ = ft.key === 'winback' ? this.api.createWinbackTemplate()
       : ft.key === 'post_purchase' ? this.api.createPostPurchaseTemplate()
       : ft.key === 'points_nudge' ? this.api.createPointsNudgeTemplate()
+      : ft.key === 'no_show' ? this.api.createNoShowTemplate()
       : null;
     if (!create$) { ft.creating = false; return; }
     create$.subscribe({
