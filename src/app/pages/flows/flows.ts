@@ -5,17 +5,33 @@ import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 
-// inactive_customer and post_purchase_points have working backend triggers
-// so far (Phases 1-2) — the other 2 are listed so the merchant knows they're
-// coming, but aren't selectable yet. Extend this as each trigger's own phase
-// ships. configField picks which input the create/edit form shows: triggers
-// keyed on "how long since an event" use delayHours, triggers keyed on "how
-// long since the customer's own state stopped changing" use inactivityDays.
+// inactive_customer, post_purchase_points, and points_balance_reminder have
+// working backend triggers so far (Phases 1-3) — booking_no_show is listed so
+// the merchant knows it's coming, but isn't selectable yet. Extend this as
+// its own phase ships. configField picks which input the create/edit form
+// shows: triggers keyed on "how long since an event" use delayHours, triggers
+// keyed on "how long since the customer's own state stopped changing" use
+// inactivityDays.
+// defaultValue mirrors shared/operations.js#FLOW_TYPE_DEFAULTS on the backend
+// exactly, so picking a trigger type pre-fills the same number the backend
+// would've applied anyway if the field were left blank.
 const TRIGGER_TYPES = [
-  { value: 'inactive_customer', icon: '🔄', label: 'Win-Back (Inactive Customer)', blurb: "Message a customer who hasn't ordered in N days.", available: true, configField: 'inactivityDays' },
-  { value: 'post_purchase_points', icon: '🎁', label: 'Post-Purchase Points Reminder', blurb: 'Thank a customer and remind them of their points shortly after a purchase.', available: true, configField: 'delayHours' },
-  { value: 'points_balance_reminder', icon: '💎', label: 'Points Balance Reminder', blurb: "Nudge a customer whose points balance has sat unused for a while.", available: false, configField: 'inactivityDays' },
-  { value: 'booking_no_show', icon: '📅', label: 'No-Show Follow-Up', blurb: 'Follow up after a customer misses a booked appointment.', available: false, configField: 'delayHours' },
+  {
+    value: 'inactive_customer', icon: '🔄', label: 'Win-Back (Inactive Customer)', blurb: "Message a customer who hasn't ordered in N days.", available: true,
+    configField: 'inactivityDays', defaultValue: 60, configLabel: 'Inactivity threshold (days)', configHint: 'Customers with no order in this many days become eligible.',
+  },
+  {
+    value: 'post_purchase_points', icon: '🎁', label: 'Post-Purchase Points Reminder', blurb: 'Thank a customer and remind them of their points shortly after a purchase.', available: true,
+    configField: 'delayHours', defaultValue: 2, configLabel: 'Delay after purchase (hours)', configHint: 'How long to wait after an order is paid before sending.',
+  },
+  {
+    value: 'points_balance_reminder', icon: '💎', label: 'Points Balance Reminder', blurb: "Nudge a customer whose points balance has sat unused for a while.", available: true,
+    configField: 'inactivityDays', defaultValue: 30, configLabel: 'Inactivity threshold (days)', configHint: "Customers whose points balance hasn't changed in this many days become eligible.",
+  },
+  {
+    value: 'booking_no_show', icon: '📅', label: 'No-Show Follow-Up', blurb: 'Follow up after a customer misses a booked appointment.', available: false,
+    configField: 'delayHours', defaultValue: 1, configLabel: 'Delay after no-show (hours)', configHint: 'How long to wait after a booking is marked no-show before sending.',
+  },
 ];
 
 @Component({
@@ -54,6 +70,12 @@ export class Flows implements OnInit {
 
   get configField(): 'inactivityDays' | 'delayHours' {
     return (this.selectedTrigger?.configField as 'inactivityDays' | 'delayHours') || 'inactivityDays';
+  }
+
+  selectTriggerType(value: string) {
+    this.form.triggerType = value;
+    const t = this.triggerTypes.find(x => x.value === value);
+    if (t) this.form[t.configField] = t.defaultValue;
   }
 
   load() {

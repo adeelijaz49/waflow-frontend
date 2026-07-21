@@ -97,6 +97,9 @@ export class ApiService {
   createPostPurchaseTemplate(): Observable<any> {
     return this.http.post(`${API}/whatsapp/create-post-purchase-template`, {});
   }
+  createPointsNudgeTemplate(): Observable<any> {
+    return this.http.post(`${API}/whatsapp/create-points-nudge-template`, {});
+  }
   deleteTemplate(name: string): Observable<any> {
     return this.http.delete(`${API}/whatsapp/templates/${name}`);
   }

@@ -117,7 +117,7 @@
             <div class="trigger-picker">
               @for (t of triggerTypes; track t.value) {
                 <div class="trigger-option" [class.picked]="form.triggerType === t.value" [class.disabled]="!t.available"
-                  (click)="t.available && (form.triggerType = t.value)">
+                  (click)="t.available && selectTriggerType(t.value)">
                   <div style="font-size:20px">{{ t.icon }}</div>
                   <div>
                     <div class="fw-600" style="font-size:13px">{{ t.label }}{{ !t.available ? ' (Coming soon)' : '' }}</div>
@@ -131,15 +131,15 @@
 
         @if (configField === 'delayHours') {
           <div class="form-group">
-            <label>Delay after purchase (hours)</label>
+            <label>{{ selectedTrigger?.configLabel || 'Delay (hours)' }}</label>
             <input type="number" [(ngModel)]="form.delayHours" min="0" />
-            <div class="text-muted" style="font-size:11px;margin-top:4px">How long to wait after an order is paid before sending.</div>
+            <div class="text-muted" style="font-size:11px;margin-top:4px">{{ selectedTrigger?.configHint }}</div>
           </div>
         } @else {
           <div class="form-group">
-            <label>Inactivity threshold (days)</label>
+            <label>{{ selectedTrigger?.configLabel || 'Inactivity threshold (days)' }}</label>
             <input type="number" [(ngModel)]="form.inactivityDays" min="1" />
-            <div class="text-muted" style="font-size:11px;margin-top:4px">Customers with no order in this many days become eligible.</div>
+            <div class="text-muted" style="font-size:11px;margin-top:4px">{{ selectedTrigger?.configHint }}</div>
           </div>
         }
       </div>
