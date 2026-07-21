@@ -1,0 +1,146 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Automated Flows</div>
+      <div class="page-sub">Set a trigger once — Waflow messages every qualifying customer automatically, no manual campaigns.</div>
+    </div>
+    <button class="btn btn-primary" (click)="openCreate()">+ New Flow</button>
+  </div>
+
+  <div class="flows-layout">
+    <div>
+      @if (loading) {
+        <div class="loading">Loading flows...</div>
+      } @else if (flows.length === 0) {
+        <div class="card">
+          <div class="empty-state">No flows yet.<br>Create your first automated flow to get started.</div>
+        </div>
+      } @else {
+        <div class="flow-list">
+          @for (f of flows; track f._id) {
+            <div class="flow-card" [class.active-card]="activeFlow?._id === f._id" (click)="openDetail(f)">
+              <div class="flow-card-header">
+                <div>
+                  <div class="fw-600" style="font-size:15px">{{ f.name }}</div>
+                  <div class="text-muted" style="font-size:12px;margin-top:2px">{{ triggerLabel(f.triggerType) }}</div>
+                </div>
+                <span class="badge {{ f.status | statusBadge:'flow' }}">{{ f.status }}</span>
+              </div>
+              <div class="flow-actions">
+                <button class="btn btn-outline btn-sm" (click)="openEdit(f, $event)">Edit</button>
+                <button class="btn btn-outline btn-sm" (click)="toggleStatus(f, $event)">
+                  {{ f.status === 'active' ? 'Pause' : 'Activate' }}
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="deleteFlow(f, $event)">Delete</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @if (activeFlow) {
+      <div class="flow-detail card">
+        <div class="card-header">
+          <span class="card-title">{{ activeFlow.name }}</span>
+          <button class="close-btn" (click)="activeFlow = null">×</button>
+        </div>
+        <div class="card-body">
+          @if (loadingReport) {
+            <div class="loading" style="padding:12px">Loading report...</div>
+          } @else if (report) {
+            <div class="section-label">Enrollment</div>
+            <div class="flow-funnel">
+              <div class="flow-funnel-stat"><div class="flow-funnel-value">{{ report.enrolled }}</div><div class="flow-funnel-label">Enrolled</div></div>
+              <div class="flow-funnel-stat"><div class="flow-funnel-value">{{ report.messaged }}</div><div class="flow-funnel-label">Messaged</div></div>
+              <div class="flow-funnel-stat"><div class="flow-funnel-value">{{ report.exited }}</div><div class="flow-funnel-label">Exited</div></div>
+              <div class="flow-funnel-stat"><div class="flow-funnel-value">{{ report.completed }}</div><div class="flow-funnel-label">Completed</div></div>
+            </div>
+
+            <div class="section-label" style="margin-top:16px">Message Performance</div>
+            <div class="report-funnel">
+              <div class="report-stat"><div class="report-value">{{ report.messagesSent }}</div><div class="report-label">Sent</div></div>
+              <div class="report-stat"><div class="report-value">{{ report.messagesDelivered }}</div><div class="report-label">Delivered</div></div>
+              <div class="report-stat"><div class="report-value">{{ report.messagesRead }}</div><div class="report-label">Read</div></div>
+              <div class="report-stat"><div class="report-value">{{ report.clicked }}</div><div class="report-label">Clicked</div></div>
+              <div class="report-stat"><div class="report-value">{{ report.ordersCreated }}</div><div class="report-label">Orders</div></div>
+              <div class="report-stat"><div class="report-value">{{ report.revenue | appCurrency }}</div><div class="report-label">Revenue</div></div>
+              <div class="report-stat"><div class="report-value">{{ report.pointsIssued }}</div><div class="report-label">Points Issued</div></div>
+              <div class="report-stat"><div class="report-value">{{ report.conversionRate }}%</div><div class="report-label">Conversion</div></div>
+            </div>
+          }
+
+          <div class="section-label" style="margin-top:16px">Enrolled Customers</div>
+          @if (loadingEnrollments) {
+            <div class="loading" style="padding:12px">Loading...</div>
+          } @else {
+            <div class="enrollment-list">
+              @for (e of enrollments; track e._id) {
+                <div class="enrollment-row">
+                  <div>
+                    <div class="fw-600" style="font-size:13px">{{ e.customer?.firstname }} {{ e.customer?.lastname }}</div>
+                    <div class="text-muted" style="font-size:11px">
+                      Enrolled {{ e.enrolledAt | date:'d MMM y' }}
+                      @if (e.exitReason) { · {{ e.exitReason }} }
+                    </div>
+                  </div>
+                  <span class="badge {{ e.state | statusBadge:'flowEnrollment' }}">{{ e.state }}</span>
+                </div>
+              } @empty {
+                <div class="empty-state" style="padding:20px">No customers enrolled yet.</div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Create / Edit Flow Modal -->
+@if (showModal) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">{{ editingId ? 'Edit Flow' : 'New Flow' }}</span>
+        <button class="close-btn" (click)="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Flow Name</label>
+          <input [(ngModel)]="form.name" placeholder="e.g. Win back customers after 60 days" />
+        </div>
+
+        @if (!editingId) {
+          <div class="form-group">
+            <label>Trigger Type</label>
+            <div class="trigger-picker">
+              @for (t of triggerTypes; track t.value) {
+                <div class="trigger-option" [class.picked]="form.triggerType === t.value" [class.disabled]="!t.available"
+                  (click)="t.available && (form.triggerType = t.value)">
+                  <div style="font-size:20px">{{ t.icon }}</div>
+                  <div>
+                    <div class="fw-600" style="font-size:13px">{{ t.label }}{{ !t.available ? ' (Coming soon)' : '' }}</div>
+                    <div class="text-muted" style="font-size:11px">{{ t.blurb }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="form-group">
+          <label>Inactivity threshold (days)</label>
+          <input type="number" [(ngModel)]="form.inactivityDays" min="1" />
+          <div class="text-muted" style="font-size:11px;margin-top:4px">Customers with no order in this many days become eligible.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="save()" [disabled]="saving || !form.name || !form.inactivityDays">
+          {{ saving ? 'Saving...' : (editingId ? 'Update Flow' : 'Create Flow') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

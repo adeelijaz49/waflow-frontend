@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-export type StatusDomain = 'order' | 'booking' | 'promotion';
+export type StatusDomain = 'order' | 'booking' | 'promotion' | 'flow' | 'flowEnrollment';
 
 // Status keys collide across domains with different meanings (e.g. 'confirmed'
 // means "payment confirmed" for an order but "slot approved" for a booking) —
@@ -25,6 +25,16 @@ const BADGE_MAPS: Record<StatusDomain, Record<string, string>> = {
     draft:   'badge-neutral',
     active:  'badge-success',
     expired: 'badge-danger',
+  },
+  flow: {
+    active: 'badge-success',
+    paused: 'badge-neutral',
+  },
+  flowEnrollment: {
+    enrolled:  'badge-warning',
+    messaged:  'badge-info',
+    exited:    'badge-danger',
+    completed: 'badge-success',
   },
 };
 

@@ -15,6 +15,7 @@ export class App {
     { path: '/customers',  label: 'Customers',    icon: '◎' },
     { path: '/orders',     label: 'Orders',       icon: '▤' },
     { path: '/promotions', label: 'Promotions',   icon: '◈' },
+    { path: '/flows',      label: 'Automated Flows', icon: '⟳' },
     { path: '/services',   label: 'Services',     icon: '✂' },
     { path: '/settings',   label: 'Settings',     icon: '⚙' },
   ];

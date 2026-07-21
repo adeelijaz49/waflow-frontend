@@ -130,6 +130,35 @@ export class ApiService {
     return this.http.post(`${API}/promotions/${promotionId}/test-send`, { phone });
   }
 
+  // ── Flows ─────────────────────────────────────────────────────────────────
+  getFlows(params: any = {}): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/flows`, { params });
+  }
+  getFlow(id: string): Observable<any> {
+    return this.http.get(`${API}/flows/${id}`);
+  }
+  createFlow(data: any): Observable<any> {
+    return this.http.post(`${API}/flows`, data);
+  }
+  updateFlow(id: string, data: any): Observable<any> {
+    return this.http.put(`${API}/flows/${id}`, data);
+  }
+  deleteFlow(id: string): Observable<any> {
+    return this.http.delete(`${API}/flows/${id}`);
+  }
+  activateFlow(id: string): Observable<any> {
+    return this.http.post(`${API}/flows/${id}/activate`, {});
+  }
+  pauseFlow(id: string): Observable<any> {
+    return this.http.post(`${API}/flows/${id}/pause`, {});
+  }
+  getFlowEnrollments(id: string, params: any = {}): Observable<any> {
+    return this.http.get(`${API}/flows/${id}/enrollments`, { params });
+  }
+  getFlowReport(id: string): Observable<any> {
+    return this.http.get(`${API}/flows/${id}/report`);
+  }
+
   // ── Services ──────────────────────────────────────────────────────────────
   getServices(): Observable<any[]> {
     return this.http.get<any[]>(`${API}/services`);
