@@ -173,6 +173,29 @@ export class ApiService {
   previewFlowMessage(triggerType: string): Observable<any> {
     return this.http.get(`${API}/flows/preview`, { params: { triggerType } });
   }
+  getFlowMessageVariables(triggerType: string): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/flows/message-variables`, { params: { triggerType } });
+  }
+
+  // ── Message Nodes (branching — see models/MessageNode.js) ──────────────────
+  createMessageNode(data: any): Observable<any> {
+    return this.http.post(`${API}/message-nodes`, data);
+  }
+  getMessageNode(id: string): Observable<any> {
+    return this.http.get(`${API}/message-nodes/${id}`);
+  }
+  updateMessageNode(id: string, data: any): Observable<any> {
+    return this.http.put(`${API}/message-nodes/${id}`, data);
+  }
+  deleteMessageNode(id: string): Observable<any> {
+    return this.http.delete(`${API}/message-nodes/${id}`);
+  }
+  submitMessageNodeTemplate(id: string): Observable<any> {
+    return this.http.post(`${API}/message-nodes/${id}/submit-template`, {});
+  }
+  refreshMessageNodeTemplateStatus(id: string): Observable<any> {
+    return this.http.post(`${API}/message-nodes/${id}/refresh-status`, {});
+  }
 
   // ── Services ──────────────────────────────────────────────────────────────
   getServices(): Observable<any[]> {

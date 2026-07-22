@@ -1,0 +1,45 @@
+<div class="node-editor">
+  <div class="form-group">
+    <label>Message Body</label>
+    <textarea rows="3" [(ngModel)]="node.bodyText" (ngModelChange)="emit()" placeholder="Write the message..."></textarea>
+    @if (variables.length) {
+      <div class="variable-chips">
+        <span class="text-muted" style="font-size:11px">Insert:</span>
+        @for (v of variables; track v.key) {
+          <button type="button" class="variable-chip" (click)="insertVariable(v)">+ {{ v.label }}</button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (showButtons) {
+    <div class="form-group">
+      <label>Buttons ({{ node.buttons.length }}/3)</label>
+      @for (b of node.buttons; track b.position) {
+        <div class="button-row">
+          <div class="button-row-main">
+            <input [(ngModel)]="b.label" (ngModelChange)="emit()" maxlength="20" placeholder="Button label" />
+            <span class="char-count" [class.char-count-over]="b.label.length > 20">{{ b.label.length }}/20</span>
+            <button type="button" class="btn-remove" (click)="removeButton(b.position)">×</button>
+          </div>
+          <div class="form-group" style="margin-top:6px">
+            <label style="font-size:11px">When tapped →</label>
+            <select [(ngModel)]="b.nextAction" (ngModelChange)="emit()">
+              <option value="end_flow">End here</option>
+              <option value="send_message">Send a follow-up message</option>
+            </select>
+          </div>
+          @if (b.nextAction === 'send_message') {
+            <div class="follow-up-box">
+              <label style="font-size:11px">Follow-up message</label>
+              <textarea rows="2" [(ngModel)]="b.followUpBody" (ngModelChange)="emit()" placeholder="What to send when this button is tapped..."></textarea>
+            </div>
+          }
+        </div>
+      }
+      @if (node.buttons.length < 3) {
+        <button type="button" class="btn btn-outline btn-sm" (click)="addButton()">+ Add Button</button>
+      }
+    </div>
+  }
+</div>

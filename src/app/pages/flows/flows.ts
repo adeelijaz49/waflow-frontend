@@ -4,6 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
+import { MessageNodeEditor, MessageNodeDraft } from '../../shared/message-node-editor/message-node-editor';
+
+// Custom entry messages (see models/MessageNode.js) are only supported for
+// this trigger type in Phase 1 — the other 3 still always use their fixed
+// default template. Extended trigger-by-trigger in Phase 2.
+const BRANCHING_SUPPORTED_TRIGGERS = ['inactive_customer'];
 
 // All 4 trigger types now have working backend triggers (Phases 1-4).
 // configField picks which input the create/edit form shows: triggers keyed on
@@ -33,7 +39,7 @@ const TRIGGER_TYPES = [
 
 @Component({
   selector: 'app-flows',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, DatePipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, DatePipe, MessageNodeEditor],
   templateUrl: './flows.html',
   styleUrl: './flows.css',
 })
@@ -59,6 +65,16 @@ export class Flows implements OnInit {
   preview: any = null;
   previewLoading = false;
 
+  // Custom entry message (see models/MessageNode.js) — Phase 1: edit-mode
+  // only, since a MessageNode needs a real flow id as its owner. See
+  // BRANCHING_SUPPORTED_TRIGGERS above for which trigger types support this.
+  useCustomEntry = false;
+  existingEntryNode: any = null;
+  entryDraft: MessageNodeDraft = { bodyText: '', buttons: [] };
+  savingEntryNode = false;
+  submittingTemplate = false;
+  refreshingStatus = false;
+
   constructor(private api: ApiService) {}
 
   ngOnInit() { this.load(); }
@@ -73,6 +89,10 @@ export class Flows implements OnInit {
 
   get configField(): 'inactivityDays' | 'delayHours' {
     return (this.selectedTrigger?.configField as 'inactivityDays' | 'delayHours') || 'inactivityDays';
+  }
+
+  get branchingSupported(): boolean {
+    return BRANCHING_SUPPORTED_TRIGGERS.includes(this.form.triggerType);
   }
 
   selectTriggerType(value: string) {
@@ -103,6 +123,7 @@ export class Flows implements OnInit {
     this.editingId = null;
     this.form = this.emptyForm();
     this.showModal = true;
+    this.resetCustomEntry();
     this.loadPreview();
   }
 
@@ -116,12 +137,107 @@ export class Flows implements OnInit {
       cooldownDaysOverride: f.cooldownDaysOverride ?? null,
     };
     this.showModal = true;
+    this.resetCustomEntry();
+    if (f.entryNodeId) {
+      this.useCustomEntry = true;
+      this.loadExistingEntryNode(f.entryNodeId);
+    }
     this.loadPreview();
   }
 
   closeModal() {
     this.showModal = false;
     this.editingId = null;
+  }
+
+  resetCustomEntry() {
+    this.useCustomEntry = false;
+    this.existingEntryNode = null;
+    this.entryDraft = { bodyText: '', buttons: [] };
+  }
+
+  // Reverse-maps a saved MessageNode (real nextAction.targetNodeId shape)
+  // back into the editor's flat draft shape (nextAction + followUpBody) —
+  // fetches each send_message button's target node to show its body inline.
+  loadExistingEntryNode(nodeId: string) {
+    this.api.getMessageNode(nodeId).subscribe({
+      next: (node) => {
+        this.existingEntryNode = node;
+        const buttonDrafts = node.buttons.map((b: any) => ({
+          position: b.position, label: b.label,
+          nextAction: b.nextAction.type, followUpBody: '', targetNodeId: b.nextAction.targetNodeId,
+        }));
+        this.entryDraft = { bodyText: node.bodyText, buttons: buttonDrafts };
+        buttonDrafts.filter((b: any) => b.nextAction === 'send_message' && b.targetNodeId).forEach((b: any) => {
+          this.api.getMessageNode(b.targetNodeId).subscribe({
+            next: (target) => { b.followUpBody = target.bodyText; },
+          });
+        });
+      },
+    });
+  }
+
+  toggleCustomEntry() {
+    this.useCustomEntry = !this.useCustomEntry;
+    if (this.useCustomEntry && !this.existingEntryNode) {
+      this.entryDraft = { bodyText: '', buttons: [] };
+    }
+  }
+
+  saveCustomEntry() {
+    if (!this.editingId) return;
+    this.savingEntryNode = true;
+
+    // Create/refresh each send_message button's follow-up node first (its id
+    // is needed to build the entry node's own buttons array), then the entry
+    // node itself, then point the flow at it.
+    const buttonRequests = this.entryDraft.buttons.map((b: any) => {
+      if (b.nextAction !== 'send_message') return Promise.resolve(b);
+      const followUp$ = b.targetNodeId
+        ? this.api.updateMessageNode(b.targetNodeId, { bodyText: b.followUpBody, buttons: [] })
+        : this.api.createMessageNode({ ownerId: this.editingId, bodyText: b.followUpBody, buttons: [] });
+      return new Promise((resolve, reject) => {
+        followUp$.subscribe({ next: (node) => resolve({ ...b, targetNodeId: node._id }), error: reject });
+      });
+    });
+
+    Promise.all(buttonRequests).then((resolvedButtons: any) => {
+      const buttons = resolvedButtons.map((b: any) => ({
+        position: b.position, label: b.label,
+        nextAction: { type: b.nextAction, targetNodeId: b.nextAction === 'send_message' ? b.targetNodeId : undefined },
+      }));
+
+      const entry$ = this.existingEntryNode
+        ? this.api.updateMessageNode(this.existingEntryNode._id, { bodyText: this.entryDraft.bodyText, buttons })
+        : this.api.createMessageNode({ ownerId: this.editingId, isEntryNode: true, bodyText: this.entryDraft.bodyText, buttons });
+
+      entry$.subscribe({
+        next: (node) => {
+          const afterLink = () => { this.existingEntryNode = node; this.savingEntryNode = false; this.load(); };
+          if (this.existingEntryNode) afterLink();
+          else this.api.updateFlow(this.editingId!, { entryNodeId: node._id }).subscribe({ next: afterLink, error: () => { this.savingEntryNode = false; } });
+        },
+        error: () => { this.savingEntryNode = false; },
+      });
+    }).catch(() => { this.savingEntryNode = false; });
+  }
+
+  submitEntryTemplate() {
+    if (!this.existingEntryNode) return;
+    this.submittingTemplate = true;
+    this.api.submitMessageNodeTemplate(this.existingEntryNode._id).subscribe({
+      next: (node) => { this.existingEntryNode = node; this.submittingTemplate = false; },
+      error: () => { this.submittingTemplate = false; },
+    });
+  }
+
+  refreshEntryTemplateStatus() {
+    if (!this.existingEntryNode) return;
+    this.refreshingStatus = true;
+    this.api.refreshMessageNodeTemplateStatus(this.existingEntryNode._id).subscribe({
+      next: (node) => { this.existingEntryNode = node; this.refreshingStatus = false; },
+      error: () => { this.refreshingStatus = false; },
+    });
   }
 
   save() {

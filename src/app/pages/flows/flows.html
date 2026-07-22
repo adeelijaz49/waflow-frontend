@@ -167,6 +167,58 @@
             </div>
           }
         </div>
+
+        @if (editingId && branchingSupported) {
+          <div class="form-group custom-entry-section">
+            <label class="custom-entry-toggle">
+              <input type="checkbox" [checked]="useCustomEntry" (change)="toggleCustomEntry()" />
+              Customize this message
+            </label>
+            <div class="text-muted" style="font-size:11px;margin-top:2px">
+              Replace the default message above with your own, and configure what happens when a customer taps a button.
+            </div>
+
+            @if (useCustomEntry) {
+              <div class="custom-entry-editor">
+                <app-message-node-editor
+                  [triggerType]="form.triggerType"
+                  [node]="entryDraft"
+                  (nodeChange)="entryDraft = $event">
+                </app-message-node-editor>
+
+                @if (existingEntryNode) {
+                  <div class="template-status-row">
+                    <span class="text-muted" style="font-size:12px">Template status:</span>
+                    <span class="badge"
+                      [class.badge-success]="existingEntryNode.templateStatus === 'approved'"
+                      [class.badge-danger]="existingEntryNode.templateStatus === 'rejected'"
+                      [class.badge-warning]="existingEntryNode.templateStatus === 'pending'"
+                      [class.badge-neutral]="existingEntryNode.templateStatus === 'not_created'">
+                      {{ existingEntryNode.templateStatus }}
+                    </span>
+                    <button class="btn btn-outline btn-sm" (click)="refreshEntryTemplateStatus()" [disabled]="refreshingStatus">
+                      {{ refreshingStatus ? 'Checking...' : 'Refresh Status' }}
+                    </button>
+                  </div>
+                }
+
+                <div style="display:flex;gap:8px;margin-top:10px">
+                  <button class="btn btn-outline btn-sm" (click)="saveCustomEntry()" [disabled]="savingEntryNode || !entryDraft.bodyText">
+                    {{ savingEntryNode ? 'Saving...' : 'Save Custom Message' }}
+                  </button>
+                  @if (existingEntryNode && existingEntryNode.templateStatus !== 'approved') {
+                    <button class="btn btn-outline btn-sm" (click)="submitEntryTemplate()" [disabled]="submittingTemplate">
+                      {{ submittingTemplate ? 'Submitting...' : 'Submit for Approval' }}
+                    </button>
+                  }
+                </div>
+                @if (existingEntryNode && existingEntryNode.templateStatus !== 'approved') {
+                  <div class="text-muted" style="font-size:11px;margin-top:6px">This flow can't be activated until Meta approves this custom template.</div>
+                }
+              </div>
+            }
+          </div>
+        }
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="closeModal()">Cancel</button>
