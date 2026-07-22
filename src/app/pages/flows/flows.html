@@ -28,7 +28,9 @@
               </div>
               <div class="flow-actions">
                 <button class="btn btn-outline btn-sm" (click)="openEdit(f, $event)">Edit</button>
-                <button class="btn btn-outline btn-sm" (click)="toggleStatus(f, $event)">
+                <button class="btn btn-outline btn-sm" (click)="toggleStatus(f, $event)"
+                  [disabled]="f.status !== 'active' && needsTemplateApproval(f)"
+                  [title]="f.status !== 'active' && needsTemplateApproval(f) ? 'Custom message template needs Meta approval before this flow can be activated' : ''">
                   {{ f.status === 'active' ? 'Pause' : 'Activate' }}
                 </button>
                 <button class="btn btn-danger btn-sm" (click)="deleteFlow(f, $event)">Delete</button>

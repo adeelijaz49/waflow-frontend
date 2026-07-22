@@ -6,10 +6,9 @@ import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 import { MessageNodeEditor, MessageNodeDraft } from '../../shared/message-node-editor/message-node-editor';
 
-// Custom entry messages (see models/MessageNode.js) are only supported for
-// this trigger type in Phase 1 — the other 3 still always use their fixed
-// default template. Extended trigger-by-trigger in Phase 2.
-const BRANCHING_SUPPORTED_TRIGGERS = ['inactive_customer'];
+// Custom entry messages (see models/MessageNode.js) are now supported for all
+// 4 trigger types (Phases 1-2).
+const BRANCHING_SUPPORTED_TRIGGERS = ['inactive_customer', 'post_purchase_points', 'points_balance_reminder', 'booking_no_show'];
 
 // All 4 trigger types now have working backend triggers (Phases 1-4).
 // configField picks which input the create/edit form shows: triggers keyed on
@@ -138,9 +137,13 @@ export class Flows implements OnInit {
     };
     this.showModal = true;
     this.resetCustomEntry();
-    if (f.entryNodeId) {
+    // entryNodeId comes back populated ({_id, templateStatus}) from getFlows/
+    // getFlow so the list view can grey out Activate without a second
+    // round-trip — extract the plain id here regardless of which shape it is.
+    const entryNodeId = f.entryNodeId?._id || f.entryNodeId;
+    if (entryNodeId) {
       this.useCustomEntry = true;
-      this.loadExistingEntryNode(f.entryNodeId);
+      this.loadExistingEntryNode(entryNodeId);
     }
     this.loadPreview();
   }
@@ -256,8 +259,16 @@ export class Flows implements OnInit {
     });
   }
 
+  // Mirrors the activateFlow backend guard client-side, so the button reads as
+  // disabled instead of round-tripping to a 400. A flow with no custom entry
+  // message (entryNodeId unset) is never blocked.
+  needsTemplateApproval(f: any): boolean {
+    return !!f.entryNodeId && f.entryNodeId.templateStatus !== 'approved';
+  }
+
   toggleStatus(f: any, event: Event) {
     event.stopPropagation();
+    if (f.status !== 'active' && this.needsTemplateApproval(f)) return;
     const req = f.status === 'active' ? this.api.pauseFlow(f._id) : this.api.activateFlow(f._id);
     req.subscribe(() => this.load());
   }
