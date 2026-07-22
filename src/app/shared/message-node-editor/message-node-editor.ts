@@ -7,20 +7,21 @@ export interface MessageNodeButtonDraft {
   position: number;
   label: string;
   nextAction: 'end_flow' | 'send_message';
-  followUpBody: string; // only meaningful when nextAction === 'send_message'
-  targetNodeId?: string; // set once the follow-up node has been created/loaded — orchestrated by the parent, unused by this component
+  followUp?: MessageNodeDraft; // recursive — only present when nextAction === 'send_message'
+  targetNodeId?: string; // set once this button's follow-up has been created/loaded — orchestrated by the parent, unused by this component
 }
 
 export interface MessageNodeDraft {
   bodyText: string;
   buttons: MessageNodeButtonDraft[];
+  targetNodeId?: string; // set once this node itself has been created/loaded — orchestrated by the parent
 }
 
-// Shared body + CTA-button editor, reused for a Flow's custom entry message.
-// showButtons=false renders the follow-up leaf case (Phase 1: a follow-up
-// message has no further buttons of its own — single branching level only).
-// Phase 3 will let a follow-up's own buttons branch further by turning
-// showButtons on recursively; nothing here needs to change to support that.
+// Shared body + CTA-button editor, reused for a Flow's custom entry message
+// and recursively for every level of follow-up beneath it, up to depth 3
+// (MAX_BRANCH_DEPTH, enforced server-side too in shared/operations.js). A
+// button whose nextAction is send_message nests another instance of this
+// same component bound to that button's own follow-up draft.
 @Component({
   selector: 'app-message-node-editor',
   standalone: true,
@@ -31,7 +32,8 @@ export interface MessageNodeDraft {
 export class MessageNodeEditor implements OnChanges {
   @Input() triggerType = '';
   @Input() node: MessageNodeDraft = { bodyText: '', buttons: [] };
-  @Input() showButtons = true;
+  @Input() depth = 0; // 0 = entry node
+  @Input() maxDepth = 3;
   @Output() nodeChange = new EventEmitter<MessageNodeDraft>();
 
   variables: Array<{ key: string; label: string; slot: number }> = [];
@@ -40,6 +42,10 @@ export class MessageNodeEditor implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['triggerType']) this.loadVariables();
+  }
+
+  get canBranchFurther(): boolean {
+    return this.depth < this.maxDepth;
   }
 
   loadVariables() {
@@ -57,7 +63,7 @@ export class MessageNodeEditor implements OnChanges {
 
   addButton() {
     if (this.node.buttons.length >= 3) return;
-    this.node.buttons.push({ position: this.node.buttons.length, label: '', nextAction: 'end_flow', followUpBody: '' });
+    this.node.buttons.push({ position: this.node.buttons.length, label: '', nextAction: 'end_flow' });
     this.emit();
   }
 
@@ -65,6 +71,18 @@ export class MessageNodeEditor implements OnChanges {
     this.node.buttons = this.node.buttons
       .filter(b => b.position !== position)
       .map((b, i) => ({ ...b, position: i }));
+    this.emit();
+  }
+
+  onNextActionChange(button: MessageNodeButtonDraft) {
+    if (button.nextAction === 'send_message' && !button.followUp) {
+      button.followUp = { bodyText: '', buttons: [] };
+    }
+    this.emit();
+  }
+
+  onFollowUpChange(button: MessageNodeButtonDraft, updated: MessageNodeDraft) {
+    button.followUp = updated;
     this.emit();
   }
 

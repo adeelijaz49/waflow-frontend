@@ -204,8 +204,15 @@
                   </div>
                 }
 
+                @if (entryError) {
+                  <div class="result-box result-error" style="margin-top:10px">{{ entryError }}</div>
+                }
+                @if (hasIncompleteButtons(entryDraft)) {
+                  <div class="text-muted" style="font-size:11px;margin-top:6px">Every button (at every level) needs a label before this can be saved.</div>
+                }
+
                 <div style="display:flex;gap:8px;margin-top:10px">
-                  <button class="btn btn-outline btn-sm" (click)="saveCustomEntry()" [disabled]="savingEntryNode || !entryDraft.bodyText">
+                  <button class="btn btn-outline btn-sm" (click)="saveCustomEntry()" [disabled]="savingEntryNode || !entryDraft.bodyText || hasIncompleteButtons(entryDraft)">
                     {{ savingEntryNode ? 'Saving...' : 'Save Custom Message' }}
                   </button>
                   @if (existingEntryNode && existingEntryNode.templateStatus !== 'approved') {

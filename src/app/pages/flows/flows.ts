@@ -1,10 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
-import { MessageNodeEditor, MessageNodeDraft } from '../../shared/message-node-editor/message-node-editor';
+import { MessageNodeEditor, MessageNodeDraft, MessageNodeButtonDraft } from '../../shared/message-node-editor/message-node-editor';
+
+const MAX_BRANCH_DEPTH = 3; // mirrors shared/operations.js#MAX_BRANCH_DEPTH
 
 // Custom entry messages (see models/MessageNode.js) are now supported for all
 // 4 trigger types (Phases 1-2).
@@ -73,6 +76,7 @@ export class Flows implements OnInit {
   savingEntryNode = false;
   submittingTemplate = false;
   refreshingStatus = false;
+  entryError: string | null = null;
 
   constructor(private api: ApiService) {}
 
@@ -143,7 +147,7 @@ export class Flows implements OnInit {
     const entryNodeId = f.entryNodeId?._id || f.entryNodeId;
     if (entryNodeId) {
       this.useCustomEntry = true;
-      this.loadExistingEntryNode(entryNodeId);
+      this.loadExistingEntryNode(entryNodeId).catch((err) => console.error('loadExistingEntryNode failed:', err));
     }
     this.loadPreview();
   }
@@ -159,70 +163,85 @@ export class Flows implements OnInit {
     this.entryDraft = { bodyText: '', buttons: [] };
   }
 
-  // Reverse-maps a saved MessageNode (real nextAction.targetNodeId shape)
-  // back into the editor's flat draft shape (nextAction + followUpBody) —
-  // fetches each send_message button's target node to show its body inline.
-  loadExistingEntryNode(nodeId: string) {
-    this.api.getMessageNode(nodeId).subscribe({
-      next: (node) => {
-        this.existingEntryNode = node;
-        const buttonDrafts = node.buttons.map((b: any) => ({
-          position: b.position, label: b.label,
-          nextAction: b.nextAction.type, followUpBody: '', targetNodeId: b.nextAction.targetNodeId,
-        }));
-        this.entryDraft = { bodyText: node.bodyText, buttons: buttonDrafts };
-        buttonDrafts.filter((b: any) => b.nextAction === 'send_message' && b.targetNodeId).forEach((b: any) => {
-          this.api.getMessageNode(b.targetNodeId).subscribe({
-            next: (target) => { b.followUpBody = target.bodyText; },
-          });
-        });
-      },
-    });
+  // Recursively reverse-maps a saved MessageNode (real nextAction.targetNodeId
+  // shape) back into the editor's nested draft shape, fetching each
+  // send_message button's target node (and its own targets, and so on, up to
+  // MAX_BRANCH_DEPTH) so the whole tree is editable inline.
+  async loadExistingEntryNode(nodeId: string) {
+    const node = await this.loadNodeDraftRecursive(nodeId);
+    this.existingEntryNode = node.raw;
+    this.entryDraft = node.draft;
+  }
+
+  private async loadNodeDraftRecursive(nodeId: string): Promise<{ draft: MessageNodeDraft; raw: any }> {
+    const raw = await firstValueFrom(this.api.getMessageNode(nodeId));
+    const buttons: MessageNodeButtonDraft[] = [];
+    for (const b of raw.buttons) {
+      const draftButton: MessageNodeButtonDraft = {
+        position: b.position, label: b.label, nextAction: b.nextAction.type, targetNodeId: b.nextAction.targetNodeId,
+      };
+      if (b.nextAction.type === 'send_message' && b.nextAction.targetNodeId) {
+        const child = await this.loadNodeDraftRecursive(b.nextAction.targetNodeId);
+        draftButton.followUp = child.draft;
+      }
+      buttons.push(draftButton);
+    }
+    return { draft: { bodyText: raw.bodyText, buttons, targetNodeId: raw._id }, raw };
   }
 
   toggleCustomEntry() {
     this.useCustomEntry = !this.useCustomEntry;
+    this.entryError = null;
     if (this.useCustomEntry && !this.existingEntryNode) {
       this.entryDraft = { bodyText: '', buttons: [] };
     }
   }
 
+  // Walks the whole draft tree (not just the entry node) so "Save" can be
+  // disabled with a clear reason instead of surfacing a raw backend
+  // validation error after several sequential save requests have already run.
+  hasIncompleteButtons(draft: MessageNodeDraft): boolean {
+    return draft.buttons.some(b => !b.label?.trim() || (b.nextAction === 'send_message' && b.followUp && this.hasIncompleteButtons(b.followUp)));
+  }
+
   saveCustomEntry() {
     if (!this.editingId) return;
+    this.entryError = null;
     this.savingEntryNode = true;
-
-    // Create/refresh each send_message button's follow-up node first (its id
-    // is needed to build the entry node's own buttons array), then the entry
-    // node itself, then point the flow at it.
-    const buttonRequests = this.entryDraft.buttons.map((b: any) => {
-      if (b.nextAction !== 'send_message') return Promise.resolve(b);
-      const followUp$ = b.targetNodeId
-        ? this.api.updateMessageNode(b.targetNodeId, { bodyText: b.followUpBody, buttons: [] })
-        : this.api.createMessageNode({ ownerId: this.editingId, bodyText: b.followUpBody, buttons: [] });
-      return new Promise((resolve, reject) => {
-        followUp$.subscribe({ next: (node) => resolve({ ...b, targetNodeId: node._id }), error: reject });
+    this.saveNodeDraftRecursive(this.entryDraft, true, 0).then((node) => {
+      const afterLink = () => { this.existingEntryNode = node; this.savingEntryNode = false; this.load(); };
+      if (this.existingEntryNode) afterLink();
+      else this.api.updateFlow(this.editingId!, { entryNodeId: node._id }).subscribe({
+        next: afterLink,
+        error: (err) => { this.entryError = err.error?.error || 'Failed to save.'; this.savingEntryNode = false; },
       });
+    }).catch((err) => {
+      this.entryError = err.error?.error || err.message || 'Failed to save.';
+      this.savingEntryNode = false;
     });
+  }
 
-    Promise.all(buttonRequests).then((resolvedButtons: any) => {
-      const buttons = resolvedButtons.map((b: any) => ({
-        position: b.position, label: b.label,
-        nextAction: { type: b.nextAction, targetNodeId: b.nextAction === 'send_message' ? b.targetNodeId : undefined },
-      }));
+  // Persists a draft node bottom-up: a button's follow-up is created/updated
+  // before the node containing that button, since the button's own
+  // nextAction.targetNodeId needs the follow-up's real id. depth is tracked
+  // through the recursion (0 = entry) and capped at MAX_BRANCH_DEPTH,
+  // matching the server-side cap in shared/operations.js.
+  private async saveNodeDraftRecursive(draft: MessageNodeDraft, isEntryNode: boolean, depth: number): Promise<any> {
+    const buttons = [];
+    for (const b of draft.buttons) {
+      let targetNodeId: string | undefined;
+      if (b.nextAction === 'send_message' && b.followUp && depth < MAX_BRANCH_DEPTH) {
+        const savedChild = await this.saveNodeDraftRecursive(b.followUp, false, depth + 1);
+        targetNodeId = savedChild._id;
+      }
+      buttons.push({ position: b.position, label: b.label, nextAction: { type: b.nextAction, targetNodeId } });
+    }
 
-      const entry$ = this.existingEntryNode
-        ? this.api.updateMessageNode(this.existingEntryNode._id, { bodyText: this.entryDraft.bodyText, buttons })
-        : this.api.createMessageNode({ ownerId: this.editingId, isEntryNode: true, bodyText: this.entryDraft.bodyText, buttons });
-
-      entry$.subscribe({
-        next: (node) => {
-          const afterLink = () => { this.existingEntryNode = node; this.savingEntryNode = false; this.load(); };
-          if (this.existingEntryNode) afterLink();
-          else this.api.updateFlow(this.editingId!, { entryNodeId: node._id }).subscribe({ next: afterLink, error: () => { this.savingEntryNode = false; } });
-        },
-        error: () => { this.savingEntryNode = false; },
-      });
-    }).catch(() => { this.savingEntryNode = false; });
+    const payload = { bodyText: draft.bodyText, buttons };
+    if (draft.targetNodeId) {
+      return firstValueFrom(this.api.updateMessageNode(draft.targetNodeId, payload));
+    }
+    return firstValueFrom(this.api.createMessageNode({ ownerId: this.editingId, isEntryNode, bodyText: draft.bodyText, buttons, depth }));
   }
 
   submitEntryTemplate() {

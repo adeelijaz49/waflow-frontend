@@ -52,18 +52,10 @@
 
 .follow-up-box {
   margin-top: 8px;
-  padding: 8px;
+  padding: 8px 8px 8px 12px;
   background: #f8fafc;
   border-radius: 6px;
   border: 1px dashed var(--border);
+  border-left: 3px solid var(--primary);
 }
-.follow-up-box textarea {
-  width: 100%;
-  font-family: inherit;
-  font-size: 12px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  resize: vertical;
-  margin-top: 4px;
-}
+.follow-up-box textarea { font-size: 12px; }
