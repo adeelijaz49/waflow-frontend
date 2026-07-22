@@ -84,6 +84,7 @@
                     <div class="text-muted" style="font-size:11px">
                       Enrolled {{ e.enrolledAt | date:'d MMM y' }}
                       @if (e.exitReason) { · {{ e.exitReason }} }
+                      @if (e.tappedButtonLabel) { · Tapped "{{ e.tappedButtonLabel }}" }
                     </div>
                   </div>
                   <span class="badge {{ e.state | statusBadge:'flowEnrollment' }}">{{ e.state }}</span>
