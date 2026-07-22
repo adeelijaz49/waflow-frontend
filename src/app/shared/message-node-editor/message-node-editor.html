@@ -28,7 +28,14 @@
             @if (canBranchFurther) {
               <option value="send_message">Send a follow-up message</option>
             }
+            <option value="apply_discount">Apply a discount (not yet available)</option>
+            <option value="redeem_points">Mark points redeemed (not yet available)</option>
           </select>
+          @if (b.nextAction === 'apply_discount' || b.nextAction === 'redeem_points') {
+            <div class="text-muted" style="font-size:11px;margin-top:4px">
+              This action isn't wired up yet — tapping the button will be recorded but won't do anything. Choose "End here" or a follow-up message instead for now.
+            </div>
+          }
         </div>
         @if (b.nextAction === 'send_message' && b.followUp) {
           <div class="follow-up-box">

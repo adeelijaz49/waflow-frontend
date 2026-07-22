@@ -3,10 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 
+export type MessageNodeAction = 'end_flow' | 'send_message' | 'apply_discount' | 'redeem_points';
+
 export interface MessageNodeButtonDraft {
   position: number;
   label: string;
-  nextAction: 'end_flow' | 'send_message';
+  nextAction: MessageNodeAction; // apply_discount/redeem_points are visible, not-yet-wired no-ops (see server.js#handleMessageNodeTap)
   followUp?: MessageNodeDraft; // recursive — only present when nextAction === 'send_message'
   targetNodeId?: string; // set once this button's follow-up has been created/loaded — orchestrated by the parent, unused by this component
 }
