@@ -1,0 +1,49 @@
+<div class="convo-viewer">
+  <div class="convo-breadcrumb">
+    @for (step of pathSteps; track $index) {
+      @if ($index > 0) { <span class="convo-breadcrumb-sep">→</span> }
+      <button type="button" class="convo-breadcrumb-item" [class.active]="$index === pathSteps.length - 1" (click)="jumpTo($index)">
+        {{ $index === 0 ? 'Entry' : step.tappedButtonLabel }}
+      </button>
+    }
+  </div>
+
+  <div class="convo-thread">
+    @for (step of pathSteps; track $index) {
+      @if ($index > 0) {
+        <div class="convo-row convo-row-left">
+          <div class="convo-bubble convo-bubble-customer">"{{ step.tappedButtonLabel }}"</div>
+        </div>
+      }
+      <div class="convo-row convo-row-right">
+        <div class="convo-bubble convo-bubble-business">
+          <div class="convo-bubble-text">{{ step.node.bodyText || '(empty message)' }}</div>
+          @if ($index === 0 && templateStatus) {
+            <span class="badge convo-template-badge"
+              [class.badge-success]="templateStatus === 'approved'"
+              [class.badge-warning]="templateStatus === 'pending'"
+              [class.badge-danger]="templateStatus === 'rejected'"
+              [class.badge-neutral]="templateStatus === 'not_created'">
+              {{ templateStatus }}
+            </span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (lastStep && lastStep.node.buttons.length) {
+    <div class="convo-chips">
+      @for (b of lastStep.node.buttons; track b.position) {
+        <button type="button" class="convo-chip"
+          [class.convo-chip-navigable]="b.nextAction === 'send_message' && b.followUp"
+          [class.convo-chip-unset]="!(b.nextAction === 'send_message' && b.followUp)"
+          (click)="tapChip(b)">
+          {{ b.label || '(no label)' }}
+        </button>
+      }
+    </div>
+  } @else if (lastStep) {
+    <div class="text-muted convo-end-note">No buttons configured — the conversation ends here.</div>
+  }
+</div>

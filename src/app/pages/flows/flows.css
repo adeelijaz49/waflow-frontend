@@ -13,6 +13,29 @@
 }
 .result-error { background: #fee2e2; color: #991b1b; }
 
+/* Copied from pages/customers/customers.css's detail-tabs pattern (Angular
+   view encapsulation means component styles don't carry across files) —
+   used here to switch between the flat editor and the conversation viewer. */
+.detail-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-btn:hover { color: var(--text); }
+
 .flow-list { display: flex; flex-direction: column; gap: 12px; }
 
 .flow-card {

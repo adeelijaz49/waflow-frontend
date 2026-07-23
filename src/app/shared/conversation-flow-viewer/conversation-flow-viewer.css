@@ -1,0 +1,90 @@
+.convo-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.convo-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 12px;
+}
+.convo-breadcrumb-item {
+  background: none;
+  border: none;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+.convo-breadcrumb-item:hover { background: #f1f5f9; }
+.convo-breadcrumb-item.active { color: var(--primary); font-weight: 600; }
+.convo-breadcrumb-sep { color: var(--text-muted); font-size: 11px; }
+
+.convo-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #e5ded5; /* WhatsApp chat-wallpaper beige */
+  border-radius: 10px;
+  padding: 14px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.convo-row { display: flex; }
+.convo-row-left { justify-content: flex-start; }
+.convo-row-right { justify-content: flex-end; }
+
+.convo-bubble {
+  max-width: 78%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.08);
+  position: relative;
+}
+.convo-bubble-business {
+  background: #dcf8c6; /* real WhatsApp business-message green, matches promotions' wa-bubble */
+  color: #111;
+}
+.convo-bubble-customer {
+  background: #ffffff;
+  color: #111;
+  font-style: italic;
+}
+.convo-bubble-text { white-space: pre-wrap; }
+
+.convo-template-badge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 10px;
+}
+
+.convo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.convo-chip {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--primary);
+  background: white;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.convo-chip-navigable:hover { background: #eff6ff; }
+.convo-chip-unset {
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.convo-end-note { font-size: 12px; padding: 4px 0; }

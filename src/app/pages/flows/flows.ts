@@ -6,6 +6,7 @@ import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 import { MessageNodeEditor, MessageNodeDraft, MessageNodeButtonDraft } from '../../shared/message-node-editor/message-node-editor';
+import { ConversationFlowViewer } from '../../shared/conversation-flow-viewer/conversation-flow-viewer';
 
 const MAX_BRANCH_DEPTH = 3; // mirrors shared/operations.js#MAX_BRANCH_DEPTH
 
@@ -41,7 +42,7 @@ const TRIGGER_TYPES = [
 
 @Component({
   selector: 'app-flows',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, DatePipe, MessageNodeEditor],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, DatePipe, MessageNodeEditor, ConversationFlowViewer],
   templateUrl: './flows.html',
   styleUrl: './flows.css',
 })
@@ -77,6 +78,7 @@ export class Flows implements OnInit {
   submittingTemplate = false;
   refreshingStatus = false;
   entryError: string | null = null;
+  editorViewMode: 'flat' | 'conversation' = 'flat'; // which way the custom message is shown/edited — both bind to the same entryDraft
 
   constructor(private api: ApiService) {}
 
@@ -161,6 +163,7 @@ export class Flows implements OnInit {
     this.useCustomEntry = false;
     this.existingEntryNode = null;
     this.entryDraft = { bodyText: '', buttons: [] };
+    this.editorViewMode = 'flat';
   }
 
   // Recursively reverse-maps a saved MessageNode (real nextAction.targetNodeId

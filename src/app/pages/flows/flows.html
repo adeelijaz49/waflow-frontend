@@ -183,11 +183,24 @@
 
             @if (useCustomEntry) {
               <div class="custom-entry-editor">
-                <app-message-node-editor
-                  [triggerType]="form.triggerType"
-                  [node]="entryDraft"
-                  (nodeChange)="entryDraft = $event">
-                </app-message-node-editor>
+                <div class="detail-tabs" style="padding:0;margin-bottom:10px">
+                  <button type="button" class="tab-btn" [class.active]="editorViewMode === 'flat'" (click)="editorViewMode = 'flat'">Flat Editor</button>
+                  <button type="button" class="tab-btn" [class.active]="editorViewMode === 'conversation'" (click)="editorViewMode = 'conversation'">Conversation View</button>
+                </div>
+
+                @if (editorViewMode === 'flat') {
+                  <app-message-node-editor
+                    [triggerType]="form.triggerType"
+                    [node]="entryDraft"
+                    (nodeChange)="entryDraft = $event">
+                  </app-message-node-editor>
+                } @else {
+                  <app-conversation-flow-viewer
+                    [triggerType]="form.triggerType"
+                    [root]="entryDraft"
+                    [templateStatus]="existingEntryNode?.templateStatus || null">
+                  </app-conversation-flow-viewer>
+                }
 
                 @if (existingEntryNode) {
                   <div class="template-status-row">
