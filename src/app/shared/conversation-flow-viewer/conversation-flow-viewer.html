@@ -16,8 +16,8 @@
         </div>
       }
       <div class="convo-row convo-row-right">
-        <div class="convo-bubble convo-bubble-business">
-          <div class="convo-bubble-text">{{ step.node.bodyText || '(empty message)' }}</div>
+        <div class="convo-bubble convo-bubble-business" [class.convo-bubble-editing]="editingNode === step.node" (click)="toggleEdit(step.node)">
+          <div class="convo-bubble-text">{{ step.node.bodyText || '(empty message — click to edit)' }}</div>
           @if ($index === 0 && templateStatus) {
             <span class="badge convo-template-badge"
               [class.badge-success]="templateStatus === 'approved'"
@@ -29,18 +29,70 @@
           }
         </div>
       </div>
+      @if (editingNode === step.node) {
+        <div class="convo-edit-drawer" (click)="$event.stopPropagation()">
+          <app-message-node-editor
+            [triggerType]="triggerType"
+            [node]="step.node"
+            [hideNestedEditors]="true"
+            (nodeChange)="onNodeEdited()">
+          </app-message-node-editor>
+        </div>
+      }
     }
   </div>
 
   @if (lastStep && lastStep.node.buttons.length) {
     <div class="convo-chips">
       @for (b of lastStep.node.buttons; track b.position) {
-        <button type="button" class="convo-chip"
-          [class.convo-chip-navigable]="b.nextAction === 'send_message' && b.followUp"
-          [class.convo-chip-unset]="!(b.nextAction === 'send_message' && b.followUp)"
-          (click)="tapChip(b)">
-          {{ b.label || '(no label)' }}
-        </button>
+        <div class="convo-chip-group">
+          <div class="convo-chip-row">
+            <button type="button" class="convo-chip"
+              [class.convo-chip-navigable]="b.nextAction === 'send_message' && b.followUp"
+              [class.convo-chip-unset]="!(b.nextAction === 'send_message' && b.followUp)"
+              (click)="tapChip(b)">
+              {{ b.label || '(no label)' }}
+            </button>
+            <button type="button" class="convo-chip-gear" (click)="openActionPicker(b)" title="Change what happens when tapped">⚙</button>
+          </div>
+
+          @if (actionPickerButton === b) {
+            <div class="convo-action-picker">
+              <div class="convo-action-picker-title">When "{{ b.label || '(no label)' }}" is tapped →</div>
+
+              <label class="convo-action-option">
+                <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'end_flow'" (change)="setAction(b, 'end_flow')" />
+                End here
+              </label>
+
+              <label class="convo-action-option" [class.convo-action-disabled]="!canOfferSendMessage(b)">
+                <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'send_message'"
+                  [disabled]="!canOfferSendMessage(b)"
+                  (change)="setAction(b, 'send_message')" />
+                Send a follow-up message
+              </label>
+              @if (!canOfferSendMessage(b)) {
+                <div class="text-muted convo-depth-note">Messages can only branch {{ maxDepth }} levels deep.</div>
+              }
+              @if (b.nextAction === 'send_message' && !b.followUp) {
+                <button type="button" class="btn btn-primary btn-sm convo-create-btn" (click)="createFollowUp(b)">+ Create new message</button>
+              } @else if (b.nextAction === 'send_message' && b.followUp) {
+                <div class="text-muted convo-existing-note">Already sends: "{{ b.followUp.bodyText || '(empty)' }}" — tap the chip to view/edit it.</div>
+              }
+
+              <label class="convo-action-option">
+                <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'apply_discount'" (change)="setAction(b, 'apply_discount')" />
+                Apply a discount (not yet available)
+              </label>
+              <label class="convo-action-option">
+                <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'redeem_points'" (change)="setAction(b, 'redeem_points')" />
+                Mark points redeemed (not yet available)
+              </label>
+
+              <button type="button" class="btn btn-outline btn-sm convo-close-btn" (click)="closeActionPicker()">Close</button>
+            </div>
+          }
+        </div>
       }
     </div>
   } @else if (lastStep) {

@@ -198,7 +198,8 @@
                   <app-conversation-flow-viewer
                     [triggerType]="form.triggerType"
                     [root]="entryDraft"
-                    [templateStatus]="existingEntryNode?.templateStatus || null">
+                    [templateStatus]="existingEntryNode?.templateStatus || null"
+                    (rootChange)="entryDraft = $event">
                   </app-conversation-flow-viewer>
                 }
 

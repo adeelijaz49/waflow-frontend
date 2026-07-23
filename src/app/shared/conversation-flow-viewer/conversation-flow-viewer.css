@@ -51,7 +51,10 @@
 .convo-bubble-business {
   background: #dcf8c6; /* real WhatsApp business-message green, matches promotions' wa-bubble */
   color: #111;
+  cursor: pointer;
 }
+.convo-bubble-business:hover { box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
+.convo-bubble-editing { box-shadow: 0 0 0 2px var(--primary); }
 .convo-bubble-customer {
   background: #ffffff;
   color: #111;
@@ -65,11 +68,22 @@
   font-size: 10px;
 }
 
+.convo-edit-drawer {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  margin: -2px 0 4px;
+}
+
 .convo-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
+  position: relative;
 }
+.convo-chip-group { position: relative; }
+.convo-chip-row { display: flex; align-items: center; gap: 4px; }
 .convo-chip {
   padding: 7px 14px;
   border-radius: 999px;
@@ -86,5 +100,43 @@
   color: var(--text-muted);
   cursor: default;
 }
+.convo-chip-gear {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.convo-chip-gear:hover { border-color: var(--primary); color: var(--primary); }
+
+.convo-action-picker {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 10;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  width: 260px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.convo-action-picker-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+.convo-action-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.convo-action-disabled { opacity: 0.5; cursor: not-allowed; }
+.convo-depth-note { font-size: 11px; margin: 2px 0 4px 20px; }
+.convo-create-btn { margin: 4px 0 4px 20px; }
+.convo-existing-note { font-size: 11px; margin: 2px 0 4px 20px; }
+.convo-close-btn { margin-top: 6px; width: 100%; }
 
 .convo-end-note { font-size: 12px; padding: 4px 0; }

@@ -36,6 +36,7 @@ export class MessageNodeEditor implements OnChanges {
   @Input() node: MessageNodeDraft = { bodyText: '', buttons: [] };
   @Input() depth = 0; // 0 = entry node
   @Input() maxDepth = 3;
+  @Input() hideNestedEditors = false; // true when a host (e.g. ConversationFlowViewer) handles "go deeper" as navigation instead of an inline nested form
   @Output() nodeChange = new EventEmitter<MessageNodeDraft>();
 
   variables: Array<{ key: string; label: string; slot: number }> = [];

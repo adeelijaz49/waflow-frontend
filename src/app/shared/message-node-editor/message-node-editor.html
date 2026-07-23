@@ -37,7 +37,7 @@
             </div>
           }
         </div>
-        @if (b.nextAction === 'send_message' && b.followUp) {
+        @if (b.nextAction === 'send_message' && b.followUp && !hideNestedEditors) {
           <div class="follow-up-box">
             <label style="font-size:11px">Follow-up message</label>
             <app-message-node-editor
