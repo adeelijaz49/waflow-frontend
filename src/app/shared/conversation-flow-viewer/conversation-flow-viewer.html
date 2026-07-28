@@ -33,6 +33,7 @@
         <div class="convo-edit-drawer" (click)="$event.stopPropagation()">
           <app-message-node-editor
             [triggerType]="triggerType"
+            [variableSource]="variableSource"
             [node]="step.node"
             [hideNestedEditors]="true"
             (nodeChange)="onNodeEdited()">

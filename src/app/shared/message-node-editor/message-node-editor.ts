@@ -32,7 +32,12 @@ export interface MessageNodeDraft {
   styleUrl: './message-node-editor.css',
 })
 export class MessageNodeEditor implements OnChanges {
+  // triggerType only matters when variableSource is 'flow' (selects which
+  // fixed per-triggerType variable list to fetch); ignored for 'promotion',
+  // which always uses the one fixed PROMOTION_MESSAGE_VARIABLES list
+  // (see shared/operations.js) regardless of the promotion's own shape.
   @Input() triggerType = '';
+  @Input() variableSource: 'flow' | 'promotion' = 'flow';
   @Input() node: MessageNodeDraft = { bodyText: '', buttons: [] };
   @Input() depth = 0; // 0 = entry node
   @Input() maxDepth = 3;
@@ -44,7 +49,7 @@ export class MessageNodeEditor implements OnChanges {
   constructor(private api: ApiService) {}
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['triggerType']) this.loadVariables();
+    if (changes['triggerType'] || changes['variableSource']) this.loadVariables();
   }
 
   get canBranchFurther(): boolean {
@@ -52,6 +57,13 @@ export class MessageNodeEditor implements OnChanges {
   }
 
   loadVariables() {
+    if (this.variableSource === 'promotion') {
+      this.api.getPromotionMessageVariables().subscribe({
+        next: (vars) => { this.variables = vars; },
+        error: () => { this.variables = []; },
+      });
+      return;
+    }
     if (!this.triggerType) { this.variables = []; return; }
     this.api.getFlowMessageVariables(this.triggerType).subscribe({
       next: (vars) => { this.variables = vars; },

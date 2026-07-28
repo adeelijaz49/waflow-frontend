@@ -113,7 +113,7 @@ export class Demo implements OnInit, OnDestroy {
     if (!confirm(`Send a REAL WhatsApp message right now to: ${phones}?\n\nThis is not a simulation.`)) return;
     this.sending = true;
     this.sendResult = null;
-    this.api.sendPromotion(this.selectedPromotion._id, [...this.selectedCustomerIds]).subscribe({
+    this.api.sendLiveDemoPromotion(this.selectedPromotion._id, [...this.selectedCustomerIds]).subscribe({
       next: (res) => {
         this.sendResult = res;
         this.sending = false;

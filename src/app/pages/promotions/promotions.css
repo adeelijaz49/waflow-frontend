@@ -150,6 +150,56 @@
 .result-success { background: #d1fae5; color: #065f46; }
 .result-error   { background: #fee2e2; color: #991b1b; }
 
+/* Copied from pages/flows/flows.css (Angular view encapsulation means component
+   styles don't carry across files) — used here for the same purpose: switching
+   between the flat custom-entry editor and the conversation viewer (DEFECT-02). */
+.detail-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-btn:hover { color: var(--text); }
+
+.custom-entry-section {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+.custom-entry-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.custom-entry-editor {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.template-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 /* Campaign type picker (guided creation) */
 .campaign-type-grid {
   display: grid;

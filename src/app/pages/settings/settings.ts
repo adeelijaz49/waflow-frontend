@@ -21,36 +21,13 @@ export class Settings implements OnInit {
   refreshing    = false;
   refreshResult: any = null;
 
+  // Read-only (DEFECT-05) — creating/editing a template happens inside the
+  // Promotion or Flow it belongs to. The fixed fallback templates (waflow_promo,
+  // waflow_loyalty, etc.) are created automatically on first use if missing
+  // (see utils/whatsapp.js#ensureTemplateExists) — nothing to do here.
   templates: any[] = [];
-  promoTemplate    = 'waflow_promo';    // default — overridden by API response
-  loyaltyTemplate  = 'waflow_loyalty';  // default — overridden by API response
   templatesLoading = false;
   templatesError   = false;
-  creatingPromo    = false;
-  creatingLoyalty  = false;
-  templateResult: any = null;
-
-  // Automated Flow templates (see /flows) — a small data-driven list rather
-  // than one hand-duplicated block per template like promo/loyalty above,
-  // since there are already 2 of these with more triggers adding more later.
-  flowTemplates: Array<{ key: string; label: string; templateName: string; responseKey: string; body: string; creating: boolean }> = [
-    {
-      key: 'winback', label: 'Win-Back (Inactive Customer)', templateName: 'waflow_winback', responseKey: 'winbackTemplate', creating: false,
-      body: "Hi [name]! 👋 It's been a while since we've seen you.\n\nCome back and check out what's new — we'd love to have you again! 🛍️",
-    },
-    {
-      key: 'post_purchase', label: 'Post-Purchase Points Reminder', templateName: 'waflow_post_purchase', responseKey: 'postPurchaseTemplate', creating: false,
-      body: 'Hi [name]! 🎉 Thanks for your order!\n\nYou now have [X] loyalty points — come back and use them on your next visit!',
-    },
-    {
-      key: 'points_nudge', label: 'Points Balance Reminder', templateName: 'waflow_points_nudge', responseKey: 'pointsNudgeTemplate', creating: false,
-      body: 'Hi [name]! 💎 You still have [X] loyalty points waiting to be used.\n\nCome in and redeem them before you forget!',
-    },
-    {
-      key: 'no_show', label: 'No-Show Follow-Up', templateName: 'waflow_no_show', responseKey: 'noShowTemplate', creating: false,
-      body: 'Hi [name]! We missed you at your [service] appointment.\n\nNo worries — tap below to grab a new time, on us!',
-    },
-  ];
 
   constructor(private api: ApiService, private settings: SettingsService) {}
 
@@ -113,60 +90,9 @@ export class Settings implements OnInit {
     this.api.getTemplates().subscribe({
       next: (res) => {
         this.templates        = res.templates;
-        this.promoTemplate    = res.promoTemplate   || this.promoTemplate;
-        this.loyaltyTemplate  = res.loyaltyTemplate || this.loyaltyTemplate;
-        this.flowTemplates.forEach(ft => { ft.templateName = res[ft.responseKey] || ft.templateName; });
         this.templatesLoading = false;
       },
       error: () => { this.templatesLoading = false; this.templatesError = true; },
-    });
-  }
-
-  createPromoTemplate() {
-    this.creatingPromo  = true;
-    this.templateResult = null;
-    this.api.createPromoTemplate().subscribe({
-      next:  () => { this.templateResult = { ok: true, msg: 'Promo template submitted for review. Refresh in a few minutes to check approval status.' }; this.creatingPromo = false; this.loadTemplates(); },
-      error: (err) => { this.templateResult = { ok: false, msg: err.error?.error?.error_user_msg || err.error?.error || 'Failed' }; this.creatingPromo = false; },
-    });
-  }
-
-  recreatePromoTemplate() {
-    if (!confirm('This will DELETE the existing promo template and recreate it with the "Shop Now" button. It will need re-approval. Continue?')) return;
-    this.creatingPromo  = true;
-    this.templateResult = null;
-    this.api.deleteTemplate(this.promoTemplate).subscribe({
-      next: () => {
-        this.api.createPromoTemplate().subscribe({
-          next:  () => { this.templateResult = { ok: true, msg: 'Promo template recreated with "Shop Now" button. Awaiting Meta approval.' }; this.creatingPromo = false; this.loadTemplates(); },
-          error: (err) => { this.templateResult = { ok: false, msg: 'Deleted but recreate failed: ' + (err.error?.error || err.message) }; this.creatingPromo = false; },
-        });
-      },
-      error: (err) => { this.templateResult = { ok: false, msg: 'Delete failed: ' + (err.error?.error || err.message) }; this.creatingPromo = false; },
-    });
-  }
-
-  createLoyaltyTemplate() {
-    this.creatingLoyalty = true;
-    this.templateResult  = null;
-    this.api.createLoyaltyTemplate().subscribe({
-      next:  () => { this.templateResult = { ok: true, msg: 'Loyalty template submitted for review. Refresh in a few minutes to check approval status.' }; this.creatingLoyalty = false; this.loadTemplates(); },
-      error: (err) => { this.templateResult = { ok: false, msg: err.error?.error?.error_user_msg || err.error?.error || 'Failed' }; this.creatingLoyalty = false; },
-    });
-  }
-
-  createFlowTemplate(ft: { key: string; label: string; creating: boolean }) {
-    ft.creating = true;
-    this.templateResult = null;
-    const create$ = ft.key === 'winback' ? this.api.createWinbackTemplate()
-      : ft.key === 'post_purchase' ? this.api.createPostPurchaseTemplate()
-      : ft.key === 'points_nudge' ? this.api.createPointsNudgeTemplate()
-      : ft.key === 'no_show' ? this.api.createNoShowTemplate()
-      : null;
-    if (!create$) { ft.creating = false; return; }
-    create$.subscribe({
-      next:  () => { this.templateResult = { ok: true, msg: `${ft.label} template submitted for review. Refresh in a few minutes to check approval status.` }; ft.creating = false; this.loadTemplates(); },
-      error: (err: any) => { this.templateResult = { ok: false, msg: err.error?.error?.error_user_msg || err.error?.error || 'Failed' }; ft.creating = false; },
     });
   }
 

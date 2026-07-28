@@ -100,7 +100,11 @@
     </div>
   </div>
 
-  <!-- Templates -->
+  <!-- Templates — read-only (DEFECT-05). Creating/editing a message now happens
+       where the message itself lives: inside a Promotion or a Flow's custom
+       entry message. The 6 fixed fallback templates below (waflow_promo,
+       waflow_loyalty, etc.) are created automatically on first use if missing —
+       nothing to click here. -->
   <div class="card">
     <div class="card-header">
       <span class="card-title">📋 WhatsApp Message Templates</span>
@@ -110,87 +114,8 @@
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
         Templates bypass the 24-hour conversation window, so promotions reach customers whether or not they've messaged you before.
         Templates must be <strong>APPROVED</strong> by Meta before use — approval usually takes a few minutes to a few hours.
+        To create or edit a message, open the Promotion or Flow it belongs to — the fixed fallback templates below are created automatically the first time they're needed.
       </p>
-
-      @if (templateResult) {
-        <div class="result-box {{ templateResult.ok ? 'result-success' : 'result-error' }}" style="margin-bottom:14px">
-          {{ templateResult.msg }}
-        </div>
-      }
-
-      <!-- Promo template -->
-      <div class="template-card">
-        <div class="template-header">
-          <div>
-            <div class="fw-600">Promotion Template</div>
-            <div class="text-muted" style="font-size:12px;margin-top:2px">Name: <code>{{ promoTemplate }}</code></div>
-          </div>
-          @if (templateForName(promoTemplate); as t) {
-            <span class="badge {{ statusBadgeClass(t.status) }}">{{ t.status }}</span>
-          } @else {
-            <span class="badge badge-neutral">Not created</span>
-          }
-        </div>
-        <div class="template-body">
-          Hi [name]! 🏷️ <strong>[Product]</strong> is now <strong>[X]% OFF</strong> — only [price] {{ loyaltySettings.currency }}. [Promo name]. Tap below to browse all products in this sale!<br>
-          <em style="font-size:11px;color:#6366f1">→ Includes "Shop Now" quick-reply button</em>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-primary btn-sm" (click)="createPromoTemplate()" [disabled]="creatingPromo">
-            {{ creatingPromo ? 'Working...' : 'Create Template' }}
-          </button>
-          <button class="btn btn-outline btn-sm" (click)="recreatePromoTemplate()" [disabled]="creatingPromo">
-            {{ creatingPromo ? 'Working...' : '🔄 Delete & Recreate' }}
-          </button>
-          <span class="text-muted" style="font-size:11px">Use "Delete & Recreate" if it already exists but is missing the Shop Now button</span>
-        </div>
-      </div>
-
-      <!-- Loyalty template -->
-      <div class="template-card">
-        <div class="template-header">
-          <div>
-            <div class="fw-600">Loyalty Reminder Template</div>
-            <div class="text-muted" style="font-size:12px;margin-top:2px">Name: <code>{{ loyaltyTemplate }}</code></div>
-          </div>
-          @if (templateForName(loyaltyTemplate); as t) {
-            <span class="badge {{ statusBadgeClass(t.status) }}">{{ t.status }}</span>
-          } @else {
-            <span class="badge badge-neutral">Not created</span>
-          }
-        </div>
-        <div class="template-body">
-          Hi [name]! 💎 You have <strong>[X] loyalty points</strong> worth [Y] {{ loyaltySettings.currency }}. Pop in and use them on your next purchase — we'd love to see you! 🛍️
-        </div>
-        @if (!templateForName(loyaltyTemplate)) {
-          <button class="btn btn-primary btn-sm" (click)="createLoyaltyTemplate()" [disabled]="creatingLoyalty">
-            {{ creatingLoyalty ? 'Creating...' : 'Create Template' }}
-          </button>
-        }
-      </div>
-
-      <!-- Automated Flow templates (see /flows) -->
-      @for (ft of flowTemplates; track ft.key) {
-        <div class="template-card">
-          <div class="template-header">
-            <div>
-              <div class="fw-600">{{ ft.label }}</div>
-              <div class="text-muted" style="font-size:12px;margin-top:2px">Name: <code>{{ ft.templateName }}</code></div>
-            </div>
-            @if (templateForName(ft.templateName); as t) {
-              <span class="badge {{ statusBadgeClass(t.status) }}">{{ t.status }}</span>
-            } @else {
-              <span class="badge badge-neutral">Not created</span>
-            }
-          </div>
-          <div class="template-body">{{ ft.body }}</div>
-          @if (!templateForName(ft.templateName)) {
-            <button class="btn btn-primary btn-sm" (click)="createFlowTemplate(ft)" [disabled]="ft.creating">
-              {{ ft.creating ? 'Creating...' : 'Create Template' }}
-            </button>
-          }
-        </div>
-      }
 
       <!-- All templates table -->
       @if (!templatesLoading && templates.length > 0) {

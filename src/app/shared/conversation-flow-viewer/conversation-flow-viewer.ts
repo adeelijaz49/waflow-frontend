@@ -29,6 +29,7 @@ interface PathStep {
 })
 export class ConversationFlowViewer implements OnChanges {
   @Input() triggerType = '';
+  @Input() variableSource: 'flow' | 'promotion' = 'flow';
   @Input() root: MessageNodeDraft = { bodyText: '', buttons: [] };
   @Input() templateStatus: string | null = null;
   @Input() maxDepth = 3;

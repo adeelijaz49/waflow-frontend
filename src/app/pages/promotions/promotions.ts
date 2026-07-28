@@ -2,9 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
+import { MessageNodeEditor, MessageNodeDraft, MessageNodeButtonDraft } from '../../shared/message-node-editor/message-node-editor';
+import { ConversationFlowViewer } from '../../shared/conversation-flow-viewer/conversation-flow-viewer';
+
+const MAX_BRANCH_DEPTH = 3; // mirrors shared/operations.js#MAX_BRANCH_DEPTH
 
 // Guided creation paths — picking one pre-fills sensible defaults + a suggested
 // message (dropped into `description`, which the WhatsApp send now includes)
@@ -45,7 +50,7 @@ const CAMPAIGN_TYPES = [
 
 @Component({
   selector: 'app-promotions',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, MessageNodeEditor, ConversationFlowViewer],
   templateUrl: './promotions.html',
   styleUrl: './promotions.css',
 })
@@ -66,12 +71,36 @@ export class Promotions implements OnInit {
   campaignTypes = CAMPAIGN_TYPES;
   pickingType = false;
 
+  // Custom entry message (see models/MessageNode.js) — DEFECT-02: the same
+  // branching editor Flows already had, reused here rather than a second
+  // implementation. Edit-mode only, since a MessageNode needs a real
+  // promotion id as its owner (mirrors pages/flows/flows.ts exactly).
+  useCustomEntry = false;
+  existingEntryNode: any = null;
+  entryDraft: MessageNodeDraft = { bodyText: '', buttons: [] };
+  savingEntryNode = false;
+  submittingTemplate = false;
+  refreshingStatus = false;
+  entryError: string | null = null;
+  editorViewMode: 'flat' | 'conversation' = 'flat';
+
   // Campaign panel
   activePromo: any = null;
   recommendedCustomers: any[] = [];
   selectedCustomerIds = new Set<string>();
   recommendLimit = 100;
   loadingRecs = false;
+
+  // "All Customers" tab — DEFECT-04B: the Recommended panel is always RFM-ranked
+  // and capped, so it's not a substitute for browsing/searching the merchant's
+  // full customer base. Selection (selectedCustomerIds) is shared across both tabs.
+  customerViewMode: 'recommended' | 'all' = 'recommended';
+  allCustomers: any[] = [];
+  allCustomersTotal = 0;
+  allCustomersPage = 1;
+  allCustomersPageSize = 50;
+  allCustomersSearch = '';
+  loadingAllCustomers = false;
   sending = false;
   sendResult: any = null;
   campaignReport: any = null;
@@ -121,6 +150,7 @@ export class Promotions implements OnInit {
     this.form = this.emptyForm();
     this.pickingType = true;
     this.showCreateModal = true;
+    this.resetCustomEntry();
   }
 
   selectCampaignType(ct: typeof CAMPAIGN_TYPES[number]) {
@@ -150,6 +180,15 @@ export class Promotions implements OnInit {
       status:           p.status || 'draft',
     };
     this.showCreateModal = true;
+    this.resetCustomEntry();
+    // entryNodeId comes back populated ({_id, templateStatus}) from getPromotions/
+    // getPromotion so the list view can show template status without a second
+    // round-trip — extract the plain id here regardless of which shape it is.
+    const entryNodeId = p.entryNodeId?._id || p.entryNodeId;
+    if (entryNodeId) {
+      this.useCustomEntry = true;
+      this.loadExistingEntryNode(entryNodeId).catch((err) => console.error('loadExistingEntryNode failed:', err));
+    }
   }
 
   closeModal() {
@@ -158,6 +197,124 @@ export class Promotions implements OnInit {
     this.viewMode = false;
     this.viewingPromo = null;
     this.pickingType = false;
+  }
+
+  resetCustomEntry() {
+    this.useCustomEntry = false;
+    this.existingEntryNode = null;
+    this.entryDraft = { bodyText: '', buttons: [] };
+    this.editorViewMode = 'flat';
+    this.entryError = null;
+  }
+
+  toggleCustomEntry() {
+    this.useCustomEntry = !this.useCustomEntry;
+    this.entryError = null;
+    if (this.useCustomEntry && !this.existingEntryNode) {
+      this.entryDraft = { bodyText: '', buttons: [] };
+    }
+  }
+
+  // Recursively reverse-maps a saved MessageNode (real nextAction.targetNodeId
+  // shape) back into the editor's nested draft shape — identical to
+  // pages/flows/flows.ts, since MessageNode CRUD is fully ownerType-agnostic.
+  async loadExistingEntryNode(nodeId: string) {
+    const node = await this.loadNodeDraftRecursive(nodeId);
+    this.existingEntryNode = node.raw;
+    this.entryDraft = node.draft;
+  }
+
+  private async loadNodeDraftRecursive(nodeId: string): Promise<{ draft: MessageNodeDraft; raw: any }> {
+    const raw = await firstValueFrom(this.api.getMessageNode(nodeId));
+    const buttons: MessageNodeButtonDraft[] = [];
+    for (const b of raw.buttons) {
+      const draftButton: MessageNodeButtonDraft = {
+        position: b.position, label: b.label, nextAction: b.nextAction.type, targetNodeId: b.nextAction.targetNodeId,
+      };
+      if (b.nextAction.type === 'send_message' && b.nextAction.targetNodeId) {
+        const child = await this.loadNodeDraftRecursive(b.nextAction.targetNodeId);
+        draftButton.followUp = child.draft;
+      }
+      buttons.push(draftButton);
+    }
+    return { draft: { bodyText: raw.bodyText, buttons, targetNodeId: raw._id }, raw };
+  }
+
+  // Walks the whole draft tree (not just the entry node) so "Save" can be
+  // disabled with a clear reason instead of surfacing a raw backend
+  // validation error after several sequential save requests have already run.
+  hasIncompleteButtons(draft: MessageNodeDraft): boolean {
+    return draft.buttons.some(b => !b.label?.trim() || (b.nextAction === 'send_message' && b.followUp && this.hasIncompleteButtons(b.followUp)));
+  }
+
+  saveCustomEntry() {
+    if (!this.editingPromoId) return;
+    this.entryError = null;
+    this.savingEntryNode = true;
+    this.saveNodeDraftRecursive(this.entryDraft, true, 0).then((node) => {
+      const afterLink = () => { this.existingEntryNode = node; this.savingEntryNode = false; this.loadPromotions(); };
+      if (this.existingEntryNode) afterLink();
+      else this.api.updatePromotion(this.editingPromoId!, { entryNodeId: node._id }).subscribe({
+        next: afterLink,
+        error: (err) => { this.entryError = err.error?.error || 'Failed to save.'; this.savingEntryNode = false; },
+      });
+    }).catch((err) => {
+      this.entryError = err.error?.error || err.message || 'Failed to save.';
+      this.savingEntryNode = false;
+    });
+  }
+
+  // Persists a draft node bottom-up: a button's follow-up is created/updated
+  // before the node containing that button, since the button's own
+  // nextAction.targetNodeId needs the follow-up's real id. depth is tracked
+  // through the recursion (0 = entry) and capped at MAX_BRANCH_DEPTH,
+  // matching the server-side cap in shared/operations.js.
+  private async saveNodeDraftRecursive(draft: MessageNodeDraft, isEntryNode: boolean, depth: number): Promise<any> {
+    const buttons = [];
+    for (const b of draft.buttons) {
+      let targetNodeId: string | undefined;
+      if (b.nextAction === 'send_message' && b.followUp && depth < MAX_BRANCH_DEPTH) {
+        const savedChild = await this.saveNodeDraftRecursive(b.followUp, false, depth + 1);
+        targetNodeId = savedChild._id;
+      }
+      buttons.push({ position: b.position, label: b.label, nextAction: { type: b.nextAction, targetNodeId } });
+    }
+
+    const payload = { bodyText: draft.bodyText, buttons };
+    if (draft.targetNodeId) {
+      return firstValueFrom(this.api.updateMessageNode(draft.targetNodeId, payload));
+    }
+    return firstValueFrom(this.api.createMessageNode({ ownerType: 'promotion', ownerId: this.editingPromoId, isEntryNode, bodyText: draft.bodyText, buttons, depth }));
+  }
+
+  submitEntryTemplate() {
+    if (!this.existingEntryNode) return;
+    this.submittingTemplate = true;
+    this.api.submitMessageNodeTemplate(this.existingEntryNode._id).subscribe({
+      next: (node) => { this.existingEntryNode = node; this.submittingTemplate = false; },
+      error: () => { this.submittingTemplate = false; },
+    });
+  }
+
+  refreshEntryTemplateStatus() {
+    if (!this.existingEntryNode) return;
+    this.refreshingStatus = true;
+    this.api.refreshMessageNodeTemplateStatus(this.existingEntryNode._id).subscribe({
+      next: (node) => { this.existingEntryNode = node; this.refreshingStatus = false; },
+      error: () => { this.refreshingStatus = false; },
+    });
+  }
+
+  // Mirrors the backend's graceful fallback (shared/operations.js#resolveApprovedEntryNode)
+  // client-side, so the merchant sees this state up front rather than discovering
+  // it only after sending — an unapproved custom entry never blocks the send
+  // outright (Promotions have no separate "activate" gate, per DEFECT-04A), it
+  // just silently falls back, which is worth surfacing rather than leaving silent.
+  needsTemplateApproval(p: any): boolean {
+    const entryNodeId = p?.entryNodeId;
+    if (!entryNodeId) return false;
+    const status = entryNodeId?.templateStatus;
+    return status !== undefined ? status !== 'approved' : false;
   }
 
   toggleProduct(id: string) {
@@ -214,6 +371,10 @@ export class Promotions implements OnInit {
     this.activePromo = promo;
     this.selectedCustomerIds.clear();
     this.recommendedCustomers = [];
+    this.customerViewMode = 'recommended';
+    this.allCustomers = [];
+    this.allCustomersPage = 1;
+    this.allCustomersSearch = '';
     this.sendResult = null;
     this.campaignReport = null;
     this.preview = null;
@@ -249,6 +410,44 @@ export class Promotions implements OnInit {
     });
   }
 
+  switchCustomerView(mode: 'recommended' | 'all') {
+    this.customerViewMode = mode;
+    if (mode === 'all' && !this.allCustomers.length) this.loadAllCustomers();
+  }
+
+  loadAllCustomers() {
+    this.loadingAllCustomers = true;
+    this.api.getCustomers({ search: this.allCustomersSearch || undefined, isDemo: false, page: this.allCustomersPage, limit: this.allCustomersPageSize }).subscribe({
+      next: (res) => {
+        this.allCustomers = res.customers;
+        this.allCustomersTotal = res.total;
+        this.loadingAllCustomers = false;
+      },
+      error: () => { this.loadingAllCustomers = false; },
+    });
+  }
+
+  searchAllCustomers() {
+    this.allCustomersPage = 1;
+    this.loadAllCustomers();
+  }
+
+  allCustomersNextPage() {
+    if (this.allCustomersPage * this.allCustomersPageSize >= this.allCustomersTotal) return;
+    this.allCustomersPage++;
+    this.loadAllCustomers();
+  }
+
+  allCustomersPrevPage() {
+    if (this.allCustomersPage <= 1) return;
+    this.allCustomersPage--;
+    this.loadAllCustomers();
+  }
+
+  allCustomersTotalPages(): number {
+    return Math.max(1, Math.ceil(this.allCustomersTotal / this.allCustomersPageSize));
+  }
+
   loadRecommended(applyDefaultTargeting = false) {
     this.loadingRecs = true;
     this.api.getRecommendedCustomers(this.activePromo._id, this.recommendLimit).subscribe({
@@ -281,7 +480,12 @@ export class Promotions implements OnInit {
     else this.selectedCustomerIds.add(c._id);
   }
 
-  selectAll() { this.recommendedCustomers.filter(c => this.customerCanAfford(c)).forEach(c => this.selectedCustomerIds.add(c._id)); }
+  // "Select All" only applies to whichever list is currently visible — for the
+  // All Customers tab that's just the current page, not the whole customer base.
+  selectAll() {
+    const list = this.customerViewMode === 'all' ? this.allCustomers : this.recommendedCustomers;
+    list.filter(c => this.customerCanAfford(c)).forEach(c => this.selectedCustomerIds.add(c._id));
+  }
   clearAll()  { this.selectedCustomerIds.clear(); }
 
   sendCampaign() {
@@ -308,9 +512,12 @@ export class Promotions implements OnInit {
     return this.activePromo?.customerType === 'points';
   }
 
+  // Works for both the Recommended tab (which precomputes hasEnoughPoints) and
+  // the All Customers tab (plain customer records, no precomputed field).
   customerCanAfford(c: any): boolean {
     if (!this.isPointsPromo()) return true;
-    return c.hasEnoughPoints !== false;
+    if (c.hasEnoughPoints !== undefined) return c.hasEnoughPoints;
+    return (c.loyaltyPoints || 0) >= (this.activePromo?.pointsPrice || 0);
   }
 
 

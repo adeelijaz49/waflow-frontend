@@ -82,29 +82,11 @@ export class ApiService {
   refreshToken(): Observable<any> {
     return this.http.post(`${API}/whatsapp/refresh-token`, {});
   }
+  // Read-only (DEFECT-05) — creating/editing a template happens inside the
+  // Promotion or Flow it belongs to; the fixed fallback templates are created
+  // automatically on first use if missing (see utils/whatsapp.js#ensureTemplateExists).
   getTemplates(): Observable<any> {
     return this.http.get(`${API}/whatsapp/templates`);
-  }
-  createPromoTemplate(): Observable<any> {
-    return this.http.post(`${API}/whatsapp/create-promo-template`, {});
-  }
-  createLoyaltyTemplate(): Observable<any> {
-    return this.http.post(`${API}/whatsapp/create-loyalty-template`, {});
-  }
-  createWinbackTemplate(): Observable<any> {
-    return this.http.post(`${API}/whatsapp/create-winback-template`, {});
-  }
-  createPostPurchaseTemplate(): Observable<any> {
-    return this.http.post(`${API}/whatsapp/create-post-purchase-template`, {});
-  }
-  createPointsNudgeTemplate(): Observable<any> {
-    return this.http.post(`${API}/whatsapp/create-points-nudge-template`, {});
-  }
-  createNoShowTemplate(): Observable<any> {
-    return this.http.post(`${API}/whatsapp/create-no-show-template`, {});
-  }
-  deleteTemplate(name: string): Observable<any> {
-    return this.http.delete(`${API}/whatsapp/templates/${name}`);
   }
 
   // ── Promotions ────────────────────────────────────────────────────────────
@@ -128,6 +110,11 @@ export class ApiService {
   }
   sendPromotion(promotionId: string, customerIds: string[]): Observable<any> {
     return this.http.post(`${API}/promotions/${promotionId}/send`, { customerIds });
+  }
+  // Dedicated /demo sales-presentation page only — real send to a real phone the
+  // presenter controls. Do not call this from the regular Promotions screen.
+  sendLiveDemoPromotion(promotionId: string, customerIds: string[]): Observable<any> {
+    return this.http.post(`${API}/promotions/${promotionId}/send-live-demo`, { customerIds });
   }
   sendLoyaltyReminders(customerIds?: string[]): Observable<any> {
     return this.http.post(`${API}/promotions/loyalty/remind`, { customerIds: customerIds || [] });
@@ -175,6 +162,12 @@ export class ApiService {
   }
   getFlowMessageVariables(triggerType: string): Observable<any[]> {
     return this.http.get<any[]>(`${API}/flows/message-variables`, { params: { triggerType } });
+  }
+  getPromotionMessageVariables(): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/promotions/message-variables`);
+  }
+  getFlowPresets(): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/flows/presets`);
   }
 
   // ── Message Nodes (branching — see models/MessageNode.js) ──────────────────

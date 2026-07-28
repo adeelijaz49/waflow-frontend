@@ -1,26 +1,25 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
-import { MessageNodeEditor, MessageNodeDraft, MessageNodeButtonDraft } from '../../shared/message-node-editor/message-node-editor';
-import { ConversationFlowViewer } from '../../shared/conversation-flow-viewer/conversation-flow-viewer';
 
-const MAX_BRANCH_DEPTH = 3; // mirrors shared/operations.js#MAX_BRANCH_DEPTH
-
-// Custom entry messages (see models/MessageNode.js) are now supported for all
-// 4 trigger types (Phases 1-2).
-const BRANCHING_SUPPORTED_TRIGGERS = ['inactive_customer', 'post_purchase_points', 'points_balance_reminder', 'booking_no_show'];
-
-// All 4 trigger types now have working backend triggers (Phases 1-4).
-// configField picks which input the create/edit form shows: triggers keyed on
-// "how long since an event" use delayHours, triggers keyed on "how long since
-// the customer's own state stopped changing" use inactivityDays.
-// defaultValue mirrors shared/operations.js#FLOW_TYPE_DEFAULTS on the backend
-// exactly, so picking a trigger type pre-fills the same number the backend
-// would've applied anyway if the field were left blank.
+// DEFECT-03: "A Flow = a trigger condition + a reference to an existing
+// Promotion." All message content/branching now lives in Promotions
+// (DEFECT-02) — this screen is a pure rule builder: pick a metric, an
+// operator-shaped config, and which Promotion to send. No message/button
+// editor lives here anymore (see git history for the removed Phase 1-4
+// custom-entry-message UI this screen used to have).
+//
+// configField picks which input(s) the create/edit form shows:
+//   'delayHours'          — how long since an event (post_purchase_points, booking_no_show)
+//   'inactivityDays'      — how long since the customer's own state stopped changing
+//   'pointsThreshold'     — a one-time value-crossing trigger (points_threshold)
+//   'orderCountAndWindow' — a frequency/count trigger over a rolling window (purchase_frequency)
+// defaultValue(s) mirror shared/operations.js#FLOW_TYPE_DEFAULTS on the
+// backend exactly, so picking a trigger type pre-fills the same number the
+// backend would've applied anyway if the field were left blank.
 const TRIGGER_TYPES = [
   {
     value: 'inactive_customer', icon: '🔄', label: 'Win-Back (Inactive Customer)', blurb: "Message a customer who hasn't ordered in N days.", available: true,
@@ -38,11 +37,23 @@ const TRIGGER_TYPES = [
     value: 'booking_no_show', icon: '📅', label: 'No-Show Follow-Up', blurb: 'Follow up after a customer misses a booked appointment.', available: true,
     configField: 'delayHours', defaultValue: 1, configLabel: 'Delay after no-show (hours)', configHint: 'How long to wait after a booking is marked no-show before sending.',
   },
+  {
+    value: 'points_threshold', icon: '💰', label: 'Points Threshold', blurb: 'Message a customer the first time their points balance crosses a threshold.', available: true,
+    configField: 'pointsThreshold', defaultValue: 1000, configLabel: 'Points threshold', configHint: 'Fires once, the first time a customer\'s balance reaches or exceeds this.',
+  },
+  {
+    value: 'purchase_frequency', icon: '🛍️', label: 'Purchase Frequency', blurb: 'Message a customer who shops more than N times within a rolling window.', available: true,
+    configField: 'orderCountAndWindow', configLabel: 'Order count within window', configHint: 'Fires once, the first time a customer\'s order count within the window reaches this.',
+  },
 ];
+
+// The two new metrics have no fixed default template (see FLOW_TYPE_DEFAULTS
+// on the backend) — a Promotion reference is mandatory, not optional, for them.
+const PROMOTION_ONLY_TRIGGER_TYPES = ['points_threshold', 'purchase_frequency'];
 
 @Component({
   selector: 'app-flows',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, DatePipe, MessageNodeEditor, ConversationFlowViewer],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, DatePipe],
   templateUrl: './flows.html',
   styleUrl: './flows.css',
 })
@@ -68,43 +79,59 @@ export class Flows implements OnInit {
   preview: any = null;
   previewLoading = false;
 
-  // Custom entry message (see models/MessageNode.js) — Phase 1: edit-mode
-  // only, since a MessageNode needs a real flow id as its owner. See
-  // BRANCHING_SUPPORTED_TRIGGERS above for which trigger types support this.
-  useCustomEntry = false;
-  existingEntryNode: any = null;
-  entryDraft: MessageNodeDraft = { bodyText: '', buttons: [] };
-  savingEntryNode = false;
-  submittingTemplate = false;
-  refreshingStatus = false;
-  entryError: string | null = null;
-  editorViewMode: 'flat' | 'conversation' = 'flat'; // which way the custom message is shown/edited — both bind to the same entryDraft
+  // DEFECT-03: the action side of the rule — which Promotion this flow sends
+  // (message content/branching lives entirely there, see DEFECT-02), and
+  // optionally which other Flow this one escalates from (§8.3 cascade).
+  allPromotions: any[] = [];
+  otherFlows: any[] = []; // for the requiresPriorFlowId picker — excludes self when editing
+
+  // §8.2/§9 static preset catalog.
+  showPresets = false;
+  presets: any[] = [];
+  loadingPresets = false;
 
   constructor(private api: ApiService) {}
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.load();
+    this.api.getPromotions().subscribe({ next: (data) => { this.allPromotions = data; }, error: () => {} });
+  }
 
   emptyForm() {
-    return { name: '', triggerType: 'inactive_customer', inactivityDays: 60, delayHours: 2, cooldownDaysOverride: null };
+    return {
+      name: '', triggerType: 'inactive_customer', inactivityDays: 60, delayHours: 2, cooldownDaysOverride: null,
+      pointsThreshold: 1000, orderCountThreshold: 2,
+      promotionId: null as string | null, requiresPriorFlowId: null as string | null,
+    };
   }
 
   get selectedTrigger() {
     return this.triggerTypes.find(t => t.value === this.form.triggerType);
   }
 
-  get configField(): 'inactivityDays' | 'delayHours' {
-    return (this.selectedTrigger?.configField as 'inactivityDays' | 'delayHours') || 'inactivityDays';
+  get configField(): 'inactivityDays' | 'delayHours' | 'pointsThreshold' | 'orderCountAndWindow' {
+    return (this.selectedTrigger?.configField as any) || 'inactivityDays';
   }
 
-  get branchingSupported(): boolean {
-    return BRANCHING_SUPPORTED_TRIGGERS.includes(this.form.triggerType);
+  get isPromotionOnlyTrigger(): boolean {
+    return PROMOTION_ONLY_TRIGGER_TYPES.includes(this.form.triggerType);
+  }
+
+  // A trigger type with a fixed default template (the original 4) can still
+  // reference a Promotion instead if the merchant wants — it's just optional
+  // for them, mandatory for the two new metrics that have no fixed default.
+  get promotionRequired(): boolean {
+    return this.isPromotionOnlyTrigger;
   }
 
   selectTriggerType(value: string) {
     this.form.triggerType = value;
     const t = this.triggerTypes.find(x => x.value === value);
-    if (t) this.form[t.configField] = t.defaultValue;
-    this.loadPreview();
+    if (t?.configField && t.configField !== 'orderCountAndWindow' && t.defaultValue !== undefined) {
+      this.form[t.configField] = t.defaultValue;
+    }
+    if (!this.isPromotionOnlyTrigger) this.loadPreview();
+    else this.preview = null;
   }
 
   loadPreview() {
@@ -119,7 +146,10 @@ export class Flows implements OnInit {
   load() {
     this.loading = true;
     this.api.getFlows().subscribe({
-      next: (data) => { this.flows = data; this.loading = false; },
+      next: (data) => {
+        this.flows = data;
+        this.loading = false;
+      },
       error: () => { this.loading = false; },
     });
   }
@@ -128,7 +158,8 @@ export class Flows implements OnInit {
     this.editingId = null;
     this.form = this.emptyForm();
     this.showModal = true;
-    this.resetCustomEntry();
+    this.showPresets = false;
+    this.otherFlows = this.flows;
     this.loadPreview();
   }
 
@@ -139,139 +170,73 @@ export class Flows implements OnInit {
       name: f.name, triggerType: f.triggerType,
       inactivityDays: f.inactivityDays || 60,
       delayHours: f.delayHours ?? 2,
+      pointsThreshold: f.pointsThreshold ?? 1000,
+      orderCountThreshold: f.orderCountThreshold ?? 2,
       cooldownDaysOverride: f.cooldownDaysOverride ?? null,
+      // promotionId/requiresPriorFlowId come back populated ({_id, name, ...})
+      // from getFlows/getFlow — extract the plain id for the form's <select>.
+      promotionId: f.promotionId?._id || f.promotionId || null,
+      requiresPriorFlowId: f.requiresPriorFlowId?._id || f.requiresPriorFlowId || null,
     };
     this.showModal = true;
-    this.resetCustomEntry();
-    // entryNodeId comes back populated ({_id, templateStatus}) from getFlows/
-    // getFlow so the list view can grey out Activate without a second
-    // round-trip — extract the plain id here regardless of which shape it is.
-    const entryNodeId = f.entryNodeId?._id || f.entryNodeId;
-    if (entryNodeId) {
-      this.useCustomEntry = true;
-      this.loadExistingEntryNode(entryNodeId).catch((err) => console.error('loadExistingEntryNode failed:', err));
-    }
-    this.loadPreview();
+    this.showPresets = false;
+    this.otherFlows = this.flows.filter(x => x._id !== f._id);
+    if (!this.isPromotionOnlyTrigger) this.loadPreview();
   }
 
   closeModal() {
     this.showModal = false;
     this.editingId = null;
+    this.showPresets = false;
   }
 
-  resetCustomEntry() {
-    this.useCustomEntry = false;
-    this.existingEntryNode = null;
-    this.entryDraft = { bodyText: '', buttons: [] };
-    this.editorViewMode = 'flat';
-  }
-
-  // Recursively reverse-maps a saved MessageNode (real nextAction.targetNodeId
-  // shape) back into the editor's nested draft shape, fetching each
-  // send_message button's target node (and its own targets, and so on, up to
-  // MAX_BRANCH_DEPTH) so the whole tree is editable inline.
-  async loadExistingEntryNode(nodeId: string) {
-    const node = await this.loadNodeDraftRecursive(nodeId);
-    this.existingEntryNode = node.raw;
-    this.entryDraft = node.draft;
-  }
-
-  private async loadNodeDraftRecursive(nodeId: string): Promise<{ draft: MessageNodeDraft; raw: any }> {
-    const raw = await firstValueFrom(this.api.getMessageNode(nodeId));
-    const buttons: MessageNodeButtonDraft[] = [];
-    for (const b of raw.buttons) {
-      const draftButton: MessageNodeButtonDraft = {
-        position: b.position, label: b.label, nextAction: b.nextAction.type, targetNodeId: b.nextAction.targetNodeId,
-      };
-      if (b.nextAction.type === 'send_message' && b.nextAction.targetNodeId) {
-        const child = await this.loadNodeDraftRecursive(b.nextAction.targetNodeId);
-        draftButton.followUp = child.draft;
-      }
-      buttons.push(draftButton);
-    }
-    return { draft: { bodyText: raw.bodyText, buttons, targetNodeId: raw._id }, raw };
-  }
-
-  toggleCustomEntry() {
-    this.useCustomEntry = !this.useCustomEntry;
-    this.entryError = null;
-    if (this.useCustomEntry && !this.existingEntryNode) {
-      this.entryDraft = { bodyText: '', buttons: [] };
-    }
-  }
-
-  // Walks the whole draft tree (not just the entry node) so "Save" can be
-  // disabled with a clear reason instead of surfacing a raw backend
-  // validation error after several sequential save requests have already run.
-  hasIncompleteButtons(draft: MessageNodeDraft): boolean {
-    return draft.buttons.some(b => !b.label?.trim() || (b.nextAction === 'send_message' && b.followUp && this.hasIncompleteButtons(b.followUp)));
-  }
-
-  saveCustomEntry() {
-    if (!this.editingId) return;
-    this.entryError = null;
-    this.savingEntryNode = true;
-    this.saveNodeDraftRecursive(this.entryDraft, true, 0).then((node) => {
-      const afterLink = () => { this.existingEntryNode = node; this.savingEntryNode = false; this.load(); };
-      if (this.existingEntryNode) afterLink();
-      else this.api.updateFlow(this.editingId!, { entryNodeId: node._id }).subscribe({
-        next: afterLink,
-        error: (err) => { this.entryError = err.error?.error || 'Failed to save.'; this.savingEntryNode = false; },
-      });
-    }).catch((err) => {
-      this.entryError = err.error?.error || err.message || 'Failed to save.';
-      this.savingEntryNode = false;
+  // ── Presets (§8.2/§9) ────────────────────────────────────────────────────
+  openPresets() {
+    this.showPresets = true;
+    this.loadingPresets = true;
+    this.api.getFlowPresets().subscribe({
+      next: (data) => { this.presets = data; this.loadingPresets = false; },
+      error: () => { this.loadingPresets = false; },
     });
   }
 
-  // Persists a draft node bottom-up: a button's follow-up is created/updated
-  // before the node containing that button, since the button's own
-  // nextAction.targetNodeId needs the follow-up's real id. depth is tracked
-  // through the recursion (0 = entry) and capped at MAX_BRANCH_DEPTH,
-  // matching the server-side cap in shared/operations.js.
-  private async saveNodeDraftRecursive(draft: MessageNodeDraft, isEntryNode: boolean, depth: number): Promise<any> {
-    const buttons = [];
-    for (const b of draft.buttons) {
-      let targetNodeId: string | undefined;
-      if (b.nextAction === 'send_message' && b.followUp && depth < MAX_BRANCH_DEPTH) {
-        const savedChild = await this.saveNodeDraftRecursive(b.followUp, false, depth + 1);
-        targetNodeId = savedChild._id;
-      }
-      buttons.push({ position: b.position, label: b.label, nextAction: { type: b.nextAction, targetNodeId } });
-    }
-
-    const payload = { bodyText: draft.bodyText, buttons };
-    if (draft.targetNodeId) {
-      return firstValueFrom(this.api.updateMessageNode(draft.targetNodeId, payload));
-    }
-    return firstValueFrom(this.api.createMessageNode({ ownerId: this.editingId, isEntryNode, bodyText: draft.bodyText, buttons, depth }));
-  }
-
-  submitEntryTemplate() {
-    if (!this.existingEntryNode) return;
-    this.submittingTemplate = true;
-    this.api.submitMessageNodeTemplate(this.existingEntryNode._id).subscribe({
-      next: (node) => { this.existingEntryNode = node; this.submittingTemplate = false; },
-      error: () => { this.submittingTemplate = false; },
-    });
-  }
-
-  refreshEntryTemplateStatus() {
-    if (!this.existingEntryNode) return;
-    this.refreshingStatus = true;
-    this.api.refreshMessageNodeTemplateStatus(this.existingEntryNode._id).subscribe({
-      next: (node) => { this.existingEntryNode = node; this.refreshingStatus = false; },
-      error: () => { this.refreshingStatus = false; },
-    });
+  applyPreset(preset: any) {
+    if (!preset.buildable || !preset.flowConfig) return;
+    const cfg = preset.flowConfig;
+    this.form = {
+      ...this.emptyForm(),
+      name: preset.action,
+      triggerType: cfg.triggerType,
+      inactivityDays: cfg.inactivityDays ?? this.emptyForm().inactivityDays,
+      pointsThreshold: cfg.pointsThreshold ?? this.emptyForm().pointsThreshold,
+      orderCountThreshold: cfg.orderCountThreshold ?? this.emptyForm().orderCountThreshold,
+    };
+    // A2/A3 escalate from a prior preset stage (e.g. A1) — that only means
+    // something once the merchant has actually created the prior stage's
+    // flow, so this just points them at picking it manually below rather
+    // than guessing which existing Flow (if any) corresponds to it.
+    this.showPresets = false;
+    this.editingId = null;
+    this.showModal = true;
+    this.otherFlows = this.flows;
+    if (!this.isPromotionOnlyTrigger) this.loadPreview();
   }
 
   save() {
     this.saving = true;
     const payload: any = { name: this.form.name };
     if (this.configField === 'delayHours') payload.delayHours = +this.form.delayHours;
-    else payload.inactivityDays = +this.form.inactivityDays;
+    else if (this.configField === 'pointsThreshold') payload.pointsThreshold = +this.form.pointsThreshold;
+    else if (this.configField === 'orderCountAndWindow') {
+      payload.inactivityDays = +this.form.inactivityDays;
+      payload.orderCountThreshold = +this.form.orderCountThreshold;
+    } else payload.inactivityDays = +this.form.inactivityDays;
+
     payload.cooldownDaysOverride = this.form.cooldownDaysOverride === null || this.form.cooldownDaysOverride === ''
       ? null : +this.form.cooldownDaysOverride;
+    payload.promotionId = this.form.promotionId || null;
+    payload.requiresPriorFlowId = this.form.requiresPriorFlowId || null;
+
     const req = this.editingId
       ? this.api.updateFlow(this.editingId, payload)
       : this.api.createFlow({ ...payload, triggerType: this.form.triggerType });
@@ -282,10 +247,21 @@ export class Flows implements OnInit {
   }
 
   // Mirrors the activateFlow backend guard client-side, so the button reads as
-  // disabled instead of round-tripping to a 400. A flow with no custom entry
-  // message (entryNodeId unset) is never blocked.
+  // disabled instead of round-tripping to a 400. Checks whichever message
+  // source the flow actually uses — its referenced Promotion's entry message
+  // (DEFECT-03, the new way) or its own legacy entryNodeId (pre-DEFECT-03,
+  // still supported for any flow already using it). A flow using neither
+  // (a fixed-template original-4 trigger with no Promotion picked) is never blocked.
   needsTemplateApproval(f: any): boolean {
+    if (f.promotionId) {
+      const node = f.promotionId?.entryNodeId;
+      return !node || node.templateStatus !== 'approved';
+    }
     return !!f.entryNodeId && f.entryNodeId.templateStatus !== 'approved';
+  }
+
+  promotionName(f: any): string {
+    return f.promotionId?.name || '';
   }
 
   toggleStatus(f: any, event: Event) {
@@ -348,5 +324,24 @@ export class Flows implements OnInit {
 
   triggerLabel(type: string): string {
     return this.triggerTypes.find(t => t.value === type)?.label || type;
+  }
+
+  presetCategories = [
+    { key: 'repeat_business', label: '📈 Drive Repeat Business' },
+    { key: 'lifetime_value',  label: '💰 Increase Customer Lifetime Value' },
+    { key: 'redemption',      label: '🎁 Increase Loyalty Redemption Rates' },
+  ];
+
+  presetsByCategory(key: string): any[] {
+    return this.presets.filter(p => p.category === key);
+  }
+
+  canSave(): boolean {
+    if (!this.form.name) return false;
+    if (this.promotionRequired && !this.form.promotionId) return false;
+    if (this.configField === 'delayHours') return this.form.delayHours !== null && this.form.delayHours !== undefined;
+    if (this.configField === 'pointsThreshold') return !!this.form.pointsThreshold;
+    if (this.configField === 'orderCountAndWindow') return !!this.form.orderCountThreshold && !!this.form.inactivityDays;
+    return !!this.form.inactivityDays;
   }
 }

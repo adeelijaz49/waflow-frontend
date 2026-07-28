@@ -30,7 +30,10 @@
                   <div class="fw-600" style="font-size:15px">{{ p.name }}</div>
                   <div class="text-muted" style="font-size:12px;margin-top:2px">{{ p.description }}</div>
                 </div>
-                <span class="badge {{ p.status | statusBadge:'promotion' }}">{{ p.status }}</span>
+                <span class="badge {{ p.status | statusBadge:'promotion' }}"
+                  [title]="p.status === 'draft' ? 'Draft — not sent yet. Sending a campaign below will mark it Active.' : p.status === 'active' ? 'Active — has been sent at least once (' + (p.sentCount || 0) + ' message(s) so far).' : 'Expired — past its end date.'">
+                  {{ p.status }}
+                </span>
               </div>
               <div class="promo-meta">
                 @if (p.customerType === 'points') {
@@ -46,6 +49,9 @@
                 }
                 @if (p.sentAt) {
                   <span class="badge badge-success">Sent {{ p.sentCount }} msgs</span>
+                }
+                @if (needsTemplateApproval(p)) {
+                  <span class="badge badge-warning" title="Custom message awaiting WhatsApp approval — sends use the default message until then">⏳ Pending Approval</span>
                 }
               </div>
               <div class="promo-actions">
@@ -69,6 +75,30 @@
           <button class="close-btn" (click)="activePromo = null">×</button>
         </div>
         <div class="card-body">
+
+          <!-- DEFECT-04A: Active is an automatic side-effect of sending a campaign,
+               not a separate manual step — this makes that explicit rather than
+               leaving the merchant to guess what "Draft" means or what activates it. -->
+          @if (activePromo.status === 'draft') {
+            <div class="result-box" style="background:var(--bg-subtle,#f8fafc);border:1px solid var(--border,#e2e8f0);font-size:12px;margin-bottom:12px">
+              📋 This promotion is in <strong>Draft</strong>. It becomes <strong>Active</strong> automatically the moment you send it to customers below — there's no separate "activate" step.
+            </div>
+          } @else if (activePromo.status === 'active') {
+            <div class="result-box result-success" style="font-size:12px;margin-bottom:12px">
+              ✅ <strong>Active</strong> — sent {{ activePromo.sentCount || 0 }} message(s) so far. Sending again below adds to these totals.
+            </div>
+          }
+
+          <!-- DEFECT-02: a custom entry message never blocks sending outright (no
+               separate activate gate exists for Promotions) — it just silently
+               falls back to the default message until Meta approves it, so this
+               makes that state visible rather than leaving the merchant to
+               wonder why customers got the "wrong" message. -->
+          @if (needsTemplateApproval(activePromo)) {
+            <div class="result-box" style="background:var(--bg-subtle,#fffbeb);border:1px solid #f59e0b;font-size:12px;margin-bottom:12px">
+              ⏳ This promotion has a custom message awaiting WhatsApp template approval. Until approved, sends will use the default message instead.
+            </div>
+          }
 
           <!-- Products in promo -->
           @if (activePromo.products?.length) {
@@ -141,50 +171,95 @@
             }
           }
 
-          <!-- Recommended customers -->
-          <div class="section-label" style="margin-top:16px">
-            Recommended Customers
-            <span style="font-weight:400;color:var(--text-muted)"> — {{ recommendedCustomers.length }} found</span>
+          <!-- Customer targeting: Recommended (RFM-ranked, capped) vs All Customers (searchable, full base) -->
+          <div class="section-label" style="margin-top:16px; display:flex; align-items:center; gap:8px">
+            <button class="btn btn-sm" [class.btn-primary]="customerViewMode === 'recommended'" [class.btn-outline]="customerViewMode !== 'recommended'"
+              (click)="switchCustomerView('recommended')">Recommended</button>
+            <button class="btn btn-sm" [class.btn-primary]="customerViewMode === 'all'" [class.btn-outline]="customerViewMode !== 'all'"
+              (click)="switchCustomerView('all')">All Customers</button>
+            <span style="font-weight:400;color:var(--text-muted);font-size:12px">
+              {{ customerViewMode === 'all' ? allCustomersTotal + ' total' : recommendedCustomers.length + ' found' }}
+            </span>
           </div>
 
-          <div class="recs-toolbar">
-            <input type="number" [(ngModel)]="recommendLimit" placeholder="100" style="width:80px" min="1" max="500" />
-            <button class="btn btn-outline btn-sm" (click)="loadRecommended()" [disabled]="loadingRecs">Refresh</button>
-            <button class="btn btn-outline btn-sm" (click)="selectAll()">Select All</button>
-            <button class="btn btn-outline btn-sm" (click)="clearAll()">Clear</button>
-            <span class="text-muted" style="font-size:12px">{{ selectedCustomerIds.size }} selected</span>
-          </div>
-
-          @if (loadingRecs) {
-            <div class="loading" style="padding:20px">Finding the best customers to target...</div>
-          } @else {
-            <div class="customer-rec-list">
-              @for (c of recommendedCustomers; track c._id) {
-                <div class="rec-row"
-                  [class.selected]="selectedCustomerIds.has(c._id)"
-                  [class.disabled]="!customerCanAfford(c)"
-                  [style.opacity]="customerCanAfford(c) ? '1' : '0.45'"
-                  (click)="toggleCustomer(c)">
-                  <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" [disabled]="!customerCanAfford(c)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c)" />
-                  <div class="rec-info">
-                    <div class="fw-600" style="font-size:13px">{{ c.firstname }} {{ c.lastname }}</div>
-                    @if (isPointsPromo()) {
-                      <div class="text-muted" style="font-size:11px">{{ c.loyaltyPoints }} pts available
-                        @if (!customerCanAfford(c)) { <span style="color:#dc2626"> — Not enough points</span> }
-                      </div>
-                    } @else {
-                      <div class="text-muted" style="font-size:11px">{{ c.orderCount }} orders · {{ c.totalSpent | appCurrency }} spent</div>
-                    }
-                  </div>
-                  @if (!isPointsPromo()) {
-                    <div class="segment-badge" [style.color]="segmentColor(c.segment)" [title]="'RFM score: ' + c.rfmScore">{{ c.segment }}</div>
-                  }
-                  <span class="badge badge-info" style="font-size:10px">{{ c.loyaltyPoints }} pts</span>
-                </div>
-              } @empty {
-                <div class="empty-state" style="padding:20px">No customer data available. Run the seed script first.</div>
-              }
+          @if (customerViewMode === 'recommended') {
+            <div class="recs-toolbar">
+              <input type="number" [(ngModel)]="recommendLimit" placeholder="100" style="width:80px" min="1" max="500" />
+              <button class="btn btn-outline btn-sm" (click)="loadRecommended()" [disabled]="loadingRecs">Refresh</button>
+              <button class="btn btn-outline btn-sm" (click)="selectAll()">Select All</button>
+              <button class="btn btn-outline btn-sm" (click)="clearAll()">Clear</button>
+              <span class="text-muted" style="font-size:12px">{{ selectedCustomerIds.size }} selected</span>
             </div>
+
+            @if (loadingRecs) {
+              <div class="loading" style="padding:20px">Finding the best customers to target...</div>
+            } @else {
+              <div class="customer-rec-list">
+                @for (c of recommendedCustomers; track c._id) {
+                  <div class="rec-row"
+                    [class.selected]="selectedCustomerIds.has(c._id)"
+                    [class.disabled]="!customerCanAfford(c)"
+                    [style.opacity]="customerCanAfford(c) ? '1' : '0.45'"
+                    (click)="toggleCustomer(c)">
+                    <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" [disabled]="!customerCanAfford(c)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c)" />
+                    <div class="rec-info">
+                      <div class="fw-600" style="font-size:13px">{{ c.firstname }} {{ c.lastname }}</div>
+                      @if (isPointsPromo()) {
+                        <div class="text-muted" style="font-size:11px">{{ c.loyaltyPoints }} pts available
+                          @if (!customerCanAfford(c)) { <span style="color:#dc2626"> — Not enough points</span> }
+                        </div>
+                      } @else {
+                        <div class="text-muted" style="font-size:11px">{{ c.orderCount }} orders · {{ c.totalSpent | appCurrency }} spent</div>
+                      }
+                    </div>
+                    @if (!isPointsPromo()) {
+                      <div class="segment-badge" [style.color]="segmentColor(c.segment)" [title]="'RFM score: ' + c.rfmScore">{{ c.segment }}</div>
+                    }
+                    <span class="badge badge-info" style="font-size:10px">{{ c.loyaltyPoints }} pts</span>
+                  </div>
+                } @empty {
+                  <div class="empty-state" style="padding:20px">No customer data available. Run the seed script first.</div>
+                }
+              </div>
+            }
+          } @else {
+            <div class="recs-toolbar">
+              <input type="text" [(ngModel)]="allCustomersSearch" (keyup.enter)="searchAllCustomers()" placeholder="Search name or phone…" style="flex:1;min-width:160px" />
+              <button class="btn btn-outline btn-sm" (click)="searchAllCustomers()" [disabled]="loadingAllCustomers">Search</button>
+              <button class="btn btn-outline btn-sm" (click)="selectAll()">Select Page</button>
+              <button class="btn btn-outline btn-sm" (click)="clearAll()">Clear</button>
+              <span class="text-muted" style="font-size:12px">{{ selectedCustomerIds.size }} selected</span>
+            </div>
+
+            @if (loadingAllCustomers) {
+              <div class="loading" style="padding:20px">Loading customers...</div>
+            } @else {
+              <div class="customer-rec-list">
+                @for (c of allCustomers; track c._id) {
+                  <div class="rec-row"
+                    [class.selected]="selectedCustomerIds.has(c._id)"
+                    [class.disabled]="!customerCanAfford(c)"
+                    [style.opacity]="customerCanAfford(c) ? '1' : '0.45'"
+                    (click)="toggleCustomer(c)">
+                    <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" [disabled]="!customerCanAfford(c)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c)" />
+                    <div class="rec-info">
+                      <div class="fw-600" style="font-size:13px">{{ c.firstname }} {{ c.lastname }}</div>
+                      <div class="text-muted" style="font-size:11px">{{ c.phone }}
+                        @if (isPointsPromo() && !customerCanAfford(c)) { <span style="color:#dc2626"> — Not enough points</span> }
+                      </div>
+                    </div>
+                    <span class="badge badge-info" style="font-size:10px">{{ c.loyaltyPoints }} pts</span>
+                  </div>
+                } @empty {
+                  <div class="empty-state" style="padding:20px">No customers match your search.</div>
+                }
+              </div>
+              <div class="recs-toolbar" style="margin-top:8px">
+                <button class="btn btn-outline btn-sm" (click)="allCustomersPrevPage()" [disabled]="allCustomersPage <= 1">← Prev</button>
+                <span class="text-muted" style="font-size:12px">Page {{ allCustomersPage }} of {{ allCustomersTotalPages() }}</span>
+                <button class="btn btn-outline btn-sm" (click)="allCustomersNextPage()" [disabled]="allCustomersPage * allCustomersPageSize >= allCustomersTotal">Next →</button>
+              </div>
+            }
           }
 
           <!-- Send Button -->
@@ -356,6 +431,79 @@
                 </div>
               }
             </div>
+          </div>
+        }
+
+        @if (!viewMode && editingPromoId) {
+          <div class="form-group custom-entry-section">
+            <label class="custom-entry-toggle">
+              <input type="checkbox" [checked]="useCustomEntry" (change)="toggleCustomEntry()" />
+              Customize this message
+            </label>
+            <div class="text-muted" style="font-size:11px;margin-top:2px">
+              Replace the default message above with your own, and configure what happens when a customer taps a button.
+            </div>
+
+            @if (useCustomEntry) {
+              <div class="custom-entry-editor">
+                <div class="detail-tabs" style="padding:0;margin-bottom:10px">
+                  <button type="button" class="tab-btn" [class.active]="editorViewMode === 'flat'" (click)="editorViewMode = 'flat'">Flat Editor</button>
+                  <button type="button" class="tab-btn" [class.active]="editorViewMode === 'conversation'" (click)="editorViewMode = 'conversation'">Conversation View</button>
+                </div>
+
+                @if (editorViewMode === 'flat') {
+                  <app-message-node-editor
+                    variableSource="promotion"
+                    [node]="entryDraft"
+                    (nodeChange)="entryDraft = $event">
+                  </app-message-node-editor>
+                } @else {
+                  <app-conversation-flow-viewer
+                    variableSource="promotion"
+                    [root]="entryDraft"
+                    [templateStatus]="existingEntryNode?.templateStatus || null"
+                    (rootChange)="entryDraft = $event">
+                  </app-conversation-flow-viewer>
+                }
+
+                @if (existingEntryNode) {
+                  <div class="template-status-row">
+                    <span class="text-muted" style="font-size:12px">Template status:</span>
+                    <span class="badge"
+                      [class.badge-success]="existingEntryNode.templateStatus === 'approved'"
+                      [class.badge-danger]="existingEntryNode.templateStatus === 'rejected'"
+                      [class.badge-warning]="existingEntryNode.templateStatus === 'pending'"
+                      [class.badge-neutral]="existingEntryNode.templateStatus === 'not_created'">
+                      {{ existingEntryNode.templateStatus }}
+                    </span>
+                    <button class="btn btn-outline btn-sm" (click)="refreshEntryTemplateStatus()" [disabled]="refreshingStatus">
+                      {{ refreshingStatus ? 'Checking...' : 'Refresh Status' }}
+                    </button>
+                  </div>
+                }
+
+                @if (entryError) {
+                  <div class="result-box result-error" style="margin-top:10px">{{ entryError }}</div>
+                }
+                @if (hasIncompleteButtons(entryDraft)) {
+                  <div class="text-muted" style="font-size:11px;margin-top:6px">Every button (at every level) needs a label before this can be saved.</div>
+                }
+
+                <div style="display:flex;gap:8px;margin-top:10px">
+                  <button class="btn btn-outline btn-sm" (click)="saveCustomEntry()" [disabled]="savingEntryNode || !entryDraft.bodyText || hasIncompleteButtons(entryDraft)">
+                    {{ savingEntryNode ? 'Saving...' : 'Save Custom Message' }}
+                  </button>
+                  @if (existingEntryNode && existingEntryNode.templateStatus !== 'approved') {
+                    <button class="btn btn-outline btn-sm" (click)="submitEntryTemplate()" [disabled]="submittingTemplate">
+                      {{ submittingTemplate ? 'Submitting...' : 'Submit for Approval' }}
+                    </button>
+                  }
+                </div>
+                @if (existingEntryNode && existingEntryNode.templateStatus !== 'approved') {
+                  <div class="text-muted" style="font-size:11px;margin-top:6px">Until Meta approves this custom template, sends will silently fall back to the default message above.</div>
+                }
+              </div>
+            }
           </div>
         }
       </div>

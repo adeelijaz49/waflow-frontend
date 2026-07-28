@@ -4,7 +4,10 @@
       <div class="page-title">Automated Flows</div>
       <div class="page-sub">Set a trigger once — Waflow messages every qualifying customer automatically, no manual campaigns.</div>
     </div>
-    <button class="btn btn-primary" (click)="openCreate()">+ New Flow</button>
+    <div class="flex gap-2">
+      <button class="btn btn-outline" (click)="openPresets()">💡 Browse Presets</button>
+      <button class="btn btn-primary" (click)="openCreate()">+ New Flow</button>
+    </div>
   </div>
 
   <div class="flows-layout">
@@ -23,14 +26,20 @@
                 <div>
                   <div class="fw-600" style="font-size:15px">{{ f.name }}</div>
                   <div class="text-muted" style="font-size:12px;margin-top:2px">{{ triggerLabel(f.triggerType) }}</div>
+                  @if (promotionName(f)) {
+                    <div class="text-muted" style="font-size:11px;margin-top:2px">📣 Sends: {{ promotionName(f) }}</div>
+                  }
                 </div>
                 <span class="badge {{ f.status | statusBadge:'flow' }}">{{ f.status }}</span>
               </div>
+              @if (needsTemplateApproval(f)) {
+                <span class="badge badge-warning" style="font-size:10px">⏳ Pending Approval</span>
+              }
               <div class="flow-actions">
                 <button class="btn btn-outline btn-sm" (click)="openEdit(f, $event)">Edit</button>
                 <button class="btn btn-outline btn-sm" (click)="toggleStatus(f, $event)"
                   [disabled]="f.status !== 'active' && needsTemplateApproval(f)"
-                  [title]="f.status !== 'active' && needsTemplateApproval(f) ? 'Custom message template needs Meta approval before this flow can be activated' : ''">
+                  [title]="f.status !== 'active' && needsTemplateApproval(f) ? 'The message this flow sends needs an approved WhatsApp template before it can be activated' : ''">
                   {{ f.status === 'active' ? 'Pause' : 'Activate' }}
                 </button>
                 <button class="btn btn-danger btn-sm" (click)="deleteFlow(f, $event)">Delete</button>
@@ -145,6 +154,24 @@
             <input type="number" [(ngModel)]="form.delayHours" min="0" />
             <div class="text-muted" style="font-size:11px;margin-top:4px">{{ selectedTrigger?.configHint }}</div>
           </div>
+        } @else if (configField === 'pointsThreshold') {
+          <div class="form-group">
+            <label>{{ selectedTrigger?.configLabel || 'Points threshold' }}</label>
+            <input type="number" [(ngModel)]="form.pointsThreshold" min="1" />
+            <div class="text-muted" style="font-size:11px;margin-top:4px">{{ selectedTrigger?.configHint }}</div>
+          </div>
+        } @else if (configField === 'orderCountAndWindow') {
+          <div class="form-row">
+            <div class="form-group">
+              <label>Order count</label>
+              <input type="number" [(ngModel)]="form.orderCountThreshold" min="1" />
+            </div>
+            <div class="form-group">
+              <label>Within window (days)</label>
+              <input type="number" [(ngModel)]="form.inactivityDays" min="1" />
+            </div>
+          </div>
+          <div class="text-muted" style="font-size:11px;margin-top:-8px;margin-bottom:12px">{{ selectedTrigger?.configHint }}</div>
         } @else {
           <div class="form-group">
             <label>{{ selectedTrigger?.configLabel || 'Inactivity threshold (days)' }}</label>
@@ -159,97 +186,97 @@
           <div class="text-muted" style="font-size:11px;margin-top:4px">Leave blank to use the global cross-flow cooldown (Settings). Set a number to override it just for this flow.</div>
         </div>
 
+        <!-- DEFECT-03: the action side of the rule — message content/branching
+             lives entirely in the referenced Promotion (DEFECT-02), not here. -->
         <div class="form-group">
-          <label>Message Preview</label>
-          @if (previewLoading) {
-            <div class="text-muted" style="font-size:12px">Loading preview...</div>
-          } @else if (preview) {
-            <div class="flow-preview">
-              <div class="flow-preview-body">{{ preview.body }}</div>
-              <div class="flow-preview-button">{{ preview.buttonLabel }}</div>
-            </div>
+          <label>Sends this Promotion{{ promotionRequired ? '' : ' (optional — otherwise uses the fixed default message)' }}</label>
+          <select [(ngModel)]="form.promotionId">
+            <option [ngValue]="null">— Select a Promotion —</option>
+            @for (p of allPromotions; track p._id) {
+              <option [ngValue]="p._id">{{ p.name }}</option>
+            }
+          </select>
+          @if (promotionRequired && !form.promotionId) {
+            <div class="text-muted" style="font-size:11px;margin-top:4px">⚠️ This trigger type has no fixed default message — a Promotion is required.</div>
           }
+          <div class="text-muted" style="font-size:11px;margin-top:4px">
+            The Promotion needs its own custom message (configured in Promotions) approved by Meta before this flow can be activated.
+          </div>
         </div>
 
-        @if (editingId && branchingSupported) {
-          <div class="form-group custom-entry-section">
-            <label class="custom-entry-toggle">
-              <input type="checkbox" [checked]="useCustomEntry" (change)="toggleCustomEntry()" />
-              Customize this message
-            </label>
-            <div class="text-muted" style="font-size:11px;margin-top:2px">
-              Replace the default message above with your own, and configure what happens when a customer taps a button.
-            </div>
-
-            @if (useCustomEntry) {
-              <div class="custom-entry-editor">
-                <div class="detail-tabs" style="padding:0;margin-bottom:10px">
-                  <button type="button" class="tab-btn" [class.active]="editorViewMode === 'flat'" (click)="editorViewMode = 'flat'">Flat Editor</button>
-                  <button type="button" class="tab-btn" [class.active]="editorViewMode === 'conversation'" (click)="editorViewMode = 'conversation'">Conversation View</button>
-                </div>
-
-                @if (editorViewMode === 'flat') {
-                  <app-message-node-editor
-                    [triggerType]="form.triggerType"
-                    [node]="entryDraft"
-                    (nodeChange)="entryDraft = $event">
-                  </app-message-node-editor>
-                } @else {
-                  <app-conversation-flow-viewer
-                    [triggerType]="form.triggerType"
-                    [root]="entryDraft"
-                    [templateStatus]="existingEntryNode?.templateStatus || null"
-                    (rootChange)="entryDraft = $event">
-                  </app-conversation-flow-viewer>
-                }
-
-                @if (existingEntryNode) {
-                  <div class="template-status-row">
-                    <span class="text-muted" style="font-size:12px">Template status:</span>
-                    <span class="badge"
-                      [class.badge-success]="existingEntryNode.templateStatus === 'approved'"
-                      [class.badge-danger]="existingEntryNode.templateStatus === 'rejected'"
-                      [class.badge-warning]="existingEntryNode.templateStatus === 'pending'"
-                      [class.badge-neutral]="existingEntryNode.templateStatus === 'not_created'">
-                      {{ existingEntryNode.templateStatus }}
-                    </span>
-                    <button class="btn btn-outline btn-sm" (click)="refreshEntryTemplateStatus()" [disabled]="refreshingStatus">
-                      {{ refreshingStatus ? 'Checking...' : 'Refresh Status' }}
-                    </button>
-                  </div>
-                }
-
-                @if (entryError) {
-                  <div class="result-box result-error" style="margin-top:10px">{{ entryError }}</div>
-                }
-                @if (hasIncompleteButtons(entryDraft)) {
-                  <div class="text-muted" style="font-size:11px;margin-top:6px">Every button (at every level) needs a label before this can be saved.</div>
-                }
-
-                <div style="display:flex;gap:8px;margin-top:10px">
-                  <button class="btn btn-outline btn-sm" (click)="saveCustomEntry()" [disabled]="savingEntryNode || !entryDraft.bodyText || hasIncompleteButtons(entryDraft)">
-                    {{ savingEntryNode ? 'Saving...' : 'Save Custom Message' }}
-                  </button>
-                  @if (existingEntryNode && existingEntryNode.templateStatus !== 'approved') {
-                    <button class="btn btn-outline btn-sm" (click)="submitEntryTemplate()" [disabled]="submittingTemplate">
-                      {{ submittingTemplate ? 'Submitting...' : 'Submit for Approval' }}
-                    </button>
-                  }
-                </div>
-                @if (existingEntryNode && existingEntryNode.templateStatus !== 'approved') {
-                  <div class="text-muted" style="font-size:11px;margin-top:6px">This flow can't be activated until Meta approves this custom template.</div>
-                }
+        @if (!promotionRequired && !form.promotionId) {
+          <div class="form-group">
+            <label>Message Preview (fixed default — pick a Promotion above to send something custom instead)</label>
+            @if (previewLoading) {
+              <div class="text-muted" style="font-size:12px">Loading preview...</div>
+            } @else if (preview) {
+              <div class="flow-preview">
+                <div class="flow-preview-body">{{ preview.body }}</div>
+                <div class="flow-preview-button">{{ preview.buttonLabel }}</div>
               </div>
             }
           </div>
         }
+
+        <!-- §8.3: cascade/escalation — independent rules with a mutually
+             exclusive condition, not a native sequence. -->
+        <div class="form-group">
+          <label>Only fire after this other flow already messaged the customer without converting (optional)</label>
+          <select [(ngModel)]="form.requiresPriorFlowId">
+            <option [ngValue]="null">— None —</option>
+            @for (of of otherFlows; track of._id) {
+              <option [ngValue]="of._id">{{ of.name }}</option>
+            }
+          </select>
+          <div class="text-muted" style="font-size:11px;margin-top:4px">For an escalating sequence like a 30/60/90-day win-back — the 60-day stage only fires for customers already messaged (not converted) by the 30-day stage.</div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="closeModal()">Cancel</button>
         <button class="btn btn-primary" (click)="save()"
-          [disabled]="saving || !form.name || (configField === 'delayHours' ? form.delayHours === null || form.delayHours === undefined : !form.inactivityDays)">
+          [disabled]="saving || !canSave()">
           {{ saving ? 'Saving...' : (editingId ? 'Update Flow' : 'Create Flow') }}
         </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- §8.2/§9 static preset catalog — "Industry Best Practice" -->
+@if (showPresets) {
+  <div class="modal-overlay" (click)="showPresets = false">
+    <div class="modal" style="max-width:720px" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">💡 Industry Best Practice Presets</span>
+        <button class="close-btn" (click)="showPresets = false">×</button>
+      </div>
+      <div class="modal-body">
+        @if (loadingPresets) {
+          <div class="loading" style="padding:20px">Loading presets...</div>
+        } @else {
+          @for (cat of presetCategories; track cat.key) {
+            <div class="section-label" style="margin-top:14px">{{ cat.label }}</div>
+            <div class="preset-list">
+              @for (p of presetsByCategory(cat.key); track p.id) {
+                <div class="preset-card" [class.preset-card-disabled]="!p.buildable">
+                  <div class="preset-card-header">
+                    <span class="fw-600" style="font-size:13px">{{ p.action }}</span>
+                    @if (p.buildable) {
+                      <button class="btn btn-primary btn-sm" (click)="applyPreset(p)">Apply</button>
+                    } @else {
+                      <span class="badge badge-neutral" title="Needs infrastructure this release doesn't build yet">Not yet available</span>
+                    }
+                  </div>
+                  <div class="text-muted" style="font-size:11px;margin-top:4px"><code>{{ p.rule }}</code></div>
+                  <div class="text-muted" style="font-size:12px;margin-top:6px">{{ p.why }}</div>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showPresets = false">Close</button>
       </div>
     </div>
   </div>
