@@ -40,7 +40,55 @@
           </div>
         }
       }
-po   </thead>
+      <div class="stat-card">
+        <div class="stat-label">Repeat Customers</div>
+        <div class="stat-value">{{ stats.repeatCustomers | number }}</div>
+        <div class="stat-change">2+ orders</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Campaign Revenue</div>
+        <div class="stat-value">{{ stats.campaignRevenue | appCurrency:'symbol':'1.0-0' }}</div>
+        <div class="stat-change">From WhatsApp campaigns</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Inactive Customers Recovered</div>
+        <div class="stat-value">{{ stats.inactiveCustomersRecovered | number }}</div>
+        <div class="stat-change">Won back by a campaign</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">WhatsApp Messages Sent</div>
+        <div class="stat-value">{{ stats.messagesSent | number }}</div>
+        <div class="stat-change">Promotional campaigns</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Loyalty Points Issued</div>
+        <div class="stat-value">{{ stats.loyaltyPointsIssued | number }}</div>
+        <div class="stat-change">All time</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Conversion Rate</div>
+        <div class="stat-value">{{ stats.conversionRate }}%</div>
+        <div class="stat-change">Campaign messages → orders</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Recent Orders</span>
+        <a routerLink="/orders" class="btn btn-outline btn-sm">View All</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
           <tbody>
             @for (order of stats.recentOrders; track order._id) {
               <tr>
