@@ -253,4 +253,15 @@ export class ApiService {
     form.append('image', file);
     return this.http.post<{ url: string }>(`${API}/uploads/image`, form);
   }
+
+  // ── AI Mode ───────────────────────────────────────────────────────────────
+  getAiChatSession(sessionId: string): Observable<any> {
+    return this.http.get(`${API}/ai-chat/session/${sessionId}`);
+  }
+  sendAiChatMessage(sessionId: string, message: string): Observable<any> {
+    return this.http.post(`${API}/ai-chat/message`, { sessionId, message });
+  }
+  confirmAiAction(sessionId: string, actionId: string, confirm: boolean): Observable<any> {
+    return this.http.post(`${API}/ai-chat/confirm-action`, { sessionId, actionId, confirm });
+  }
 }
