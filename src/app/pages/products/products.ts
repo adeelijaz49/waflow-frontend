@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { SettingsService } from '../../shared/settings.service';
+import { ImageCarousel } from '../../shared/image-carousel/image-carousel';
 
 @Component({
   selector: 'app-products',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, ImageCarousel],
   templateUrl: './products.html',
   styleUrl: './products.css',
 })
@@ -55,11 +56,6 @@ export class Products implements OnInit {
 
   onSearch() { this.page = 1; this.load(); }
 
-  // Broken/unreachable image URLs (common with hand-entered links) fall back
-  // to the same placeholder box used when no image is set at all.
-  brokenImages = new Set<string>();
-  onImgError(url: string) { this.brokenImages.add(url); }
-
   openAdd() {
     this.editingId = null;
     this.form = this.emptyForm();
@@ -85,6 +81,36 @@ export class Products implements OnInit {
 
   removeVariant(i: number) {
     this.form.variants.splice(i, 1);
+  }
+
+  // The comma-separated string is the single source of truth for form.images
+  // (matches the existing manual-paste field) — uploads and removals both
+  // just rewrite that string, so the two entry methods never fight each other.
+  get formImagesList(): string[] {
+    return this.form.images ? this.form.images.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+  }
+
+  uploadingImage = false;
+  uploadImage(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.uploadingImage = true;
+    this.api.uploadImage(file).subscribe({
+      next: (res) => {
+        const list = this.formImagesList;
+        list.push(res.url);
+        this.form.images = list.join(', ');
+        this.uploadingImage = false;
+      },
+      error: () => { this.uploadingImage = false; },
+    });
+    (event.target as HTMLInputElement).value = ''; // allow re-selecting the same file
+  }
+
+  removeImage(index: number) {
+    const list = this.formImagesList;
+    list.splice(index, 1);
+    this.form.images = list.join(', ');
   }
 
   save() {

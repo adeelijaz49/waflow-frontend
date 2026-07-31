@@ -243,4 +243,11 @@ export class ApiService {
   markNoShow(bookingId: string): Observable<any> {
     return this.http.post(`${API}/services/bookings/${bookingId}/no-show`, {});
   }
+
+  // ── Uploads ───────────────────────────────────────────────────────────────
+  uploadImage(file: File): Observable<{ url: string }> {
+    const form = new FormData();
+    form.append('image', file);
+    return this.http.post<{ url: string }>(`${API}/uploads/image`, form);
+  }
 }

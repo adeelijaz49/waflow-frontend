@@ -22,11 +22,7 @@
           <div class="service-card" [class.active-card]="activeService?._id === s._id">
             <div class="service-card-header">
               <div class="service-cell">
-                @if (s.images?.[0] && !brokenImages.has(s.images[0])) {
-                  <img [src]="s.images[0]" alt="" class="service-thumb" (error)="onImgError(s.images[0])" />
-                } @else {
-                  <div class="service-thumb service-thumb-placeholder">🖼️</div>
-                }
+                <app-image-carousel [images]="s.images" [size]="52"></app-image-carousel>
                 <div>
                   <div class="fw-600">{{ s.name }}</div>
                   @if (s.category) { <div class="text-muted" style="font-size:12px">{{ s.category }}</div> }
@@ -234,8 +230,25 @@
           </div>
         </div>
         <div class="form-group">
-          <label>Image URLs (comma-separated)</label>
-          <input [(ngModel)]="serviceForm.images" placeholder="https://..." />
+          <label>Images</label>
+          @if (serviceFormImagesList.length) {
+            <div class="image-manage-row">
+              @for (url of serviceFormImagesList; track $index) {
+                <div class="image-manage-thumb">
+                  <img [src]="url" alt="" />
+                  <button type="button" class="image-manage-remove" (click)="removeImage($index)" title="Remove">×</button>
+                </div>
+              }
+            </div>
+          }
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label class="btn btn-outline btn-sm image-upload-btn">
+              {{ uploadingImage ? 'Uploading...' : '📤 Upload Image' }}
+              <input type="file" accept="image/png,image/jpeg" (change)="uploadImage($event)" [disabled]="uploadingImage" hidden />
+            </label>
+            <span class="text-muted" style="font-size:11px">or paste URLs below (comma-separated)</span>
+          </div>
+          <input [(ngModel)]="serviceForm.images" placeholder="https://..." style="margin-top:6px" />
         </div>
       </div>
       <div class="modal-footer">

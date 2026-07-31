@@ -5,10 +5,11 @@ import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { SettingsService } from '../../shared/settings.service';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
+import { ImageCarousel } from '../../shared/image-carousel/image-carousel';
 
 @Component({
   selector: 'app-services',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, ImageCarousel],
   templateUrl: './services.html',
   styleUrl: './services.css',
 })
@@ -46,11 +47,6 @@ export class Services implements OnInit {
   }
 
   ngOnInit() { this.loadServices(); }
-
-  // Broken/unreachable image URLs (common with hand-entered links) fall back
-  // to the same placeholder box used when no image is set at all.
-  brokenImages = new Set<string>();
-  onImgError(url: string) { this.brokenImages.add(url); }
 
   emptyServiceForm() {
     return { name: '', description: '', category: '', duration: 60, basePrice: 0, pointsPrice: 0, images: '' };
@@ -114,6 +110,37 @@ export class Services implements OnInit {
       images: s.images?.join(', ') || '',
     };
     this.showServiceModal = true;
+  }
+
+  // The comma-separated string is the single source of truth for
+  // serviceForm.images (matches the existing manual-paste field) — uploads
+  // and removals both just rewrite that string, so the two entry methods
+  // never fight each other.
+  get serviceFormImagesList(): string[] {
+    return this.serviceForm.images ? this.serviceForm.images.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+  }
+
+  uploadingImage = false;
+  uploadImage(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.uploadingImage = true;
+    this.api.uploadImage(file).subscribe({
+      next: (res) => {
+        const list = this.serviceFormImagesList;
+        list.push(res.url);
+        this.serviceForm.images = list.join(', ');
+        this.uploadingImage = false;
+      },
+      error: () => { this.uploadingImage = false; },
+    });
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  removeImage(index: number) {
+    const list = this.serviceFormImagesList;
+    list.splice(index, 1);
+    this.serviceForm.images = list.join(', ');
   }
 
   saveService() {

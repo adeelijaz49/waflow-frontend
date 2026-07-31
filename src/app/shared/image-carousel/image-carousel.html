@@ -1,0 +1,16 @@
+<div class="carousel" [style.width.px]="size" [style.height.px]="size">
+  @if (current) {
+    <img [src]="current" alt="" class="carousel-img" (error)="onError(current)" />
+    @if (validImages.length > 1) {
+      <button type="button" class="carousel-nav carousel-prev" (click)="prev($event)">‹</button>
+      <button type="button" class="carousel-nav carousel-next" (click)="next($event)">›</button>
+      <div class="carousel-dots">
+        @for (img of validImages; track $index) {
+          <span class="carousel-dot" [class.active]="$index === index" (click)="goTo($event, $index)"></span>
+        }
+      </div>
+    }
+  } @else {
+    <div class="carousel-placeholder">🖼️</div>
+  }
+</div>

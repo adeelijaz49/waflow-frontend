@@ -39,11 +39,7 @@
               <tr>
                 <td>
                   <div class="product-cell">
-                    @if (p.images?.[0] && !brokenImages.has(p.images[0])) {
-                      <img [src]="p.images[0]" alt="" class="product-thumb" (error)="onImgError(p.images[0])" />
-                    } @else {
-                      <div class="product-thumb product-thumb-placeholder">🖼️</div>
-                    }
+                    <app-image-carousel [images]="p.images" [size]="52"></app-image-carousel>
                     <div>
                       <div class="fw-600">{{ p.name }}</div>
                       @if (p.description) {
@@ -130,8 +126,25 @@
           <input type="number" [(ngModel)]="form.basePrice" placeholder="0.00" min="0" step="0.01" />
         </div>
         <div class="form-group">
-          <label>Image URLs (comma-separated)</label>
-          <input [(ngModel)]="form.images" placeholder="https://example.com/image.jpg, ..." />
+          <label>Images</label>
+          @if (formImagesList.length) {
+            <div class="image-manage-row">
+              @for (url of formImagesList; track $index) {
+                <div class="image-manage-thumb">
+                  <img [src]="url" alt="" />
+                  <button type="button" class="image-manage-remove" (click)="removeImage($index)" title="Remove">×</button>
+                </div>
+              }
+            </div>
+          }
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label class="btn btn-outline btn-sm image-upload-btn">
+              {{ uploadingImage ? 'Uploading...' : '📤 Upload Image' }}
+              <input type="file" accept="image/png,image/jpeg" (change)="uploadImage($event)" [disabled]="uploadingImage" hidden />
+            </label>
+            <span class="text-muted" style="font-size:11px">or paste URLs below (comma-separated)</span>
+          </div>
+          <input [(ngModel)]="form.images" placeholder="https://example.com/image.jpg, ..." style="margin-top:6px" />
         </div>
         <div class="form-group">
           <label>Sizes &amp; Stock</label>
