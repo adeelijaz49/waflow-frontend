@@ -88,6 +88,8 @@ export class AiMode implements OnInit {
       error: (err) => {
         this.sending = false;
         this.error = err.error?.error || 'Something went wrong — please try again.';
+        this.messages.pop(); // undo the optimistic bubble so a retry doesn't duplicate it
+        this.input = text;
       },
     });
   }
@@ -107,7 +109,10 @@ export class AiMode implements OnInit {
       },
       error: (err) => {
         this.confirming = false;
-        this.error = err.error?.error || "That didn't go through — please try again.";
+        // Leave pendingAction in place: confirm-action is idempotent-safe on retry —
+        // the server already cleared it if the tool actually ran, so a retry either
+        // completes it for real or gets a safe 409 ("no longer pending").
+        this.error = err.error?.error || "That didn't go through — you can try Confirm again.";
       },
     });
   }
