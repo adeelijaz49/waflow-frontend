@@ -15,6 +15,13 @@
     <div class="card-body">
       <div class="form-row">
         <div class="form-group">
+          <label>Your name</label>
+          <input [(ngModel)]="loyaltySettings.merchantName" placeholder="e.g. Adeel" />
+          <div class="text-muted" style="font-size:12px;margin-top:4px">Used to greet you in AI Mode.</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
           <label>How many points should customers earn per {{ loyaltySettings.currency }} spent?</label>
           <input type="number" [(ngModel)]="loyaltySettings.loyaltyPointsPerUnit" min="1" />
         </div>

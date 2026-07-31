@@ -6,9 +6,10 @@ export interface LoyaltySettings {
   loyaltyPointsPerUnit: number;
   minPointsPerPurchase: number;
   currency: string;
+  merchantName: string;
 }
 
-const DEFAULTS: LoyaltySettings = { loyaltyPointsPerUnit: 100, minPointsPerPurchase: 100, currency: 'AUD' };
+const DEFAULTS: LoyaltySettings = { loyaltyPointsPerUnit: 100, minPointsPerPurchase: 100, currency: 'AUD', merchantName: '' };
 
 // Single cached copy of Settings so the currency pipe (and anything else) doesn't
 // need to fetch it independently. Refreshed whenever the Settings page saves.

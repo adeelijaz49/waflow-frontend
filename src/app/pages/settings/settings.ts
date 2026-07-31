@@ -11,7 +11,7 @@ import { SettingsService } from '../../shared/settings.service';
   styleUrl: './settings.css',
 })
 export class Settings implements OnInit {
-  loyaltySettings: any = { loyaltyPointsPerUnit: 100, minPointsPerPurchase: 100, currency: 'AUD', flowCooldownDays: 3 };
+  loyaltySettings: any = { loyaltyPointsPerUnit: 100, minPointsPerPurchase: 100, currency: 'AUD', flowCooldownDays: 3, merchantName: '' };
   loyaltySaving  = false;
   loyaltySaved   = false;
 
