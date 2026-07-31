@@ -4,26 +4,113 @@
       <div class="page-title">Demo Mode</div>
       <div class="page-sub">A guided, real WhatsApp send to a demo customer — no simulation, tap along on the phone.</div>
     </div>
-    @if (step !== 'promotion') {
+    @if (step !== 'template') {
       <button class="btn btn-outline" (click)="resetDemo()">↺ Restart Demo</button>
     }
   </div>
 
   <!-- Step indicator -->
   <div class="demo-steps">
-    <div class="demo-step" [class.active]="step === 'promotion'" [class.done]="step !== 'promotion'">1. Pick Promotion</div>
+    <div class="demo-step" [class.active]="step === 'template'" [class.done]="step !== 'template'">0. Create Template</div>
     <div class="demo-step-arrow">→</div>
-    <div class="demo-step" [class.active]="step === 'customers'" [class.done]="step === 'funnel'">2. Pick Customer(s)</div>
+    <div class="demo-step" [class.active]="step === 'flow'" [class.done]="step === 'promotion' || step === 'customers' || step === 'funnel'">1. Automate Flow</div>
     <div class="demo-step-arrow">→</div>
-    <div class="demo-step" [class.active]="step === 'funnel'">3. Live Funnel</div>
+    <div class="demo-step" [class.active]="step === 'promotion'" [class.done]="step === 'customers' || step === 'funnel'">2. Pick Promotion</div>
+    <div class="demo-step-arrow">→</div>
+    <div class="demo-step" [class.active]="step === 'customers'" [class.done]="step === 'funnel'">3. Pick Customer(s)</div>
+    <div class="demo-step-arrow">→</div>
+    <div class="demo-step" [class.active]="step === 'funnel'">4. Live Funnel</div>
   </div>
 
   @if (loading) {
     <div class="loading">Loading demo data...</div>
   }
 
-  <!-- ── Step 1: Pick Promotion ──────────────────────────────────────────── -->
+  <!-- ── Step 0: Create Template ──────────────────────────────────────────── -->
+  @if (step === 'template') {
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Step 0: Create a WhatsApp Message Template</span>
+      </div>
+      <div class="card-body">
+        <div class="text-muted" style="font-size:13px;margin-bottom:14px">
+          Every real send starts from an approved WhatsApp template. This is the same template list shown in Settings.
+        </div>
+        @if (loadingTemplates) {
+          <div class="loading" style="padding:12px">Loading templates...</div>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Template</th><th>Status</th></tr></thead>
+              <tbody>
+                @for (t of templates; track t.name) {
+                  <tr>
+                    <td>{{ t.name }}</td>
+                    <td><span class="badge {{ t.status === 'APPROVED' ? 'badge-success' : (t.status === 'PENDING' ? 'badge-warning' : 'badge-danger') }}">{{ t.status }}</span></td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="2" class="empty-state">No templates found yet.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (missingFixedTemplates.length) {
+            <div class="hint-box" style="margin-top:14px">
+              {{ missingFixedTemplates.length }} of Waflow's default templates haven't been created yet.
+              <button class="btn btn-primary btn-sm" style="margin-left:8px" (click)="createMissingTemplates()" [disabled]="creatingTemplates">
+                {{ creatingTemplates ? 'Creating...' : 'Create Missing Templates' }}
+              </button>
+            </div>
+          }
+        }
+        <button class="btn btn-primary" style="margin-top:16px" (click)="goToFlowStep()">Continue → Automate Flow</button>
+      </div>
+    </div>
+  }
+
+  <!-- ── Step 1: Automate Flow ────────────────────────────────────────────── -->
+  @if (step === 'flow') {
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Step 1: Set Up an Automated Flow</span>
+      </div>
+      <div class="card-body">
+        <div class="text-muted" style="font-size:13px;margin-bottom:14px">
+          A Flow messages customers automatically based on a trigger (inactivity, points balance, a missed booking, and more) — no manual sending needed. This is the same list shown on the Automated Flows page.
+        </div>
+        @if (loadingFlows) {
+          <div class="loading" style="padding:12px">Loading flows...</div>
+        } @else if (flows.length === 0) {
+          <div class="empty-state" style="padding:20px">
+            No flows configured yet. <a routerLink="/flows">Set one up on the Automated Flows page</a>, then come back and continue.
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Flow</th><th>Trigger</th><th>Status</th></tr></thead>
+              <tbody>
+                @for (f of flows; track f._id) {
+                  <tr>
+                    <td>{{ f.name }}</td>
+                    <td>{{ f.triggerType }}</td>
+                    <td><span class="badge {{ f.status === 'active' ? 'badge-success' : 'badge-neutral' }}">{{ f.status }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn btn-outline" (click)="backToTemplate()">← Back</button>
+          <button class="btn btn-primary" (click)="goToPromotionStep()">Continue → Pick Promotion</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Step 2: Pick Promotion ──────────────────────────────────────────── -->
   @if (step === 'promotion' && !loading) {
+    <button class="btn btn-outline btn-sm" style="margin-bottom:12px" (click)="backToFlow()">← Back</button>
     @if (demoPromotions.length === 0) {
       <div class="card">
         <div class="empty-state">
@@ -51,7 +138,7 @@
     }
   }
 
-  <!-- ── Step 2: Pick Customers + Preview ────────────────────────────────── -->
+  <!-- ── Step 3: Pick Customers + Preview ─────────────────────────────────── -->
   @if (step === 'customers') {
     <div class="demo-layout">
       <div class="card">
@@ -170,7 +257,7 @@
     </div>
   }
 
-  <!-- ── Step 3: Live Funnel ──────────────────────────────────────────────── -->
+  <!-- ── Step 4: Live Funnel ──────────────────────────────────────────────── -->
   @if (step === 'funnel') {
     <div class="card">
       <div class="card-header">

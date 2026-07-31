@@ -88,6 +88,9 @@ export class ApiService {
   getTemplates(): Observable<any> {
     return this.http.get(`${API}/whatsapp/templates`);
   }
+  createFixedTemplate(route: string): Observable<any> {
+    return this.http.post(`${API}/whatsapp/${route}`, {});
+  }
 
   // ── Promotions ────────────────────────────────────────────────────────────
   getPromotions(params: any = {}): Observable<any[]> {

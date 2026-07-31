@@ -17,8 +17,25 @@ const POLL_MAX_MS = 10 * 60 * 1000;
   styleUrl: './demo.css',
 })
 export class Demo implements OnInit, OnDestroy {
-  step: 'promotion' | 'customers' | 'funnel' = 'promotion';
+  // CHANGE-01: reflects the full, correct workflow a merchant would actually
+  // follow — template and flow setup happen before a promotion is ever picked.
+  step: 'template' | 'flow' | 'promotion' | 'customers' | 'funnel' = 'template';
   loading = false;
+
+  templates: any[] = [];
+  loadingTemplates = false;
+  creatingTemplates = false;
+  readonly FIXED_TEMPLATE_ROUTES = [
+    { role: 'promo', route: 'create-promo-template' },
+    { role: 'loyalty', route: 'create-loyalty-template' },
+    { role: 'winback', route: 'create-winback-template' },
+    { role: 'post_purchase', route: 'create-post-purchase-template' },
+    { role: 'points_nudge', route: 'create-points-nudge-template' },
+    { role: 'no_show', route: 'create-no-show-template' },
+  ];
+
+  flows: any[] = [];
+  loadingFlows = false;
 
   demoPromotions: any[] = [];
   demoCustomers: any[] = [];
@@ -40,8 +57,48 @@ export class Demo implements OnInit, OnDestroy {
 
   constructor(private api: ApiService) {}
 
-  ngOnInit() { this.loadDemoData(); }
+  ngOnInit() { this.loadTemplates(); this.loadFlows(); this.loadDemoData(); }
   ngOnDestroy() { this.stopPolling(); }
+
+  // ── Step 0: Create Template ────────────────────────────────────────────────
+  loadTemplates() {
+    this.loadingTemplates = true;
+    this.api.getTemplates().subscribe({
+      next: (res) => { this.templates = res.templates; this.loadingTemplates = false; },
+      error: () => { this.loadingTemplates = false; },
+    });
+  }
+
+  get missingFixedTemplates() {
+    const presentRoles = new Set(this.templates.map(t => t.waflowRole).filter(Boolean));
+    return this.FIXED_TEMPLATE_ROUTES.filter(t => !presentRoles.has(t.role));
+  }
+
+  createMissingTemplates() {
+    this.creatingTemplates = true;
+    const toCreate = this.missingFixedTemplates;
+    let remaining = toCreate.length;
+    if (!remaining) { this.creatingTemplates = false; return; }
+    toCreate.forEach(t => {
+      this.api.createFixedTemplate(t.route).subscribe({
+        next: () => { remaining--; if (remaining === 0) { this.creatingTemplates = false; this.loadTemplates(); } },
+        error: () => { remaining--; if (remaining === 0) { this.creatingTemplates = false; this.loadTemplates(); } },
+      });
+    });
+  }
+
+  goToFlowStep() { this.step = 'flow'; }
+
+  // ── Step 1: Automate Flow ──────────────────────────────────────────────────
+  loadFlows() {
+    this.loadingFlows = true;
+    this.api.getFlows().subscribe({
+      next: (data) => { this.flows = data; this.loadingFlows = false; },
+      error: () => { this.loadingFlows = false; },
+    });
+  }
+
+  goToPromotionStep() { this.step = 'promotion'; }
 
   loadDemoData() {
     this.loading = true;
@@ -72,6 +129,9 @@ export class Demo implements OnInit, OnDestroy {
     this.step = 'promotion';
     this.preview = null;
   }
+
+  backToFlow() { this.step = 'flow'; }
+  backToTemplate() { this.step = 'template'; }
 
   loadPreview() {
     this.loadingPreview = true;
@@ -146,12 +206,14 @@ export class Demo implements OnInit, OnDestroy {
 
   resetDemo() {
     this.stopPolling();
-    this.step = 'promotion';
+    this.step = 'template';
     this.selectedPromotion = null;
     this.selectedCustomerIds.clear();
     this.preview = null;
     this.sendResult = null;
     this.report = null;
+    this.loadTemplates();
+    this.loadFlows();
     this.loadDemoData();
   }
 }
