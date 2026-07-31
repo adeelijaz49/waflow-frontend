@@ -215,6 +215,40 @@ export class Promotions implements OnInit {
     }
   }
 
+  // DEFECT-06: "duplicate an existing template as a starting point" — since a
+  // template here is just a promotion's custom entry message, duplicating one
+  // means copying its whole message tree (recursively, including follow-ups)
+  // into this draft as *unsaved* content — stripping every targetNodeId so
+  // "Save Custom Message" creates fresh MessageNodes rather than re-parenting
+  // the source promotion's real ones.
+  duplicateFromPromoId: string | null = null;
+
+  get promotionsWithEntryNode(): any[] {
+    return this.promotions.filter(p => (p.entryNodeId?._id || p.entryNodeId) && p._id !== this.editingPromoId);
+  }
+
+  async duplicateEntryFrom() {
+    if (!this.duplicateFromPromoId) return;
+    const source = this.promotions.find(p => p._id === this.duplicateFromPromoId);
+    const sourceNodeId = source?.entryNodeId?._id || source?.entryNodeId;
+    if (!sourceNodeId) return;
+    const { draft } = await this.loadNodeDraftRecursive(sourceNodeId);
+    this.entryDraft = this.stripTargetIds(draft);
+    this.duplicateFromPromoId = null;
+  }
+
+  private stripTargetIds(draft: MessageNodeDraft): MessageNodeDraft {
+    return {
+      bodyText: draft.bodyText,
+      buttons: draft.buttons.map((b): MessageNodeButtonDraft => ({
+        position: b.position,
+        label: b.label,
+        nextAction: b.nextAction,
+        followUp: b.followUp ? this.stripTargetIds(b.followUp) : undefined,
+      })),
+    };
+  }
+
   // Recursively reverse-maps a saved MessageNode (real nextAction.targetNodeId
   // shape) back into the editor's nested draft shape — identical to
   // pages/flows/flows.ts, since MessageNode CRUD is fully ownerType-agnostic.

@@ -134,6 +134,11 @@
                 If the customer hasn't messaged in the last 24h, they'll get a plain-text version instead.
               </div>
             }
+            @if (preview.templateStatus && preview.templateStatus !== 'approved') {
+              <div class="text-muted" style="font-size:11px;margin-top:4px">
+                This is your custom message, but Meta hasn't approved it yet ({{ preview.templateStatus }}) — sends will fall back to the default message until it's approved.
+              </div>
+            }
             <div class="test-send-row">
               <input type="text" [(ngModel)]="testPhone" placeholder="Phone number, e.g. 61412345678" />
               <button class="btn btn-outline btn-sm" (click)="sendTestMessage()" [disabled]="sendingTest || !testPhone.trim()">
@@ -446,6 +451,17 @@
 
             @if (useCustomEntry) {
               <div class="custom-entry-editor">
+                @if (promotionsWithEntryNode.length) {
+                  <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+                    <select [(ngModel)]="duplicateFromPromoId" style="max-width:260px">
+                      <option [ngValue]="null">Duplicate from an existing message...</option>
+                      @for (p of promotionsWithEntryNode; track p._id) {
+                        <option [ngValue]="p._id">{{ p.name }}</option>
+                      }
+                    </select>
+                    <button type="button" class="btn btn-outline btn-sm" [disabled]="!duplicateFromPromoId" (click)="duplicateEntryFrom()">Copy</button>
+                  </div>
+                }
                 <div class="detail-tabs" style="padding:0;margin-bottom:10px">
                   <button type="button" class="tab-btn" [class.active]="editorViewMode === 'flat'" (click)="editorViewMode = 'flat'">Flat Editor</button>
                   <button type="button" class="tab-btn" [class.active]="editorViewMode === 'conversation'" (click)="editorViewMode = 'conversation'">Conversation View</button>
