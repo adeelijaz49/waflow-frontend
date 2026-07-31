@@ -1,66 +1,75 @@
-<div class="page">
-  <div class="page-header">
-    <div>
-      <div class="page-title">AI Mode</div>
-      <div class="page-sub">Ask about your data, or ask me to take an action — you'll always confirm before anything sends.</div>
-    </div>
+<div class="ai-mode-page">
+  <div class="ai-mode-header">
+    <div class="page-title">AI Mode</div>
   </div>
 
-  <div class="ai-card">
-    @if (messages.length === 0 && !loadingSession) {
-      <div class="ai-greeting">
-        <div class="ai-greeting-title">Hi{{ merchantName ? ' ' + merchantName : '' }}, what would you like to know?</div>
-        <div class="chip-row">
-          @for (chip of chips; track chip) {
-            <button type="button" class="chip" (click)="useChip(chip)">{{ chip }}</button>
-          }
-        </div>
-      </div>
-    }
-
-    <div class="ai-thread" #threadEl>
+  <div class="ai-scroll" #threadEl [class.ai-scroll-centered]="messages.length === 0 && !loadingSession">
+    <div class="ai-col">
       @if (loadingSession) {
         <div class="ai-loading">Loading conversation…</div>
       }
 
-      @for (m of messages; track $index) {
-        <div class="wa-bubble" [class.wa-bubble-business]="m.role === 'assistant'" [class.wa-bubble-customer]="m.role === 'user'">
-          <div class="wa-bubble-text">{{ m.text }}</div>
-        </div>
-      }
-
-      @if (sending) {
-        <div class="wa-bubble wa-bubble-business ai-typing">
-          <span class="ai-typing-dot"></span><span class="ai-typing-dot"></span><span class="ai-typing-dot"></span>
-        </div>
-      }
-
-      @if (pendingAction) {
-        <div class="pending-action-card">
-          <div class="pending-action-label">Confirm action</div>
-          <div class="pending-action-summary">{{ pendingAction.summary }}</div>
-          <div class="pending-action-buttons">
-            <button type="button" class="btn-confirm" [disabled]="confirming" (click)="confirmAction(true)">Confirm</button>
-            <button type="button" class="btn-cancel" [disabled]="confirming" (click)="confirmAction(false)">Cancel</button>
+      @if (messages.length === 0 && !loadingSession) {
+        <div class="ai-empty">
+          <div class="ai-empty-title">Hi{{ merchantName ? ' ' + merchantName : '' }}, what would you like to know?</div>
+          <div class="chip-row">
+            @for (chip of chips; track chip) {
+              <button type="button" class="chip" (click)="useChip(chip)">{{ chip }}</button>
+            }
+          </div>
+          <div class="ai-empty-input">
+            <ng-container *ngTemplateOutlet="inputBar" />
           </div>
         </div>
+      } @else {
+        @for (m of messages; track $index) {
+          <div class="wa-bubble" [class.wa-bubble-business]="m.role === 'assistant'" [class.wa-bubble-customer]="m.role === 'user'">
+            <div class="wa-bubble-text">{{ m.text }}</div>
+          </div>
+        }
+
+        @if (sending) {
+          <div class="wa-bubble wa-bubble-business ai-typing">
+            <span class="ai-typing-dot"></span><span class="ai-typing-dot"></span><span class="ai-typing-dot"></span>
+          </div>
+        }
+
+        @if (pendingAction) {
+          <div class="pending-action-card">
+            <div class="pending-action-label">Confirm action</div>
+            <div class="pending-action-summary">{{ pendingAction.summary }}</div>
+            <div class="pending-action-buttons">
+              <button type="button" class="btn-confirm" [disabled]="confirming" (click)="confirmAction(true)">Confirm</button>
+              <button type="button" class="btn-cancel" [disabled]="confirming" (click)="confirmAction(false)">Cancel</button>
+            </div>
+          </div>
+        }
       }
     </div>
-
-    @if (error) {
-      <div class="ai-error">{{ error }}</div>
-    }
-
-    <div class="ai-input-row">
-      <input
-        type="text"
-        class="ai-input"
-        placeholder="Ask a question or describe what you want to do…"
-        [(ngModel)]="input"
-        (keydown.enter)="send()"
-        [disabled]="sending || !!pendingAction"
-      />
-      <button type="button" class="btn-send" [disabled]="sending || !input.trim() || !!pendingAction" (click)="send()">Send</button>
-    </div>
   </div>
+
+  @if (messages.length > 0) {
+    <div class="ai-input-bar">
+      <div class="ai-col">
+        <ng-container *ngTemplateOutlet="inputBar" />
+      </div>
+    </div>
+  }
 </div>
+
+<ng-template #inputBar>
+  @if (error) {
+    <div class="ai-error">{{ error }}</div>
+  }
+  <div class="ai-input-row">
+    <input
+      type="text"
+      class="ai-input"
+      placeholder="Ask a question or describe what you want to do…"
+      [(ngModel)]="input"
+      (keydown.enter)="send()"
+      [disabled]="sending || !!pendingAction"
+    />
+    <button type="button" class="btn-send" [disabled]="sending || !input.trim() || !!pendingAction" (click)="send()">Send</button>
+  </div>
+</ng-template>
