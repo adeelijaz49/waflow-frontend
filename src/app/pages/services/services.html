@@ -21,9 +21,16 @@
         @for (s of services; track s._id) {
           <div class="service-card" [class.active-card]="activeService?._id === s._id">
             <div class="service-card-header">
-              <div>
-                <div class="fw-600">{{ s.name }}</div>
-                @if (s.category) { <div class="text-muted" style="font-size:12px">{{ s.category }}</div> }
+              <div class="service-cell">
+                @if (s.images?.[0] && !brokenImages.has(s.images[0])) {
+                  <img [src]="s.images[0]" alt="" class="service-thumb" (error)="onImgError(s.images[0])" />
+                } @else {
+                  <div class="service-thumb service-thumb-placeholder">🖼️</div>
+                }
+                <div>
+                  <div class="fw-600">{{ s.name }}</div>
+                  @if (s.category) { <div class="text-muted" style="font-size:12px">{{ s.category }}</div> }
+                </div>
               </div>
               <div class="service-actions">
                 <button class="btn btn-outline btn-sm" (click)="openEditService(s, $event)">Edit</button>

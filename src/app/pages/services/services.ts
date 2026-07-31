@@ -47,6 +47,11 @@ export class Services implements OnInit {
 
   ngOnInit() { this.loadServices(); }
 
+  // Broken/unreachable image URLs (common with hand-entered links) fall back
+  // to the same placeholder box used when no image is set at all.
+  brokenImages = new Set<string>();
+  onImgError(url: string) { this.brokenImages.add(url); }
+
   emptyServiceForm() {
     return { name: '', description: '', category: '', duration: 60, basePrice: 0, pointsPrice: 0, images: '' };
   }

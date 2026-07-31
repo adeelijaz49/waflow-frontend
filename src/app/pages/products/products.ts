@@ -55,6 +55,11 @@ export class Products implements OnInit {
 
   onSearch() { this.page = 1; this.load(); }
 
+  // Broken/unreachable image URLs (common with hand-entered links) fall back
+  // to the same placeholder box used when no image is set at all.
+  brokenImages = new Set<string>();
+  onImgError(url: string) { this.brokenImages.add(url); }
+
   openAdd() {
     this.editingId = null;
     this.form = this.emptyForm();

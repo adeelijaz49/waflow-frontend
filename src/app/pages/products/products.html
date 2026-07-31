@@ -38,10 +38,19 @@
             @for (p of products; track p._id) {
               <tr>
                 <td>
-                  <div class="fw-600">{{ p.name }}</div>
-                  @if (p.description) {
-                    <div class="text-muted" style="font-size:11px;margin-top:2px">{{ p.description | slice:0:60 }}{{ p.description.length > 60 ? '...' : '' }}</div>
-                  }
+                  <div class="product-cell">
+                    @if (p.images?.[0] && !brokenImages.has(p.images[0])) {
+                      <img [src]="p.images[0]" alt="" class="product-thumb" (error)="onImgError(p.images[0])" />
+                    } @else {
+                      <div class="product-thumb product-thumb-placeholder">🖼️</div>
+                    }
+                    <div>
+                      <div class="fw-600">{{ p.name }}</div>
+                      @if (p.description) {
+                        <div class="text-muted" style="font-size:11px;margin-top:2px">{{ p.description | slice:0:60 }}{{ p.description.length > 60 ? '...' : '' }}</div>
+                      }
+                    </div>
+                  </div>
                 </td>
                 <td><span class="badge badge-neutral">{{ p.category }}</span></td>
                 <td class="fw-600">{{ p.basePrice | appCurrency }}</td>
