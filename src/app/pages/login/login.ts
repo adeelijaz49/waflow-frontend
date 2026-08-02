@@ -29,6 +29,9 @@ export class Login {
   chooseWorkspace: { id: string; name: string; role: string }[] | null = null;
   private preAuthToken = '';
 
+  showDevBypass = false;
+  devSecret = '';
+
   constructor(private api: ApiService, private auth: AuthService, private router: Router) {}
 
   useMethod(m: Method) {
@@ -86,6 +89,17 @@ export class Login {
     this.error = null;
     this.api.selectWorkspace(this.preAuthToken, workspaceId).subscribe({
       next: (res) => { this.loading = false; this.auth.completeLogin(res.token); this.router.navigateByUrl('/dashboard'); },
+      error: (err) => { this.loading = false; this.error = err.error?.error || 'Something went wrong — please try again.'; },
+    });
+  }
+
+  devLogin() {
+    const secret = this.devSecret.trim();
+    if (!secret || this.loading) return;
+    this.loading = true;
+    this.error = null;
+    this.api.devLogin(secret).subscribe({
+      next: (res) => this.handleAuthResult(res),
       error: (err) => { this.loading = false; this.error = err.error?.error || 'Something went wrong — please try again.'; },
     });
   }

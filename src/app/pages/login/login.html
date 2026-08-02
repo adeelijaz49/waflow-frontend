@@ -57,6 +57,18 @@
           <button type="button" class="btn-login-link" [disabled]="loading" (click)="useDifferentEmail()">Use a different email</button>
         }
       }
+
+      <div class="dev-bypass">
+        <button type="button" class="dev-bypass-toggle" (click)="showDevBypass = !showDevBypass">
+          {{ showDevBypass ? '▾' : '▸' }} Developer bypass
+        </button>
+        @if (showDevBypass) {
+          <div class="login-field">
+            <input type="password" placeholder="Dev login secret" [(ngModel)]="devSecret" (keydown.enter)="devLogin()" [disabled]="loading" />
+          </div>
+          <button type="button" class="btn-login-link btn-dev-login" [disabled]="loading || !devSecret.trim()" (click)="devLogin()">Log in with secret</button>
+        }
+      </div>
     }
   </div>
 </div>

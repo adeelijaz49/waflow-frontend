@@ -123,6 +123,21 @@
   margin-bottom: 12px;
 }
 
+.dev-bypass {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border, #d8dce1);
+}
+.dev-bypass-toggle {
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 0;
+}
+.btn-dev-login { text-decoration: none; }
+
 .workspace-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
 .workspace-option {
   display: flex;

@@ -29,6 +29,11 @@ export class ApiService {
   getMe(): Observable<any> {
     return this.http.get(`${API}/auth/me`);
   }
+  // Temporary — 404s unless the backend has DEV_LOGIN_SECRET set. Remove once
+  // WhatsApp OTP / email magic link are both configured for real.
+  devLogin(secret: string): Observable<any> {
+    return this.http.post(`${API}/auth/dev-login`, { secret });
+  }
 
   // ── Products ──────────────────────────────────────────────────────────────
   getProducts(params: any = {}): Observable<any> {
