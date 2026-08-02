@@ -3,6 +3,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { SettingsService } from '../../shared/settings.service';
+import { AuthService } from '../../shared/auth.service';
 
 @Component({
   selector: 'app-settings',
@@ -29,12 +30,26 @@ export class Settings implements OnInit {
   templatesLoading = false;
   templatesError   = false;
 
-  constructor(private api: ApiService, private settings: SettingsService) {}
+  // Team (workspace members + invites)
+  members: any[] = [];
+  membersLoading = false;
+  invites: any[] = [];
+  invitesLoading = false;
+  inviteContactType: 'phone' | 'email' = 'phone';
+  inviteContact = '';
+  inviteRole: 'owner' | 'member' = 'member';
+  inviteSending = false;
+  inviteError: string | null = null;
+  inviteWarning: string | null = null;
+
+  constructor(private api: ApiService, private settings: SettingsService, public auth: AuthService) {}
 
   ngOnInit() {
     this.loadLoyaltySettings();
     this.loadTokenStatus();
     this.loadTemplates();
+    this.loadMembers();
+    this.loadInvites();
   }
 
   loadLoyaltySettings() {
@@ -118,5 +133,58 @@ export class Settings implements OnInit {
     if (this.tokenStatus.neverExpires) return 'Never expires';
     if (this.tokenStatus.daysLeft > 0) return `${this.tokenStatus.daysLeft}d left`;
     return 'Expired';
+  }
+
+  get isOwner(): boolean {
+    return this.auth.sessionSnapshot?.role === 'owner';
+  }
+
+  loadMembers() {
+    this.membersLoading = true;
+    this.api.getMembers().subscribe({
+      next: (m) => { this.members = m; this.membersLoading = false; },
+      error: () => { this.membersLoading = false; },
+    });
+  }
+
+  loadInvites() {
+    this.invitesLoading = true;
+    this.api.getInvites().subscribe({
+      next: (i) => { this.invites = i; this.invitesLoading = false; },
+      error: () => { this.invitesLoading = false; },
+    });
+  }
+
+  sendInvite() {
+    const contact = this.inviteContact.trim();
+    if (!contact || this.inviteSending) return;
+    this.inviteSending = true;
+    this.inviteError = null;
+    this.inviteWarning = null;
+    this.api.createInvite(this.inviteContactType, contact, this.inviteRole).subscribe({
+      next: (res) => {
+        this.inviteSending = false;
+        this.inviteContact = '';
+        if (res.sendWarning) this.inviteWarning = res.sendWarning;
+        this.loadInvites();
+      },
+      error: (err) => { this.inviteSending = false; this.inviteError = err.error?.error || 'Something went wrong — please try again.'; },
+    });
+  }
+
+  revokeInvite(id: string) {
+    this.api.revokeInvite(id).subscribe({ next: () => this.loadInvites() });
+  }
+
+  removeMember(userId: string) {
+    if (!confirm('Remove this person from the workspace?')) return;
+    this.api.removeMember(userId).subscribe({
+      next: () => this.loadMembers(),
+      error: (err) => alert(err.error?.error || 'Something went wrong — please try again.'),
+    });
+  }
+
+  memberLabel(m: any): string {
+    return m.name || m.phone || m.email || 'Unknown';
   }
 }

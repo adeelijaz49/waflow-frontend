@@ -107,6 +107,93 @@
     </div>
   </div>
 
+  <!-- Team -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <span class="card-title">👥 Team</span>
+    </div>
+    <div class="card-body">
+      @if (isOwner) {
+        <div class="section-label">Invite a teammate</div>
+        @if (inviteError) {
+          <div class="result-box result-error" style="margin-bottom:10px">{{ inviteError }}</div>
+        }
+        @if (inviteWarning) {
+          <div class="result-box" style="margin-bottom:10px;background:#fff8e1;color:#9a7b12">{{ inviteWarning }}</div>
+        }
+        <div class="form-row">
+          <div class="form-group" style="max-width:140px">
+            <label>Via</label>
+            <select [(ngModel)]="inviteContactType">
+              <option value="phone">WhatsApp</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ inviteContactType === 'phone' ? 'WhatsApp number' : 'Email address' }}</label>
+            <input [(ngModel)]="inviteContact" [placeholder]="inviteContactType === 'phone' ? 'e.g. 61412345678' : 'teammate@example.com'" (keydown.enter)="sendInvite()" [disabled]="inviteSending" />
+          </div>
+          <div class="form-group" style="max-width:140px">
+            <label>Role</label>
+            <select [(ngModel)]="inviteRole">
+              <option value="member">Member</option>
+              <option value="owner">Owner</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" (click)="sendInvite()" [disabled]="inviteSending || !inviteContact.trim()">
+          {{ inviteSending ? 'Sending...' : 'Send Invite' }}
+        </button>
+      }
+
+      @if (invitesLoading) {
+        <div class="loading" style="padding:12px">Loading invites...</div>
+      } @else if (invites.length > 0) {
+        <div class="section-label" style="margin-top:20px">Pending invites</div>
+        <div class="table-wrap" style="margin-top:8px">
+          <table>
+            <thead><tr><th>Contact</th><th>Role</th><th>Sent</th>@if (isOwner) { <th></th> }</tr></thead>
+            <tbody>
+              @for (i of invites; track i._id) {
+                <tr>
+                  <td>{{ i.contact }} <span class="badge badge-neutral" style="font-size:10px">{{ i.contactType }}</span></td>
+                  <td><span class="badge badge-primary" style="text-transform:capitalize">{{ i.role }}</span></td>
+                  <td>{{ i.createdAt | date:'d MMM y' }}</td>
+                  @if (isOwner) {
+                    <td><button class="btn btn-outline btn-sm" (click)="revokeInvite(i._id)">Revoke</button></td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (membersLoading) {
+        <div class="loading" style="padding:12px">Loading members...</div>
+      } @else if (members.length > 0) {
+        <div class="section-label" style="margin-top:20px">Members ({{ members.length }})</div>
+        <div class="table-wrap" style="margin-top:8px">
+          <table>
+            <thead><tr><th>Name</th><th>Contact</th><th>Role</th>@if (isOwner) { <th></th> }</tr></thead>
+            <tbody>
+              @for (m of members; track m.userId) {
+                <tr>
+                  <td class="fw-600">{{ memberLabel(m) }}</td>
+                  <td>{{ m.phone || m.email }}</td>
+                  <td><span class="badge badge-primary" style="text-transform:capitalize">{{ m.role }}</span></td>
+                  @if (isOwner) {
+                    <td><button class="btn btn-outline btn-sm" (click)="removeMember(m.userId)">Remove</button></td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+
   <!-- Templates — read-only (DEFECT-05). Creating/editing a message now happens
        where the message itself lives: inside a Promotion or a Flow's custom
        entry message. The 6 fixed fallback templates below (waflow_promo,

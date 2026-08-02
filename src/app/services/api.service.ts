@@ -35,6 +35,23 @@ export class ApiService {
     return this.http.post(`${API}/auth/dev-login`, { secret });
   }
 
+  // ── Team (workspace members + invites) ───────────────────────────────────
+  getMembers(): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/workspaces/me/members`);
+  }
+  removeMember(userId: string): Observable<any> {
+    return this.http.delete(`${API}/workspaces/me/members/${userId}`);
+  }
+  getInvites(): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/workspaces/me/invites`);
+  }
+  createInvite(contactType: 'phone' | 'email', contact: string, role: 'owner' | 'member'): Observable<any> {
+    return this.http.post(`${API}/workspaces/me/invites`, { contactType, contact, role });
+  }
+  revokeInvite(id: string): Observable<any> {
+    return this.http.delete(`${API}/workspaces/me/invites/${id}`);
+  }
+
   // ── Products ──────────────────────────────────────────────────────────────
   getProducts(params: any = {}): Observable<any> {
     return this.http.get(`${API}/products`, { params });
