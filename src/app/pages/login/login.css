@@ -1,0 +1,140 @@
+/* Same fix as AI Mode: the routed component host (<app-login>) needs to be
+   a flex:1 item itself to fill .main-content's height — an unstyled custom
+   element defaults to display:inline / flex-grow:0. */
+:host {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.login-page {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface, #fff);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  padding: 32px 28px;
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  background: var(--primary, #3b82f6);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+}
+.logo-text { font-weight: 600; font-size: 16px; color: var(--text, #1e293b); }
+
+.login-title { font-size: 20px; font-weight: 700; color: var(--text, #1e293b); }
+.login-sub { font-size: 13px; color: var(--text-muted, #64748b); margin-top: 2px; margin-bottom: 20px; }
+
+.method-tabs {
+  display: flex;
+  gap: 6px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.method-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+}
+.method-tab.active { background: #fff; color: var(--text, #1e293b); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+
+.login-error {
+  color: #c0392b;
+  font-size: 13px;
+  background: #fdecea;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+}
+
+.login-field { margin-bottom: 16px; }
+.login-field label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text, #1e293b); margin-bottom: 6px; }
+.login-field input {
+  width: 100%;
+  border: 1px solid var(--border, #d8dce1);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 14px;
+}
+.login-field input:focus { outline: none; border-color: var(--primary, #3b82f6); }
+
+.btn-login-primary {
+  width: 100%;
+  border: none;
+  background: #128c7e;
+  color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-login-primary:disabled { opacity: 0.5; cursor: default; }
+
+.btn-login-link {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  font-size: 12.5px;
+  padding: 10px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.login-sent {
+  font-size: 13.5px;
+  color: var(--text, #1e293b);
+  line-height: 1.5;
+  background: #f0f9f4;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.workspace-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.workspace-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border, #d8dce1);
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+}
+.workspace-option:hover { background: #f7f8fa; }
+.workspace-name { font-size: 14px; font-weight: 600; color: var(--text, #1e293b); }
+.workspace-role { font-size: 12px; color: var(--text-muted, #64748b); text-transform: capitalize; }

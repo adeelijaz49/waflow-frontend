@@ -78,6 +78,19 @@
 .store-name { color: #e2e8f0; font-size: 12px; font-weight: 600; }
 .store-sub  { color: #475569; font-size: 11px; margin-top: 2px; }
 
+.btn-logout {
+  margin-top: 10px;
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: #94a3b8;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.btn-logout:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+
 /* ── Main content ── */
 .main-content {
   flex: 1;

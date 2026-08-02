@@ -1,13 +1,22 @@
 import { Component } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { AsyncPipe } from '@angular/common';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from './shared/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
+  constructor(public auth: AuthService, private router: Router) {}
+
+  logout() {
+    this.auth.logout();
+    this.router.navigateByUrl('/login');
+  }
+
   navItems = [
     { path: '/dashboard',  label: 'Dashboard',   icon: '◈' },
     { path: '/ai-mode',    label: 'AI Mode',      icon: '✦' },

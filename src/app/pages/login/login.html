@@ -1,0 +1,62 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="logo-mark">W</span>
+      <span class="logo-text">Waflow</span>
+    </div>
+
+    @if (chooseWorkspace) {
+      <div class="login-title">Choose a workspace</div>
+      <div class="workspace-list">
+        @for (w of chooseWorkspace; track w.id) {
+          <button type="button" class="workspace-option" [disabled]="loading" (click)="selectWorkspace(w.id)">
+            <span class="workspace-name">{{ w.name }}</span>
+            <span class="workspace-role">{{ w.role === 'owner' ? 'Owner' : 'Member' }}</span>
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="login-title">Log in to Waflow</div>
+      <div class="login-sub">No password needed.</div>
+
+      <div class="method-tabs">
+        <button type="button" class="method-tab" [class.active]="method === 'whatsapp'" (click)="useMethod('whatsapp')">WhatsApp</button>
+        <button type="button" class="method-tab" [class.active]="method === 'email'" (click)="useMethod('email')">Email</button>
+      </div>
+
+      @if (error) {
+        <div class="login-error">{{ error }}</div>
+      }
+
+      @if (method === 'whatsapp') {
+        @if (otpStep === 'phone') {
+          <div class="login-field">
+            <label>WhatsApp number</label>
+            <input type="tel" placeholder="e.g. 61412345678" [(ngModel)]="phone" (keydown.enter)="requestOtp()" [disabled]="loading" />
+          </div>
+          <button type="button" class="btn-login-primary" [disabled]="loading || !phone.trim()" (click)="requestOtp()">Send code</button>
+        } @else {
+          <div class="login-field">
+            <label>Enter the 6-digit code we sent you</label>
+            <input type="text" inputmode="numeric" maxlength="6" placeholder="123456" [(ngModel)]="code" (keydown.enter)="verifyOtp()" [disabled]="loading" />
+          </div>
+          <button type="button" class="btn-login-primary" [disabled]="loading || !code.trim()" (click)="verifyOtp()">Verify &amp; log in</button>
+          <button type="button" class="btn-login-link" [disabled]="loading" (click)="useDifferentPhone()">Use a different number</button>
+        }
+      }
+
+      @if (method === 'email') {
+        @if (!emailSent) {
+          <div class="login-field">
+            <label>Email address</label>
+            <input type="email" placeholder="you@example.com" [(ngModel)]="email" (keydown.enter)="requestMagicLink()" [disabled]="loading" />
+          </div>
+          <button type="button" class="btn-login-primary" [disabled]="loading || !email.trim()" (click)="requestMagicLink()">Send login link</button>
+        } @else {
+          <div class="login-sent">Check your email — we sent a login link to <strong>{{ email }}</strong>. It expires in 15 minutes.</div>
+          <button type="button" class="btn-login-link" [disabled]="loading" (click)="useDifferentEmail()">Use a different email</button>
+        }
+      }
+    }
+  </div>
+</div>

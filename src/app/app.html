@@ -1,26 +1,31 @@
 <div class="shell">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <span class="logo-mark">W</span>
-      <span class="logo-text">Waflow</span>
-    </div>
-
-    <nav class="sidebar-nav">
-      @for (item of navItems; track item.path) {
-        <a class="nav-item" [routerLink]="item.path" routerLinkActive="active">
-          <span class="nav-icon">{{ item.icon }}</span>
-          <span>{{ item.label }}</span>
-        </a>
-      }
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="store-info">
-        <div class="store-name">The Brand Is Riyadh</div>
-        <div class="store-sub">Admin Panel</div>
+  @if (auth.isLoggedIn) {
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-mark">W</span>
+        <span class="logo-text">Waflow</span>
       </div>
-    </div>
-  </aside>
+
+      <nav class="sidebar-nav">
+        @for (item of navItems; track item.path) {
+          <a class="nav-item" [routerLink]="item.path" routerLinkActive="active">
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span>{{ item.label }}</span>
+          </a>
+        }
+      </nav>
+
+      <div class="sidebar-footer">
+        @if (auth.session | async; as session) {
+          <div class="store-info">
+            <div class="store-name">{{ session.workspace.name }}</div>
+            <div class="store-sub">{{ session.user.name || session.user.phone || session.user.email }} · {{ session.role === 'owner' ? 'Owner' : 'Member' }}</div>
+          </div>
+        }
+        <button type="button" class="btn-logout" (click)="logout()">Log out</button>
+      </div>
+    </aside>
+  }
 
   <main class="main-content">
     <router-outlet />

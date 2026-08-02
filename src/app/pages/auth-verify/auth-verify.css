@@ -1,0 +1,52 @@
+:host {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.verify-page {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verify-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface, #fff);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  padding: 32px 28px;
+  text-align: center;
+}
+
+.verify-title { font-size: 18px; font-weight: 700; color: var(--text, #1e293b); margin-bottom: 12px; }
+
+.verify-error {
+  color: #c0392b;
+  font-size: 13px;
+  background: #fdecea;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+}
+
+.verify-link { color: var(--primary, #3b82f6); font-size: 13.5px; text-decoration: underline; }
+
+.workspace-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; text-align: left; }
+.workspace-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border, #d8dce1);
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.workspace-option:hover { background: #f7f8fa; }
+.workspace-name { font-size: 14px; font-weight: 600; color: var(--text, #1e293b); }
+.workspace-role { font-size: 12px; color: var(--text-muted, #64748b); text-transform: capitalize; }

@@ -10,6 +10,26 @@ const API  = `${BASE}/api`;
 export class ApiService {
   constructor(private http: HttpClient) {}
 
+  // ── Auth (passwordless login) ────────────────────────────────────────────
+  requestOtp(phone: string): Observable<any> {
+    return this.http.post(`${API}/auth/otp/request`, { phone });
+  }
+  verifyOtp(phone: string, code: string): Observable<any> {
+    return this.http.post(`${API}/auth/otp/verify`, { phone, code });
+  }
+  requestMagicLink(email: string): Observable<any> {
+    return this.http.post(`${API}/auth/magic-link/request`, { email });
+  }
+  verifyMagicLink(token: string): Observable<any> {
+    return this.http.post(`${API}/auth/magic-link/verify`, { token });
+  }
+  selectWorkspace(preAuthToken: string, workspaceId: string): Observable<any> {
+    return this.http.post(`${API}/auth/select-workspace`, { preAuthToken, workspaceId });
+  }
+  getMe(): Observable<any> {
+    return this.http.get(`${API}/auth/me`);
+  }
+
   // ── Products ──────────────────────────────────────────────────────────────
   getProducts(params: any = {}): Observable<any> {
     return this.http.get(`${API}/products`, { params });

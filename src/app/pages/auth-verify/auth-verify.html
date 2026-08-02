@@ -1,0 +1,25 @@
+<div class="verify-page">
+  <div class="verify-card">
+    @if (status === 'verifying') {
+      <div class="verify-title">Logging you in…</div>
+    }
+
+    @if (status === 'error') {
+      <div class="verify-title">Couldn't log you in</div>
+      <div class="verify-error">{{ error }}</div>
+      <a class="verify-link" routerLink="/login">Back to login</a>
+    }
+
+    @if (status === 'chooseWorkspace') {
+      <div class="verify-title">Choose a workspace</div>
+      <div class="workspace-list">
+        @for (w of workspaces; track w.id) {
+          <button type="button" class="workspace-option" (click)="selectWorkspace(w.id)">
+            <span class="workspace-name">{{ w.name }}</span>
+            <span class="workspace-role">{{ w.role === 'owner' ? 'Owner' : 'Member' }}</span>
+          </button>
+        }
+      </div>
+    }
+  </div>
+</div>
