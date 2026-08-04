@@ -1,0 +1,9 @@
+.success-box {
+  padding: 12px 14px;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #065f46;
+  line-height: 1.6;
+}

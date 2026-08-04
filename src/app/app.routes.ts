@@ -15,4 +15,5 @@ export const routes: Routes = [
   { path: 'flows',      canActivate: [authGuard], loadComponent: () => import('./pages/flows/flows').then(m => m.Flows) },
   { path: 'services',   canActivate: [authGuard], loadComponent: () => import('./pages/services/services').then(m => m.Services) },
   { path: 'settings',   canActivate: [authGuard], loadComponent: () => import('./pages/settings/settings').then(m => m.Settings) },
+  { path: 'support',    canActivate: [authGuard], loadComponent: () => import('./pages/support/support').then(m => m.Support) },
 ];

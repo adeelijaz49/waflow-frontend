@@ -1,0 +1,44 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Support</div>
+      <div class="page-sub">Need help? Send us a message and we'll get back to you.</div>
+    </div>
+  </div>
+
+  <div class="card mb-4" style="max-width:520px">
+    <div class="card-header">
+      <span class="card-title">✉️ Contact Support</span>
+    </div>
+    <div class="card-body">
+      @if (!submitted) {
+        <div class="form-row">
+          <div class="form-group">
+            <label>What's going on?</label>
+            <textarea [(ngModel)]="message" rows="6" placeholder="Describe the issue or question you have..." [disabled]="submitting"></textarea>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Preferred contact email</label>
+            <input type="email" [(ngModel)]="contactEmail" placeholder="you@example.com" [disabled]="submitting" />
+          </div>
+        </div>
+        @if (error) {
+          <div class="text-muted" style="color:var(--danger, #e5484d); font-size:13px; margin-bottom:12px">{{ error }}</div>
+        }
+        <button class="btn btn-primary" (click)="submit()" [disabled]="submitting || !message.trim() || !contactEmail.trim()">
+          {{ submitting ? 'Sending...' : 'Submit' }}
+        </button>
+      } @else {
+        <div class="success-box">
+          ✅ We will be in contact soon.
+        </div>
+        @if (warning) {
+          <div class="text-muted" style="font-size:12px;margin-top:8px">{{ warning }}</div>
+        }
+        <button class="btn btn-outline" style="margin-top:16px" (click)="another()">Send another message</button>
+      }
+    </div>
+  </div>
+</div>

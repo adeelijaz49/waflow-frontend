@@ -117,6 +117,11 @@ export class ApiService {
     return this.http.put(`${API}/settings/loyalty`, data);
   }
 
+  // ── Support ──────────────────────────────────────────────────────────────
+  submitSupportTicket(message: string, contactEmail: string): Observable<any> {
+    return this.http.post(`${API}/support`, { message, contactEmail });
+  }
+
   // ── WhatsApp ──────────────────────────────────────────────────────────────
   getTokenStatus(): Observable<any> {
     return this.http.get(`${API}/whatsapp/token-status`);

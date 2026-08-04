@@ -28,6 +28,7 @@ export class App {
     { path: '/flows',      label: 'Automated Flows', icon: '⟳' },
     { path: '/services',   label: 'Services',     icon: '✂' },
     { path: '/settings',   label: 'Settings',     icon: '⚙' },
+    { path: '/support',    label: 'Support',      icon: '❓' },
   ];
 }
 
