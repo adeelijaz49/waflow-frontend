@@ -121,6 +121,11 @@
           <div class="section-label" style="margin-top:16px">Message Preview</div>
           @if (loadingPreview) {
             <div class="loading" style="padding:12px">Building preview...</div>
+          } @else if (previewError) {
+            <div class="result-box result-error">
+              {{ previewError }}
+              <button class="btn btn-outline btn-sm" style="margin-left:8px" (click)="loadPreview()">Retry</button>
+            </div>
           } @else if (preview) {
             <div class="wa-bubble">
               @if (preview.header) {
@@ -149,7 +154,7 @@
               @if (testResult.ok) {
                 <div class="text-muted" style="font-size:11px;color:#10b981">✅ Test message sent</div>
               } @else {
-                <div class="text-muted" style="font-size:11px;color:#dc2626">Failed to send test message</div>
+                <div class="text-muted" style="font-size:11px;color:#dc2626">{{ testResult.message || 'Failed to send test message' }}</div>
               }
             }
           }
@@ -270,9 +275,21 @@
           <!-- Send Button -->
           @if (sendResult) {
             @if (sendResult.error) {
-              <div class="result-box result-error">Failed to send. Check backend logs.</div>
+              <div class="result-box result-error">{{ sendResult.message || 'Failed to send — please try again.' }}</div>
             } @else {
-              <div class="result-box result-success">✅ Sent {{ sendResult.sentCount }} WhatsApp messages successfully!</div>
+              @if (sendResult.sentCount > 0) {
+                <div class="result-box result-success">✅ Sent {{ sendResult.sentCount }} WhatsApp messages successfully!</div>
+              }
+              @if (sendResult.errors?.length) {
+                <div class="result-box result-error">
+                  ⚠️ {{ sendResult.errors.length }} message{{ sendResult.errors.length === 1 ? '' : 's' }} failed to send:
+                  <ul style="margin:4px 0 0 18px;padding:0">
+                    @for (e of sendResult.errors; track e.customer) {
+                      <li style="font-size:12px">{{ e.error }}</li>
+                    }
+                  </ul>
+                </div>
+              }
             }
           }
 

@@ -107,6 +107,7 @@ export class Promotions implements OnInit {
   loadingReport = false;
   preview: any = null;
   loadingPreview = false;
+  previewError: string | null = null;
   testPhone = '';
   sendingTest = false;
   testResult: any = null;
@@ -428,9 +429,11 @@ export class Promotions implements OnInit {
 
   loadPreview() {
     this.loadingPreview = true;
+    this.previewError = null;
+    this.preview = null;
     this.api.previewPromotionMessage(this.activePromo._id).subscribe({
       next: (data) => { this.preview = data; this.loadingPreview = false; },
-      error: () => { this.loadingPreview = false; },
+      error: (err) => { this.loadingPreview = false; this.previewError = err.error?.error || 'Something went wrong loading the preview — please try again.'; },
     });
   }
 
@@ -440,7 +443,7 @@ export class Promotions implements OnInit {
     this.testResult = null;
     this.api.sendTestMessage(this.activePromo._id, this.testPhone.trim()).subscribe({
       next: () => { this.sendingTest = false; this.testResult = { ok: true }; },
-      error: () => { this.sendingTest = false; this.testResult = { ok: false }; },
+      error: (err) => { this.sendingTest = false; this.testResult = { ok: false, message: err.error?.error }; },
     });
   }
 
@@ -529,7 +532,7 @@ export class Promotions implements OnInit {
     this.sendResult = null;
     this.api.sendPromotion(this.activePromo._id, [...this.selectedCustomerIds]).subscribe({
       next: (res) => { this.sendResult = res; this.sending = false; this.loadPromotions(); this.loadCampaignReport(); },
-      error: () => { this.sending = false; this.sendResult = { error: true }; },
+      error: (err) => { this.sending = false; this.sendResult = { error: true, message: err.error?.error }; },
     });
   }
 
