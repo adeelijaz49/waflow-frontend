@@ -66,6 +66,39 @@ export class AiMode implements OnInit {
 
   useChip(text: string) {
     this.input = text;
+    this.syncInputHeight();
+  }
+
+  // Grows the textarea with content (ChatGPT-style) up to a CSS-defined max
+  // height, beyond which it scrolls internally instead of growing further.
+  // Reset to 'auto' first so shrinking (e.g. deleting a line) recalculates
+  // scrollHeight correctly instead of only ever growing.
+  private growToFit(el: HTMLTextAreaElement) {
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }
+
+  autoGrow(event: Event) {
+    this.growToFit(event.target as HTMLTextAreaElement);
+  }
+
+  // ngModel's DOM update from setting `input` in code doesn't fire the
+  // (input) event autoGrow relies on, so the box would otherwise stay
+  // whatever size it last was — resize it to match on every programmatic
+  // change. Empty-state and bottom-bar .ai-input are mutually exclusive, so
+  // at most one exists. setTimeout lets Angular flush the new value into the
+  // DOM first, since scrollHeight has to reflect the restored text.
+  private syncInputHeight() {
+    setTimeout(() => {
+      document.querySelectorAll<HTMLTextAreaElement>('.ai-input').forEach(el => this.growToFit(el));
+    });
+  }
+
+  onEnter(event: Event) {
+    const e = event as KeyboardEvent;
+    if (e.shiftKey) return; // Shift+Enter inserts a newline, same as ChatGPT
+    e.preventDefault();
+    this.send();
   }
 
   send() {
@@ -74,6 +107,7 @@ export class AiMode implements OnInit {
 
     this.messages.push({ role: 'user', text });
     this.input = '';
+    this.syncInputHeight();
     this.sending = true;
     this.error = null;
     this.scrollToBottom();
@@ -90,6 +124,7 @@ export class AiMode implements OnInit {
         this.error = err.error?.error || 'Something went wrong — please try again.';
         this.messages.pop(); // undo the optimistic bubble so a retry doesn't duplicate it
         this.input = text;
+        this.syncInputHeight();
       },
     });
   }

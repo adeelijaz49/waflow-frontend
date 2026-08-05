@@ -172,6 +172,7 @@
 
 .ai-input-row {
   display: flex;
+  align-items: flex-end; /* keeps Send pinned to the bottom as the box grows upward */
   gap: 10px;
 }
 .ai-input {
@@ -180,6 +181,12 @@
   border-radius: 24px;
   padding: 12px 18px;
   font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  overflow-y: auto;
+  min-height: 0; /* overrides global styles.css textarea{min-height:80px}, meant for bigger multi-line forms */
+  max-height: 200px; /* ~8 lines — scrolls internally past this, like ChatGPT */
+  line-height: 1.4;
 }
 .ai-input:focus { outline: none; border-color: var(--primary, #3b82f6); }
 .btn-send {

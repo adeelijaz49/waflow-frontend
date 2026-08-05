@@ -62,14 +62,15 @@
     <div class="ai-error">{{ error }}</div>
   }
   <div class="ai-input-row">
-    <input
-      type="text"
+    <textarea
       class="ai-input"
+      rows="1"
       placeholder="Ask a question or describe what you want to do…"
       [(ngModel)]="input"
-      (keydown.enter)="send()"
+      (input)="autoGrow($event)"
+      (keydown.enter)="onEnter($event)"
       [disabled]="sending || !!pendingAction"
-    />
+    ></textarea>
     <button type="button" class="btn-send" [disabled]="sending || !input.trim() || !!pendingAction" (click)="send()">Send</button>
   </div>
 </ng-template>
