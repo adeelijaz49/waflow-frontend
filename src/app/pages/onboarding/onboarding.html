@@ -1,0 +1,183 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Let's set up your store</div>
+      <div class="page-sub">A few quick steps to get WaFlow working for you.</div>
+    </div>
+  </div>
+
+  <div class="wizard-progress">
+    <div class="wizard-progress-label">Step {{ step }} of 5</div>
+    <div class="wizard-progress-bar">
+      @for (n of [1,2,3,4,5]; track n) {
+        <div class="wizard-progress-dot" [class.done]="n < step" [class.active]="n === step"></div>
+      }
+    </div>
+  </div>
+
+  <div class="card wizard-card">
+    @if (error) {
+      <div class="wizard-error">{{ error }}</div>
+    }
+
+    <!-- Step 1 — Products / Services -->
+    @if (step === 1) {
+      <div class="card-header"><span class="card-title">🛍️ Add your first products or services</span></div>
+      <div class="card-body">
+        <div class="wizard-tabs">
+          <button type="button" class="wizard-tab" [class.active]="itemType === 'product'" (click)="itemType = 'product'">Product</button>
+          <button type="button" class="wizard-tab" [class.active]="itemType === 'service'" (click)="itemType = 'service'">Service</button>
+        </div>
+
+        @if (itemType === 'product') {
+          <div class="form-row">
+            <div class="form-group"><label>Product name</label><input [(ngModel)]="productForm.name" placeholder="e.g. Classic T-Shirt" /></div>
+            <div class="form-group"><label>Category</label><input [(ngModel)]="productForm.category" placeholder="e.g. Apparel" /></div>
+            <div class="form-group" style="max-width:140px"><label>Price</label><input type="number" [(ngModel)]="productForm.basePrice" min="0" /></div>
+          </div>
+        } @else {
+          <div class="form-row">
+            <div class="form-group"><label>Service name</label><input [(ngModel)]="serviceForm.name" placeholder="e.g. Haircut" /></div>
+          </div>
+        }
+        <button class="btn btn-outline" (click)="addItem()" [disabled]="!canAddItem || saving">+ Add {{ itemType }}</button>
+
+        @if (addedItems.length) {
+          <div class="wizard-added-list">
+            @for (item of addedItems; track item.name + item.type) {
+              <div class="wizard-added-chip">{{ item.type === 'product' ? '🛍️' : '✂️' }} {{ item.name }}</div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Step 2 — Customers -->
+    @if (step === 2) {
+      <div class="card-header"><span class="card-title">👥 Add your first customers</span></div>
+      <div class="card-body">
+        <div class="wizard-tabs">
+          <button type="button" class="wizard-tab" [class.active]="customerTab === 'manual'" (click)="customerTab = 'manual'">Add manually</button>
+          <button type="button" class="wizard-tab wizard-tab-disabled" disabled title="Coming soon">Bulk import (CSV) <span class="badge badge-neutral">Soon</span></button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group"><label>Name</label><input [(ngModel)]="customerForm.name" placeholder="e.g. Alex Rivera" (keydown.enter)="addCustomer()" /></div>
+          <div class="form-group"><label>Phone number</label><input [(ngModel)]="customerForm.phone" placeholder="e.g. 61412345678" (keydown.enter)="addCustomer()" /></div>
+        </div>
+        <button class="btn btn-outline" (click)="addCustomer()" [disabled]="!canAddCustomer || saving">+ Add customer</button>
+
+        @if (addedCustomers.length) {
+          <div class="wizard-added-list">
+            @for (c of addedCustomers; track c.phone) {
+              <div class="wizard-added-chip">👤 {{ c.name }} · {{ c.phone }}</div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Step 3 — Promotion -->
+    @if (step === 3) {
+      <div class="card-header"><span class="card-title">📣 Choose a promotion</span></div>
+      <div class="card-body">
+        @if (!createdPromotion) {
+          <div class="wizard-gallery">
+            @for (t of promoTemplates; track t.value) {
+              <div class="wizard-gallery-card" (click)="applyPromoTemplate(t)">
+                <div class="wizard-gallery-icon">{{ t.icon }}</div>
+                <div class="fw-600" style="font-size:14px">{{ t.label }}</div>
+                <div class="text-muted" style="font-size:12px;margin-top:4px">{{ t.blurb }}</div>
+              </div>
+            }
+          </div>
+
+          @if (!showCustomPromo) {
+            <button class="btn btn-link" (click)="showCustomPromo = true">or create your own</button>
+          } @else {
+            <div class="form-row" style="margin-top:12px">
+              <div class="form-group"><label>Promotion name</label><input [(ngModel)]="customPromoForm.name" placeholder="e.g. Weekend Sale" /></div>
+              <div class="form-group" style="max-width:140px"><label>Discount %</label><input type="number" [(ngModel)]="customPromoForm.discountPercent" min="0" max="100" /></div>
+            </div>
+            <button class="btn btn-outline" (click)="createCustomPromo()" [disabled]="!customPromoForm.name.trim() || saving">Create promotion</button>
+          }
+        } @else {
+          <div class="success-box">✅ "{{ createdPromotion.name }}" promotion created — saved as a draft, ready to send whenever you are.</div>
+        }
+      </div>
+    }
+
+    <!-- Step 4 — Automation -->
+    @if (step === 4) {
+      <div class="card-header"><span class="card-title">⟳ Choose an automation rule</span></div>
+      <div class="card-body">
+        @if (!createdFlow) {
+          @if (loadingPresets) {
+            <div class="loading" style="padding:20px">Loading presets...</div>
+          } @else {
+            <div class="wizard-preset-list">
+              @for (p of presets; track p.id) {
+                <div class="wizard-preset-card">
+                  <div class="wizard-preset-card-header">
+                    <span class="fw-600" style="font-size:13px">{{ p.action }}</span>
+                    <button class="btn btn-primary btn-sm" (click)="applyFlowPreset(p)" [disabled]="saving">Apply</button>
+                  </div>
+                  <div class="text-muted" style="font-size:12px;margin-top:4px">{{ p.why }}</div>
+                </div>
+              }
+            </div>
+
+            @if (!showCustomFlow) {
+              <button class="btn btn-link" (click)="showCustomFlow = true">or build your own</button>
+            } @else {
+              <div class="form-row" style="margin-top:12px">
+                <div class="form-group"><label>Rule name</label><input [(ngModel)]="customFlowForm.name" placeholder="e.g. Win back inactive customers" /></div>
+                <div class="form-group">
+                  <label>When should it trigger?</label>
+                  <select [(ngModel)]="customFlowForm.triggerType">
+                    @for (t of flowTriggerTypes; track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+                  </select>
+                </div>
+              </div>
+              <button class="btn btn-outline" (click)="createCustomFlow()" [disabled]="!customFlowForm.name.trim() || saving">Create rule</button>
+            }
+          }
+        } @else {
+          <div class="success-box">✅ "{{ createdFlow.name }}" automation created — currently paused, so nothing sends until you turn it on.</div>
+        }
+      </div>
+    }
+
+    <!-- Step 5 — Go Live -->
+    @if (step === 5) {
+      <div class="card-header"><span class="card-title">🎉 You're all set!</span></div>
+      <div class="card-body">
+        <div class="success-box" style="margin-bottom:16px">
+          @if (createdPromotion) {
+            Your first promotion, "{{ createdPromotion.name }}", is saved and ready to send whenever you are.
+          } @else {
+            Your workspace is ready. Head to Promotions whenever you'd like to create your first send.
+          }
+        </div>
+        <div class="wizard-summary">
+          <div class="wizard-summary-row"><span>Products / services added</span><strong>{{ addedItems.length }}</strong></div>
+          <div class="wizard-summary-row"><span>Customers added</span><strong>{{ addedCustomers.length }}</strong></div>
+          <div class="wizard-summary-row"><span>Promotion</span><strong>{{ createdPromotion?.name || 'None yet' }}</strong></div>
+          <div class="wizard-summary-row"><span>Automation rule</span><strong>{{ createdFlow?.name || 'None yet' }}</strong></div>
+        </div>
+      </div>
+    }
+
+    <div class="wizard-footer">
+      @if (step < 5) {
+        <button class="btn btn-link" (click)="skip()">Skip for now</button>
+        <button class="btn btn-primary" (click)="continue()"
+          [disabled]="(step === 1 && !addedItems.length) || (step === 2 && !addedCustomers.length) || (step === 3 && !createdPromotion) || (step === 4 && !createdFlow)">
+          Continue
+        </button>
+      } @else {
+        <button class="btn btn-primary" (click)="finish()" [disabled]="saving">Finish &amp; go to Dashboard</button>
+      }
+    </div>
+  </div>
+</div>

@@ -6,6 +6,13 @@
     </div>
   </div>
 
+  @if (onboarding && !onboarding.completed) {
+    <a routerLink="/onboarding" class="setup-widget">
+      <span>🚀 Finish setup ({{ onboarding.currentStep - 1 }}/5)</span>
+      <span class="setup-widget-cta">Continue setup →</span>
+    </a>
+  }
+
   <div class="primary-actions">
     <a routerLink="/promotions" class="primary-action-btn run-promotion">🚀 Run Promotion</a>
     <a routerLink="/promotions" [queryParams]="{openLoyalty: true}" class="primary-action-btn loyalty-reminder">💎 Create Loyalty Reminder</a>

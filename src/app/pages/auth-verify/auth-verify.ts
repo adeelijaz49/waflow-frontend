@@ -34,7 +34,7 @@ export class AuthVerify implements OnInit {
           return;
         }
         this.auth.completeLogin(res.token);
-        this.router.navigateByUrl('/dashboard');
+        this.router.navigateByUrl(this.auth.postLoginRedirect(res));
       },
       error: (err) => {
         this.status = 'error';
@@ -45,7 +45,7 @@ export class AuthVerify implements OnInit {
 
   selectWorkspace(workspaceId: string) {
     this.api.selectWorkspace(this.preAuthToken, workspaceId).subscribe({
-      next: (res) => { this.auth.completeLogin(res.token); this.router.navigateByUrl('/dashboard'); },
+      next: (res) => { this.auth.completeLogin(res.token); this.router.navigateByUrl(this.auth.postLoginRedirect(res)); },
       error: (err) => { this.status = 'error'; this.error = err.error?.error || 'Something went wrong — please try again.'; },
     });
   }

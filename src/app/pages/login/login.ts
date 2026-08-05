@@ -88,7 +88,7 @@ export class Login {
     this.loading = true;
     this.error = null;
     this.api.selectWorkspace(this.preAuthToken, workspaceId).subscribe({
-      next: (res) => { this.loading = false; this.auth.completeLogin(res.token); this.router.navigateByUrl('/dashboard'); },
+      next: (res) => { this.loading = false; this.auth.completeLogin(res.token); this.router.navigateByUrl(this.auth.postLoginRedirect(res)); },
       error: (err) => { this.loading = false; this.error = err.error?.error || 'Something went wrong — please try again.'; },
     });
   }
@@ -112,6 +112,6 @@ export class Login {
       return;
     }
     this.auth.completeLogin(res.token);
-    this.router.navigateByUrl('/dashboard');
+    this.router.navigateByUrl(this.auth.postLoginRedirect(res));
   }
 }

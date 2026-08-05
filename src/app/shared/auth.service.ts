@@ -4,7 +4,7 @@ import { ApiService } from '../services/api.service';
 
 export interface AuthSession {
   user: { id: string; name: string; phone: string; email: string };
-  workspace: { id: string; name: string };
+  workspace: { id: string; name: string; onboarding: { completed: boolean; currentStep: number } };
   role: 'owner' | 'member';
 }
 
@@ -40,6 +40,15 @@ export class AuthService {
   completeLogin(token: string): void {
     localStorage.setItem(TOKEN_KEY, token);
     this.refresh();
+  }
+
+  // Where to send the browser right after a successful login — the one place
+  // the onboarding wizard actually gets triggered from. Reads onboarding
+  // straight off the login/verify/select-workspace response body (not the
+  // async session$ refresh triggered by completeLogin above) so there's no
+  // race between navigating and the session actually being populated.
+  postLoginRedirect(res: { workspace?: { onboarding?: { completed?: boolean } } }): string {
+    return res.workspace?.onboarding?.completed === false ? '/onboarding' : '/dashboard';
   }
 
   refresh(): void {

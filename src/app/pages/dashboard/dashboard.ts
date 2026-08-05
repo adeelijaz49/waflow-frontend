@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { AuthService } from '../../shared/auth.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 
@@ -15,7 +16,7 @@ export class Dashboard implements OnInit {
   stats: any = null;
   loading = true;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, public auth: AuthService) {}
 
   ngOnInit() {
     this.api.getOrderStats().subscribe({
@@ -24,4 +25,7 @@ export class Dashboard implements OnInit {
     });
   }
 
+  get onboarding() {
+    return this.auth.sessionSnapshot?.workspace?.onboarding;
+  }
 }

@@ -117,6 +117,11 @@ export class ApiService {
     return this.http.put(`${API}/settings/loyalty`, data);
   }
 
+  // ── Onboarding ───────────────────────────────────────────────────────────
+  updateOnboarding(data: { completed?: boolean; currentStep?: number }): Observable<any> {
+    return this.http.patch(`${API}/workspaces/me/onboarding`, data);
+  }
+
   // ── Support ──────────────────────────────────────────────────────────────
   submitSupportTicket(message: string, contactEmail: string): Observable<any> {
     return this.http.post(`${API}/support`, { message, contactEmail });

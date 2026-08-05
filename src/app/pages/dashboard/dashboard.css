@@ -1,3 +1,21 @@
+.setup-widget {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e40af;
+  text-decoration: none;
+}
+.setup-widget:hover { border-color: var(--primary); }
+.setup-widget-cta { font-size: 13px; font-weight: 600; }
+
 .primary-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
