@@ -1,13 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 
 @Component({
   selector: 'app-customers',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, DatePipe, StatusBadgePipe],
+  imports: [CommonModule, FormsModule, RouterLink, AppCurrencyPipe, DatePipe, StatusBadgePipe],
   templateUrl: './customers.html',
   styleUrl: './customers.css',
 })

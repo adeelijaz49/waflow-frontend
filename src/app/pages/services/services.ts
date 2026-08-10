@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { SettingsService } from '../../shared/settings.service';
@@ -9,7 +10,7 @@ import { ImageCarousel } from '../../shared/image-carousel/image-carousel';
 
 @Component({
   selector: 'app-services',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, ImageCarousel],
+  imports: [CommonModule, FormsModule, RouterLink, AppCurrencyPipe, StatusBadgePipe, ImageCarousel],
   templateUrl: './services.html',
   styleUrl: './services.css',
 })

@@ -58,7 +58,7 @@
       <div class="card-body">
         <div class="wizard-tabs">
           <button type="button" class="wizard-tab" [class.active]="customerTab === 'manual'" (click)="customerTab = 'manual'">Add manually</button>
-          <button type="button" class="wizard-tab wizard-tab-disabled" disabled title="Coming soon">Bulk import (CSV) <span class="badge badge-neutral">Soon</span></button>
+          <a class="wizard-tab" [routerLink]="['/imports']" [queryParams]="{entityType:'customer'}">Bulk import (CSV)</a>
         </div>
 
         <div class="form-row">

@@ -4,7 +4,10 @@
       <div class="page-title">Services</div>
       <div class="page-sub">Manage bookable services, time slots, and appointments</div>
     </div>
-    <button class="btn btn-primary" (click)="openAddService()">+ Add Service</button>
+    <div style="display:flex; gap:8px">
+      <a class="btn btn-outline" [routerLink]="['/imports']" [queryParams]="{entityType:'service'}">⬆ Import CSV</a>
+      <button class="btn btn-primary" (click)="openAddService()">+ Add Service</button>
+    </div>
   </div>
 
   <div class="services-layout">

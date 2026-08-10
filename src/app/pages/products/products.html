@@ -4,7 +4,10 @@
       <div class="page-title">Products</div>
       <div class="page-sub">{{ total | number }} products in your store</div>
     </div>
-    <button class="btn btn-primary" (click)="openAdd()">+ Add Product</button>
+    <div style="display:flex; gap:8px">
+      <a class="btn btn-outline" [routerLink]="['/imports']" [queryParams]="{entityType:'product'}">⬆ Import CSV</a>
+      <button class="btn btn-primary" (click)="openAdd()">+ Add Product</button>
+    </div>
   </div>
 
   <div class="search-bar">

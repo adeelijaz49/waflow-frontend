@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../shared/auth.service';
 
@@ -31,7 +31,7 @@ const FLOW_TRIGGER_TYPES = [
 
 @Component({
   selector: 'app-onboarding',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './onboarding.html',
   styleUrl: './onboarding.css',
 })

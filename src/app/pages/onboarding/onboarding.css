@@ -36,6 +36,8 @@
   color: var(--text);
   font-size: 13px;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
 }
 .wizard-tab.active { border-color: var(--primary); background: #eff6ff; color: var(--primary-dark); font-weight: 600; }
 .wizard-tab-disabled { cursor: default; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }

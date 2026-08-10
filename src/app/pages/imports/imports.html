@@ -1,0 +1,152 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Import {{ entityLabel }}</div>
+      <div class="page-sub">Bring your existing {{ entityLabel | lowercase }} in from a CSV or Excel file.</div>
+    </div>
+    <a class="btn btn-outline" [routerLink]="['/' + entityType + 's']">← Back to {{ entityLabel }}</a>
+  </div>
+
+  <div class="wizard-progress">
+    <div class="wizard-progress-label">Step {{ step }} of 4</div>
+    <div class="wizard-progress-bar">
+      @for (n of [1,2,3,4]; track n) {
+        <div class="wizard-progress-dot" [class.done]="n < step" [class.active]="n === step"></div>
+      }
+    </div>
+  </div>
+
+  <div class="card wizard-card">
+    @if (error) {
+      <div class="wizard-error">{{ error }}</div>
+    }
+
+    <!-- Step 1 — Upload -->
+    @if (step === 1) {
+      <div class="card-header"><span class="card-title">📤 Upload your file</span></div>
+      <div class="card-body">
+        <p class="text-muted" style="font-size:13px;margin-bottom:12px">Accepts .csv and .xlsx files, up to 5,000 rows.</p>
+        <input type="file" accept=".csv,.xlsx" (change)="onFileSelected($event)" />
+        <div style="margin-top:16px">
+          <button class="btn btn-outline" (click)="upload()" [disabled]="!file || uploading">
+            {{ uploading ? 'Uploading...' : 'Upload & Continue' }}
+          </button>
+        </div>
+        <button class="btn-link" (click)="downloadSampleTemplate()">Download a sample CSV template</button>
+      </div>
+    }
+
+    <!-- Step 2 — Column Mapping -->
+    @if (step === 2) {
+      <div class="card-header"><span class="card-title">🔗 Map your columns</span></div>
+      <div class="card-body">
+        <p class="text-muted" style="font-size:13px;margin-bottom:16px">We matched what we could automatically — just confirm or adjust below.</p>
+        <div class="mapping-grid">
+          <div class="mapping-row mapping-row-header">
+            <span>Waflow field</span>
+            <span>Your column</span>
+          </div>
+          @for (field of fields; track field.key) {
+            <div class="mapping-row">
+              <span>
+                {{ field.label }}
+                @if (field.required) { <span class="badge badge-danger" style="margin-left:6px">Required</span> }
+                @else { <span class="badge badge-neutral" style="margin-left:6px">Optional</span> }
+              </span>
+              <select [(ngModel)]="columnMapping[field.key]">
+                <option [ngValue]="undefined">— Not mapped —</option>
+                @for (h of headers; track h) { <option [ngValue]="h">{{ h }}</option> }
+              </select>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Step 3 — Preview & Validate -->
+    @if (step === 3 && summary) {
+      <div class="card-header"><span class="card-title">👀 Preview &amp; validate</span></div>
+      <div class="card-body">
+        <div class="wizard-summary" style="margin-bottom:16px">
+          <div class="wizard-summary-row"><span>Total rows</span><strong>{{ summary.totalRows }}</strong></div>
+          <div class="wizard-summary-row"><span>Will import cleanly</span><strong>{{ summary.clean }}</strong></div>
+          <div class="wizard-summary-row"><span>Will update an existing match</span><strong>{{ summary.duplicate }}</strong></div>
+          <div class="wizard-summary-row"><span>Errors</span><strong>{{ summary.error }}</strong></div>
+        </div>
+
+        @if (discrepancies.length) {
+          <div class="discrepancy-box">
+            <div class="fw-600" style="margin-bottom:8px">⚠️ {{ discrepancies.length }} customer{{ discrepancies.length === 1 ? '' : 's' }} already {{ discrepancies.length === 1 ? 'has' : 'have' }} an imported points balance that differs from this file</div>
+            @for (d of discrepancies; track d.rowIndex) {
+              <div class="discrepancy-row">
+                <div>
+                  <div class="fw-600" style="font-size:13px">{{ d.customerName || d.phone }}</div>
+                  <div class="text-muted" style="font-size:12px">Already has an imported balance of {{ d.previousImportedBalance }}; this file says {{ d.newFileValue }}.</div>
+                </div>
+                <div class="discrepancy-choice">
+                  <button class="btn btn-sm" [class.btn-primary]="discrepancyChoice[d.rowIndex] === 'apply'" [class.btn-outline]="discrepancyChoice[d.rowIndex] !== 'apply'" (click)="discrepancyChoice[d.rowIndex] = 'apply'">Apply {{ d.newFileValue }}</button>
+                  <button class="btn btn-sm" [class.btn-primary]="discrepancyChoice[d.rowIndex] === 'skip'" [class.btn-outline]="discrepancyChoice[d.rowIndex] !== 'skip'" (click)="discrepancyChoice[d.rowIndex] = 'skip'">Keep existing</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (preview.error.length) {
+          <div class="section-label" style="margin-top:16px">Rows with errors (will be skipped)</div>
+          <div class="preview-table">
+            @for (r of preview.error; track r.rowIndex) {
+              <div class="preview-row preview-row-error">
+                <span>Row {{ r.rowIndex + 2 }}</span>
+                <span>{{ r.errors[0].reason }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        @if (preview.clean.length) {
+          <div class="section-label" style="margin-top:16px">Will import cleanly (showing first {{ preview.clean.length }})</div>
+          <div class="preview-table">
+            @for (r of preview.clean; track r.rowIndex) {
+              <div class="preview-row">
+                <span>{{ r.mapped.name }}</span>
+                <span class="text-muted">{{ r.mapped.phone || r.mapped.basePrice }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Step 4 — Results -->
+    @if (step === 4 && results) {
+      <div class="card-header"><span class="card-title">✅ Import complete</span></div>
+      <div class="card-body">
+        <div class="success-box">
+          Imported {{ results.importedCount }}. Updated {{ results.skippedDuplicateCount }} existing matches.
+          @if (results.failedCount) { {{ results.failedCount }} failed. }
+        </div>
+        @if (results.failedCount) {
+          <button class="btn btn-outline" style="margin-top:12px" (click)="downloadErrorReport()">Download error report</button>
+        }
+      </div>
+    }
+
+    <div class="wizard-footer">
+      @if (step === 2) {
+        <button class="btn btn-link" (click)="backToUpload()">← Start over</button>
+        <button class="btn btn-primary" (click)="confirmMapping()" [disabled]="mapping || unmappedRequiredFields.length > 0">
+          {{ mapping ? 'Validating...' : 'Continue' }}
+        </button>
+      }
+      @if (step === 3) {
+        <button class="btn btn-primary" (click)="runImport()" [disabled]="running || !summary || (summary.clean === 0 && summary.duplicate === 0)">
+          {{ running ? 'Importing...' : 'Run Import' }}
+        </button>
+      }
+      @if (step === 4) {
+        <button class="btn btn-primary" (click)="startAnother()">Import another file</button>
+      }
+    </div>
+  </div>
+</div>

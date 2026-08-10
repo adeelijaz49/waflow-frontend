@@ -12,7 +12,7 @@ import { AuthService } from '../../shared/auth.service';
   styleUrl: './settings.css',
 })
 export class Settings implements OnInit {
-  loyaltySettings: any = { loyaltyPointsPerUnit: 100, minPointsPerPurchase: 100, currency: 'AUD', flowCooldownDays: 3, merchantName: '' };
+  loyaltySettings: any = { loyaltyPointsPerUnit: 100, minPointsPerPurchase: 100, currency: 'AUD', flowCooldownDays: 3, merchantName: '', defaultCountryCode: '966' };
   loyaltySaving  = false;
   loyaltySaved   = false;
 

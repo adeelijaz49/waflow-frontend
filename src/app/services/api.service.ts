@@ -122,6 +122,32 @@ export class ApiService {
     return this.http.patch(`${API}/workspaces/me/onboarding`, data);
   }
 
+  // ── Bulk Import (customers/products/services) ──────────────────────────────
+  uploadImport(entityType: string, file: File): Observable<any> {
+    const form = new FormData();
+    form.append('entityType', entityType);
+    form.append('file', file);
+    return this.http.post(`${API}/imports`, form);
+  }
+  updateImportMapping(id: string, columnMapping: Record<string, string>): Observable<any> {
+    return this.http.patch(`${API}/imports/${id}/mapping`, { columnMapping });
+  }
+  runImport(id: string, discrepancyResolutions: { rowIndex: number; action: 'apply' | 'skip' }[]): Observable<any> {
+    return this.http.post(`${API}/imports/${id}/run`, { discrepancyResolutions });
+  }
+  getImportJob(id: string): Observable<any> {
+    return this.http.get(`${API}/imports/${id}`);
+  }
+  // Every /api/imports/* route sits behind requireAuth, so these two can't be
+  // a plain <a href> — the Authorization header only gets attached to actual
+  // HttpClient requests (via the auth interceptor), not a browser navigation.
+  downloadImportErrorReport(id: string): Observable<Blob> {
+    return this.http.get(`${API}/imports/${id}/error-report`, { responseType: 'blob' });
+  }
+  downloadImportSampleTemplate(entityType: string): Observable<Blob> {
+    return this.http.get(`${API}/imports/sample-template`, { params: { entityType }, responseType: 'blob' });
+  }
+
   // ── Support ──────────────────────────────────────────────────────────────
   submitSupportTicket(message: string, contactEmail: string): Observable<any> {
     return this.http.post(`${API}/support`, { message, contactEmail });

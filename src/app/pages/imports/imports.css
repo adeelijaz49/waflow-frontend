@@ -1,0 +1,112 @@
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.wizard-progress-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.wizard-progress-bar { display: flex; gap: 6px; flex: 1; max-width: 240px; }
+.wizard-progress-dot { height: 6px; flex: 1; border-radius: 4px; background: var(--border); }
+.wizard-progress-dot.done   { background: var(--success); }
+.wizard-progress-dot.active { background: var(--primary); }
+
+.wizard-card { max-width: 720px; }
+
+.wizard-error {
+  margin: 12px 16px 0;
+  padding: 10px 12px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 13px;
+}
+
+.wizard-summary { display: flex; flex-direction: column; gap: 8px; }
+.wizard-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.wizard-summary-row:last-child { border-bottom: none; }
+
+.wizard-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 0;
+  margin-top: 12px;
+  display: block;
+}
+.btn-link:hover { text-decoration: underline; }
+
+.success-box {
+  padding: 12px 14px;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #065f46;
+  line-height: 1.6;
+}
+
+/* Step 2 — column mapping */
+.mapping-grid { display: flex; flex-direction: column; gap: 8px; }
+.mapping-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.mapping-row-header { font-weight: 600; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: none; }
+
+/* Step 3 — discrepancy review */
+.discrepancy-box {
+  padding: 12px 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.discrepancy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #fde68a;
+}
+.discrepancy-choice { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* Step 3 — row previews */
+.preview-table { display: flex; flex-direction: column; gap: 4px; }
+.preview-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--bg);
+}
+.preview-row-error { background: #fee2e2; color: #991b1b; }

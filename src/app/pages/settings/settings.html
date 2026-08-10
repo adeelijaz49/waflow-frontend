@@ -44,6 +44,17 @@
           <input type="number" [(ngModel)]="loyaltySettings.flowCooldownDays" min="0" />
           <div class="text-muted" style="font-size:11px;margin-top:4px">Minimum gap between messaging the same customer from two different Automated Flows. A flow's own cooldown override (set when editing it) takes precedence over this.</div>
         </div>
+        <div class="form-group" style="max-width:220px">
+          <label>Default Country Code</label>
+          <select [(ngModel)]="loyaltySettings.defaultCountryCode">
+            <option value="966">Saudi Arabia (+966)</option>
+            <option value="971">United Arab Emirates (+971)</option>
+            <option value="61">Australia (+61)</option>
+            <option value="44">United Kingdom (+44)</option>
+            <option value="1">United States / Canada (+1)</option>
+          </select>
+          <div class="text-muted" style="font-size:11px;margin-top:4px">Used to match phone numbers during CSV import — e.g. 0501234567 and +966501234567 resolve to the same customer.</div>
+        </div>
       </div>
       <button class="btn btn-primary" (click)="saveLoyalty()" [disabled]="loyaltySaving">
         {{ loyaltySaving ? 'Saving...' : 'Save Settings' }}

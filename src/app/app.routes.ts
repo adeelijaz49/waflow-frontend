@@ -17,4 +17,5 @@ export const routes: Routes = [
   { path: 'settings',   canActivate: [authGuard], loadComponent: () => import('./pages/settings/settings').then(m => m.Settings) },
   { path: 'support',    canActivate: [authGuard], loadComponent: () => import('./pages/support/support').then(m => m.Support) },
   { path: 'onboarding', canActivate: [authGuard], loadComponent: () => import('./pages/onboarding/onboarding').then(m => m.Onboarding) },
+  { path: 'imports',    canActivate: [authGuard], loadComponent: () => import('./pages/imports/imports').then(m => m.Imports) },
 ];
