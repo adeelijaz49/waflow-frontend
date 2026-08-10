@@ -27,6 +27,14 @@
       <div class="card-body">
         <p class="text-muted" style="font-size:13px;margin-bottom:12px">Accepts .csv and .xlsx files, up to 5,000 rows.</p>
         <input type="file" accept=".csv,.xlsx" (change)="onFileSelected($event)" />
+        @if (entityType === 'customer') {
+          <div class="form-group" style="margin-top:16px">
+            <label style="display:flex;align-items:flex-start;gap:8px;font-weight:normal">
+              <input type="checkbox" [(ngModel)]="marketingConsentAttested" style="margin-top:3px" />
+              <span>These contacts have agreed to receive marketing messages via WhatsApp <span class="text-muted">(leave unchecked if unsure — they simply won't receive marketing until they consent some other way)</span></span>
+            </label>
+          </div>
+        }
         <div style="margin-top:16px">
           <button class="btn btn-outline" (click)="upload()" [disabled]="!file || uploading">
             {{ uploading ? 'Uploading...' : 'Upload & Continue' }}

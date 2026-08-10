@@ -30,6 +30,7 @@ export class Imports implements OnInit {
   // Step 1
   file: File | null = null;
   uploading = false;
+  marketingConsentAttested = false; // customer imports only — file-level consent attestation
 
   // Step 2
   jobId: string | null = null;
@@ -70,7 +71,7 @@ export class Imports implements OnInit {
     if (!this.file || this.uploading) return;
     this.uploading = true;
     this.error = null;
-    this.api.uploadImport(this.entityType, this.file).subscribe({
+    this.api.uploadImport(this.entityType, this.file, this.marketingConsentAttested).subscribe({
       next: (res) => {
         this.uploading = false;
         this.jobId = res.id;
@@ -145,6 +146,7 @@ export class Imports implements OnInit {
   startAnother() {
     this.step = 1;
     this.file = null;
+    this.marketingConsentAttested = false;
     this.jobId = null;
     this.headers = [];
     this.fields = [];

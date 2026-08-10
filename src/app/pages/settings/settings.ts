@@ -42,6 +42,10 @@ export class Settings implements OnInit {
   inviteError: string | null = null;
   inviteWarning: string | null = null;
 
+  // Privacy & Compliance
+  consentStats: any = null;
+  consentStatsLoading = false;
+
   constructor(private api: ApiService, private settings: SettingsService, public auth: AuthService) {}
 
   ngOnInit() {
@@ -50,6 +54,15 @@ export class Settings implements OnInit {
     this.loadTemplates();
     this.loadMembers();
     this.loadInvites();
+    this.loadConsentStats();
+  }
+
+  loadConsentStats() {
+    this.consentStatsLoading = true;
+    this.api.getConsentStats().subscribe({
+      next: (s) => { this.consentStats = s; this.consentStatsLoading = false; },
+      error: () => { this.consentStatsLoading = false; },
+    });
   }
 
   loadLoyaltySettings() {

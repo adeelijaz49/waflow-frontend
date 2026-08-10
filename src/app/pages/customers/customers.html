@@ -90,11 +90,13 @@
               <span class="badge badge-info">{{ selectedCustomer.loyaltyPoints }} pts = {{ selectedCustomer.loyaltyPoints / 10 | appCurrency }}</span>
             </div>
             <div class="meta-item">
-              <span class="meta-label">WhatsApp Consent</span>
+              <span class="meta-label">Marketing Consent</span>
               @if (selectedCustomer.optedOut) {
                 <span class="badge badge-danger">Opted out{{ selectedCustomer.optedOutAt ? (' · ' + (selectedCustomer.optedOutAt | date:'d MMM y')) : '' }}</span>
+              } @else if (selectedCustomer.marketingConsent) {
+                <span class="badge badge-success">Consented{{ selectedCustomer.marketingConsentAt ? (' · ' + (selectedCustomer.marketingConsentAt | date:'d MMM y')) : '' }}</span>
               } @else {
-                <span class="badge badge-success">Subscribed</span>
+                <span class="badge badge-neutral">Not yet consented</span>
               }
             </div>
           </div>
@@ -233,6 +235,12 @@
         <div class="form-group">
           <label>Email (optional)</label>
           <input [(ngModel)]="form.email" placeholder="john@example.com" />
+        </div>
+        <div class="form-group">
+          <label class="checkbox-row" style="display:flex;align-items:center;gap:8px;font-weight:normal">
+            <input type="checkbox" [(ngModel)]="form.marketingConsent" />
+            This customer has agreed to receive marketing messages via WhatsApp
+          </label>
         </div>
       </div>
       <div class="modal-footer">

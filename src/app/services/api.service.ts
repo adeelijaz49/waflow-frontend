@@ -91,6 +91,9 @@ export class ApiService {
   getCustomerBookings(id: string): Observable<any[]> {
     return this.http.get<any[]>(`${API}/customers/${id}/bookings`);
   }
+  getConsentStats(): Observable<any> {
+    return this.http.get(`${API}/customers/consent-stats`);
+  }
 
   // ── Orders ────────────────────────────────────────────────────────────────
   getOrders(params: any = {}): Observable<any> {
@@ -123,10 +126,11 @@ export class ApiService {
   }
 
   // ── Bulk Import (customers/products/services) ──────────────────────────────
-  uploadImport(entityType: string, file: File): Observable<any> {
+  uploadImport(entityType: string, file: File, marketingConsentAttested = false): Observable<any> {
     const form = new FormData();
     form.append('entityType', entityType);
     form.append('file', file);
+    form.append('marketingConsentAttested', String(marketingConsentAttested));
     return this.http.post(`${API}/imports`, form);
   }
   updateImportMapping(id: string, columnMapping: Record<string, string>): Observable<any> {

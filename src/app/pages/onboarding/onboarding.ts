@@ -48,7 +48,7 @@ export class Onboarding implements OnInit {
 
   // Step 2 — Customers
   customerTab: 'manual' | 'import' = 'manual';
-  customerForm = { name: '', phone: '' };
+  customerForm = { name: '', phone: '', marketingConsent: false };
   addedCustomers: { name: string; phone: string }[] = [];
 
   // Step 3 — Promotion
@@ -115,10 +115,10 @@ export class Onboarding implements OnInit {
     const parts = this.customerForm.name.trim().split(/\s+/);
     const firstname = parts[0];
     const lastname = parts.slice(1).join(' ') || parts[0];
-    this.api.createCustomer({ firstname, lastname, phone: this.customerForm.phone.trim() }).subscribe({
+    this.api.createCustomer({ firstname, lastname, phone: this.customerForm.phone.trim(), marketingConsent: this.customerForm.marketingConsent }).subscribe({
       next: () => {
         this.addedCustomers.push({ name: this.customerForm.name, phone: this.customerForm.phone });
-        this.customerForm = { name: '', phone: '' };
+        this.customerForm = { name: '', phone: '', marketingConsent: false };
         this.saving = false;
       },
       error: (err) => { this.saving = false; this.error = err.error?.error || 'Something went wrong.'; },

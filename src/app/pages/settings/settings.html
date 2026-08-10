@@ -205,6 +205,47 @@
     </div>
   </div>
 
+  <!-- Privacy & Compliance -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <span class="card-title">🔒 Privacy & Compliance</span>
+    </div>
+    <div class="card-body">
+      @if (consentStatsLoading) {
+        <div class="loading" style="padding:16px">Loading...</div>
+      } @else if (consentStats) {
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+          Marketing messages (promotions, loyalty reminders, automated flows) only go to customers who've given affirmative consent — either by tapping "Yes, sign me up" on a WhatsApp message, or via the consent checkbox at manual/CSV signup. Replying STOP always blocks marketing messages immediately, regardless of consent status.
+        </p>
+        <div class="status-grid">
+          <div class="status-row"><span class="status-label">Consented</span><span class="badge badge-success">{{ consentStats.consented }}</span></div>
+          <div class="status-row"><span class="status-label">Not yet consented</span><span class="badge badge-neutral">{{ consentStats.notYetConsented }}</span></div>
+          <div class="status-row"><span class="status-label">Opted out</span><span class="badge badge-danger">{{ consentStats.optedOut }}</span></div>
+          <div class="status-row"><span class="status-label">Total customers</span><span>{{ consentStats.total }}</span></div>
+        </div>
+
+        @if (consentStats.recentEvents.length > 0) {
+          <div class="section-label" style="margin-top:20px">Recent consent activity</div>
+          <div class="table-wrap" style="margin-top:8px">
+            <table>
+              <thead><tr><th>Customer</th><th>Event</th><th>Method</th><th>When</th></tr></thead>
+              <tbody>
+                @for (e of consentStats.recentEvents; track $index) {
+                  <tr>
+                    <td>{{ e.customerName || e.phone }}</td>
+                    <td>{{ e.type }}</td>
+                    <td>{{ e.method }}</td>
+                    <td>{{ e.createdAt | date:'d MMM y, HH:mm' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
   <!-- Templates — read-only (DEFECT-05). Creating/editing a message now happens
        where the message itself lives: inside a Promotion or a Flow's custom
        entry message. The 6 fixed fallback templates below (waflow_promo,

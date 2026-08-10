@@ -31,7 +31,7 @@ export class Customers implements OnInit {
 
   showAddModal = false;
   saving = false;
-  form = { firstname: '', lastname: '', phone: '', email: '' };
+  form = { firstname: '', lastname: '', phone: '', email: '', marketingConsent: false };
 
   constructor(private api: ApiService) {}
 
@@ -110,7 +110,7 @@ export class Customers implements OnInit {
   }
 
   openAdd() {
-    this.form = { firstname: '', lastname: '', phone: '', email: '' };
+    this.form = { firstname: '', lastname: '', phone: '', email: '', marketingConsent: false };
     this.showAddModal = true;
   }
 
