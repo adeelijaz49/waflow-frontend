@@ -224,6 +224,28 @@
           <div class="status-row"><span class="status-label">Total customers</span><span>{{ consentStats.total }}</span></div>
         </div>
 
+        <div class="hint-box" style="margin-top:16px">
+          💡 Customers who were already in your system before this feature, or who simply haven't placed a fresh order since, never get asked automatically — the WhatsApp button only appears on a new order/booking confirmation. Send a one-time consent request to reach the rest of your list.
+        </div>
+
+        @if (consentRequestResult) {
+          <div class="result-box {{ consentRequestResult.error ? 'result-error' : 'result-success' }}" style="margin-top:14px">
+            @if (consentRequestResult.error) {
+              {{ consentRequestResult.error }}
+            } @else {
+              ✅ Sent to {{ consentRequestResult.sentCount }} of {{ consentRequestResult.totalEligible }} eligible customers.
+              @if (consentRequestResult.errors?.length > 0) {
+                <span> {{ consentRequestResult.errors.length }} failed to send.</span>
+              }
+            }
+          </div>
+        }
+
+        <button class="btn btn-primary" style="margin-top:12px" (click)="sendConsentRequests()"
+          [disabled]="sendingConsentRequests || !consentStats.eligibleForConsentRequest">
+          {{ sendingConsentRequests ? 'Sending...' : 'Send consent request to ' + consentStats.eligibleForConsentRequest + ' customer' + (consentStats.eligibleForConsentRequest === 1 ? '' : 's') }}
+        </button>
+
         @if (consentStats.recentEvents.length > 0) {
           <div class="section-label" style="margin-top:20px">Recent consent activity</div>
           <div class="table-wrap" style="margin-top:8px">

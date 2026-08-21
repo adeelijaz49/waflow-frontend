@@ -94,6 +94,9 @@ export class ApiService {
   getConsentStats(): Observable<any> {
     return this.http.get(`${API}/customers/consent-stats`);
   }
+  sendConsentRequests(): Observable<any> {
+    return this.http.post(`${API}/customers/consent-requests`, {});
+  }
 
   // ── Orders ────────────────────────────────────────────────────────────────
   getOrders(params: any = {}): Observable<any> {

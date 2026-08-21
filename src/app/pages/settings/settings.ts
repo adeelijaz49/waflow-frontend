@@ -45,6 +45,8 @@ export class Settings implements OnInit {
   // Privacy & Compliance
   consentStats: any = null;
   consentStatsLoading = false;
+  sendingConsentRequests = false;
+  consentRequestResult: any = null;
 
   constructor(private api: ApiService, private settings: SettingsService, public auth: AuthService) {}
 
@@ -62,6 +64,23 @@ export class Settings implements OnInit {
     this.api.getConsentStats().subscribe({
       next: (s) => { this.consentStats = s; this.consentStatsLoading = false; },
       error: () => { this.consentStatsLoading = false; },
+    });
+  }
+
+  sendConsentRequests() {
+    if (this.sendingConsentRequests) return;
+    this.sendingConsentRequests = true;
+    this.consentRequestResult = null;
+    this.api.sendConsentRequests().subscribe({
+      next: (res) => {
+        this.sendingConsentRequests = false;
+        this.consentRequestResult = res;
+        this.loadConsentStats(); // refresh counts now that these customers have been asked
+      },
+      error: (err) => {
+        this.sendingConsentRequests = false;
+        this.consentRequestResult = { error: err.error?.error || 'Something went wrong — please try again.' };
+      },
     });
   }
 
