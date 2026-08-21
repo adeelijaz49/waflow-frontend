@@ -61,6 +61,16 @@ export class Customers implements OnInit {
     });
   }
 
+  markingConsented = false;
+  markConsented() {
+    if (!this.selectedCustomer || this.markingConsented) return;
+    this.markingConsented = true;
+    this.api.markCustomerConsented(this.selectedCustomer._id).subscribe({
+      next: (updated) => { this.selectedCustomer = { ...this.selectedCustomer, ...updated }; this.markingConsented = false; },
+      error: () => { this.markingConsented = false; },
+    });
+  }
+
   openDetailTab(tab: typeof this.detailTab) {
     this.detailTab = tab;
     if (tab === 'whatsapp' || tab === 'campaigns') this.loadWhatsAppHistory();

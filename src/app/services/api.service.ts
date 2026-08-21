@@ -85,6 +85,9 @@ export class ApiService {
   updateCustomer(id: string, data: any): Observable<any> {
     return this.http.put(`${API}/customers/${id}`, data);
   }
+  markCustomerConsented(id: string): Observable<any> {
+    return this.http.post(`${API}/customers/${id}/consent`, {});
+  }
   getCustomerWhatsAppHistory(id: string): Observable<any[]> {
     return this.http.get<any[]>(`${API}/customers/${id}/whatsapp-history`);
   }
