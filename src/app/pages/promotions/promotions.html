@@ -133,6 +133,12 @@
               }
               <div class="wa-bubble-text">{{ preview.body }}</div>
               <div class="wa-bubble-button">{{ preview.buttonLabel }}</div>
+              @if (!preview.isCustomEntryNode) {
+                <!-- Every promo send (interactive + template fallback) carries this
+                     second button below the shop/book action — except a custom
+                     entry-node message, which is the merchant's own message tree. -->
+                <div class="wa-bubble-button">Opt Out</div>
+              }
             </div>
             @if (preview.fallbackText) {
               <div class="text-muted" style="font-size:11px;margin-top:4px">
