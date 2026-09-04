@@ -45,6 +45,44 @@ export class AiMode implements OnInit {
     'Send a loyalty reminder to my top customers',
   ];
 
+  // Persistent "Suggested Actions" panel (right side once a conversation has
+  // started — the empty-state chips above already cover "before sending a
+  // message"). Same prompts as `chips`, grouped and with a couple of extras
+  // per the spec, purely additive — no backend/tool changes.
+  readonly suggestionGroups = [
+    {
+      title: 'Customer Insights',
+      icon: '👥',
+      items: [
+        'How many customers returned this month?',
+        'Which customer has the most loyalty points?',
+        "Who hasn't ordered in over a month?",
+      ],
+    },
+    {
+      title: 'Campaign Performance',
+      icon: '📈',
+      items: [
+        'Which promotion performed best?',
+        'Show campaign revenue this month',
+        'Which customers clicked but did not purchase?',
+      ],
+    },
+    {
+      title: 'Revenue Actions',
+      icon: '💰',
+      items: [
+        'Send a loyalty reminder to my top customers',
+        'Create a comeback campaign for inactive customers',
+        'Recommend a promotion for this weekend',
+      ],
+    },
+  ];
+
+  // Mobile/tablet: the panel collapses into a toggle button + drawer instead
+  // of a fixed column. Unused on desktop (panel is always visible via CSS).
+  suggestionsOpen = false;
+
   constructor(private api: ApiService, private settings: SettingsService) {}
 
   ngOnInit() {
@@ -67,6 +105,7 @@ export class AiMode implements OnInit {
   useChip(text: string) {
     this.input = text;
     this.syncInputHeight();
+    this.suggestionsOpen = false; // no-op on desktop; closes the mobile drawer after picking one
   }
 
   // Grows the textarea with content (ChatGPT-style) up to a CSS-defined max

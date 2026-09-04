@@ -30,6 +30,21 @@
 }
 .ai-scroll-centered { justify-content: center; }
 
+/* ── Two-column layout once a conversation exists: chat + input on the left,
+   Suggested Actions panel on the right. Empty state above stays single-column. ── */
+.ai-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.ai-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .ai-col {
   max-width: 720px;
   width: 100%;
@@ -200,3 +215,123 @@
   cursor: pointer;
 }
 .btn-send:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Suggested Actions panel ── */
+.ai-suggestions-panel {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--border, #e2e8f0);
+  background: var(--surface, #fff);
+}
+
+.ai-suggestions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text, #1e293b);
+  flex-shrink: 0;
+}
+/* Only meaningful once the panel becomes a drawer (see media query below) —
+   hidden on desktop where the panel is always open and there's nothing to close. */
+.ai-suggestions-close { display: none; }
+
+.ai-suggestions-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ai-suggestions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ai-suggestions-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 2px;
+}
+
+/* Same border/background/hover treatment as .chip (the existing prompt
+   capsules), but a left-aligned card shape rather than a full pill — a
+   280-340px column is too narrow for a true pill to hold a full sentence
+   gracefully. Radius matches this app's other cards (.wa-bubble, .pending-action-card). */
+.ai-suggestion-card {
+  text-align: left;
+  border: 1px solid var(--border, #d8dce1);
+  background: var(--surface, #fff);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: #333;
+  cursor: pointer;
+}
+.ai-suggestion-card:hover { background: #f2f4f7; border-color: var(--primary, #3b82f6); }
+
+/* Floating toggle for the collapsed (mobile/tablet) drawer form — hidden on
+   desktop, where the panel is already a permanent column. */
+.ai-suggestions-toggle {
+  display: none;
+}
+
+.ai-suggestions-backdrop {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .ai-suggestions-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(320px, 85vw);
+    z-index: 1001;
+    box-shadow: -4px 0 16px rgba(0,0,0,0.12);
+    transform: translateX(100%);
+    transition: transform 0.2s ease;
+  }
+  .ai-suggestions-panel.open { transform: translateX(0); }
+  .ai-suggestions-close { display: block; background: none; border: none; cursor: pointer; font-size: 20px; line-height: 1; color: var(--text-muted, #64748b); }
+
+  .ai-suggestions-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: fixed;
+    right: 18px;
+    bottom: 90px; /* clears the fixed input bar below it */
+    z-index: 1000;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #128c7e;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+
+  .ai-suggestions-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 1000;
+  }
+}
