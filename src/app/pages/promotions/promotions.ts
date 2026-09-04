@@ -134,6 +134,10 @@ export class Promotions implements OnInit {
       campaignType: null as string | null,
       discountPercent: 20, pointsPrice: 100, categories: [] as string[],
       selectedProducts: [] as string[], selectedServices: [] as string[], startDate: '', endDate: '', status: 'draft',
+      // Separate, additive send-format choice (see waflow-backend's
+      // shared/promotionCarousel.js) — default keeps every new promotion
+      // behaving exactly as before unless the merchant explicitly opts in.
+      sendFormat: 'separate' as 'separate' | 'carousel',
     };
   }
 
@@ -180,6 +184,10 @@ export class Promotions implements OnInit {
       startDate:        p.startDate ? p.startDate.slice(0, 10) : '',
       endDate:          p.endDate   ? p.endDate.slice(0, 10)   : '',
       status:           p.status || 'draft',
+      // Existing promotions (created before this field existed) come back
+      // with sendFormat undefined — default to 'separate', matching the
+      // backend schema default, so they keep behaving exactly as before.
+      sendFormat:       (p.sendFormat || 'separate') as 'separate' | 'carousel',
     };
     this.showCreateModal = true;
     this.resetCustomEntry();
@@ -388,6 +396,7 @@ export class Promotions implements OnInit {
       startDate:       this.form.startDate || undefined,
       endDate:         this.form.endDate || undefined,
       status:          this.form.status,
+      sendFormat:      this.form.sendFormat,
     };
     const req = this.editingPromoId
       ? this.api.updatePromotion(this.editingPromoId, payload)

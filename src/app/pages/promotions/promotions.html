@@ -126,6 +126,39 @@
               {{ previewError }}
               <button class="btn btn-outline btn-sm" style="margin-left:8px" (click)="loadPreview()">Retry</button>
             </div>
+          } @else if (preview?.carousel) {
+            <!-- Separate rendering branch for the horizontal-carousel send
+                 format — the existing single-bubble branch below is untouched. -->
+            @if (preview.ineligible) {
+              <div class="result-box result-error">{{ preview.reason }}</div>
+            } @else {
+              <div class="wa-bubble">
+                <div class="wa-bubble-text">{{ preview.headerBody }}</div>
+              </div>
+              <div class="carousel-preview-row">
+                @for (card of preview.cards; track $index) {
+                  <div class="carousel-card">
+                    <img [src]="card.image" class="carousel-card-image" alt="" />
+                    <div class="carousel-card-body">{{ card.body }}</div>
+                    <div class="carousel-card-button">{{ card.buttonLabel }}</div>
+                  </div>
+                }
+              </div>
+              <div class="text-muted" style="font-size:11px;margin-top:4px">{{ preview.footer }}</div>
+              <div class="test-send-row">
+                <input type="text" [(ngModel)]="testPhone" placeholder="Phone number, e.g. 61412345678" />
+                <button class="btn btn-outline btn-sm" (click)="sendTestMessage()" [disabled]="sendingTest || !testPhone.trim()">
+                  {{ sendingTest ? 'Sending...' : 'Show Test Message' }}
+                </button>
+              </div>
+              @if (testResult) {
+                @if (testResult.ok) {
+                  <div class="text-muted" style="font-size:11px;color:#10b981">✅ Test message sent</div>
+                } @else {
+                  <div class="text-muted" style="font-size:11px;color:#dc2626">{{ testResult.message || 'Failed to send test message' }}</div>
+                }
+              }
+            }
           } @else if (preview) {
             <div class="wa-bubble">
               @if (preview.header) {
@@ -414,6 +447,19 @@
             <label>End Date</label>
             <input type="date" [(ngModel)]="form.endDate" />
           </div>
+        </div>
+
+        <div class="form-group">
+          <label>Message Format</label>
+          <label class="format-option">
+            <input type="radio" name="sendFormat" [checked]="form.sendFormat !== 'carousel'" (change)="form.sendFormat = 'separate'" />
+            Send as separate messages
+          </label>
+          <label class="format-option">
+            <input type="radio" name="sendFormat" [checked]="form.sendFormat === 'carousel'" (change)="form.sendFormat = 'carousel'" />
+            Send as horizontal carousel
+          </label>
+          <div class="text-muted" style="font-size:11px;margin-top:4px">Carousel needs at least 2 {{ form.scope }} with a photo — needs one-time Meta approval the first time you use it.</div>
         </div>
 
         @if (form.scope === 'services') {
