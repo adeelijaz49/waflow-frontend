@@ -2,10 +2,11 @@ import { Component } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from './shared/auth.service';
+import { Dialog } from './shared/dialog/dialog';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe, Dialog],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

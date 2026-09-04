@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
+import { DialogService } from '../../shared/dialog.service';
 import { MessageNodeEditor, MessageNodeDraft, MessageNodeButtonDraft } from '../../shared/message-node-editor/message-node-editor';
 import { ConversationFlowViewer } from '../../shared/conversation-flow-viewer/conversation-flow-viewer';
 
@@ -117,7 +118,7 @@ export class Promotions implements OnInit {
   sendingLoyalty = false;
   loyaltyResult: any = null;
 
-  constructor(private api: ApiService, private route: ActivatedRoute) {}
+  constructor(private api: ApiService, private route: ActivatedRoute, private dialog: DialogService) {}
 
   ngOnInit() {
     this.loadPromotions();
@@ -393,13 +394,17 @@ export class Promotions implements OnInit {
       : this.api.createPromotion(payload);
     req.subscribe({
       next: () => { this.closeModal(); this.saving = false; this.loadPromotions(); },
-      error: () => { this.saving = false; },
+      error: (err) => { this.saving = false; this.dialog.error(err.error?.error || 'Could not save this promotion — please try again.'); },
     });
   }
 
-  deletePromotion(id: string) {
-    if (!confirm('Delete this promotion?')) return;
-    this.api.deletePromotion(id).subscribe(() => this.loadPromotions());
+  async deletePromotion(id: string) {
+    const ok = await this.dialog.confirm('Delete this promotion?', { title: 'Delete promotion', confirmLabel: 'Delete', type: 'error' });
+    if (!ok) return;
+    this.api.deletePromotion(id).subscribe({
+      next: () => this.loadPromotions(),
+      error: (err) => this.dialog.error(err.error?.error || 'Could not delete this promotion — please try again.'),
+    });
   }
 
   openCampaign(promo: any) {
@@ -525,9 +530,12 @@ export class Promotions implements OnInit {
   }
   clearAll()  { this.selectedCustomerIds.clear(); }
 
-  sendCampaign() {
+  async sendCampaign() {
     if (!this.selectedCustomerIds.size) return;
-    if (!confirm(`Send WhatsApp promotion to ${this.selectedCustomerIds.size} customers?`)) return;
+    const ok = await this.dialog.confirm(`Send WhatsApp promotion to ${this.selectedCustomerIds.size} customers?`, {
+      title: 'Send campaign', confirmLabel: 'Send', type: 'warning',
+    });
+    if (!ok) return;
     this.sending = true;
     this.sendResult = null;
     this.api.sendPromotion(this.activePromo._id, [...this.selectedCustomerIds]).subscribe({

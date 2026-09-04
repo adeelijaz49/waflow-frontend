@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
+import { DialogService } from '../../shared/dialog.service';
 
 // DEFECT-03: "A Flow = a trigger condition + a reference to an existing
 // Promotion." All message content/branching now lives in Promotions
@@ -90,7 +91,7 @@ export class Flows implements OnInit {
   presets: any[] = [];
   loadingPresets = false;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private dialog: DialogService) {}
 
   ngOnInit() {
     this.load();
@@ -271,9 +272,12 @@ export class Flows implements OnInit {
     req.subscribe(() => this.load());
   }
 
-  deleteFlow(f: any, event: Event) {
+  async deleteFlow(f: any, event: Event) {
     event.stopPropagation();
-    if (!confirm(`Delete "${f.name}"? This removes its configuration and history.`)) return;
+    const ok = await this.dialog.confirm(`Delete "${f.name}"? This removes its configuration and history.`, {
+      title: 'Delete flow', confirmLabel: 'Delete', type: 'error',
+    });
+    if (!ok) return;
     this.api.deleteFlow(f._id).subscribe(() => {
       this.load();
       if (this.activeFlow?._id === f._id) this.activeFlow = null;

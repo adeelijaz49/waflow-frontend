@@ -6,6 +6,7 @@ import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { SettingsService } from '../../shared/settings.service';
 import { ImageCarousel } from '../../shared/image-carousel/image-carousel';
+import { DialogService } from '../../shared/dialog.service';
 
 @Component({
   selector: 'app-products',
@@ -29,7 +30,7 @@ export class Products implements OnInit {
 
   form: any = this.emptyForm();
 
-  constructor(private api: ApiService, private settings: SettingsService) {}
+  constructor(private api: ApiService, private settings: SettingsService, private dialog: DialogService) {}
 
   get currencyCode(): string {
     return this.settings.currencySnapshot;
@@ -103,7 +104,10 @@ export class Products implements OnInit {
         this.form.images = list.join(', ');
         this.uploadingImage = false;
       },
-      error: () => { this.uploadingImage = false; },
+      error: (err) => {
+        this.uploadingImage = false;
+        this.dialog.error(err.error?.error || 'Image upload failed — please try again.');
+      },
     });
     (event.target as HTMLInputElement).value = ''; // allow re-selecting the same file
   }
@@ -115,9 +119,32 @@ export class Products implements OnInit {
   }
 
   save() {
+    // A variant row needs both Size and Color together (backend requires
+    // both). Rows nobody touched at all (blank size, blank color, no stock)
+    // are just an unused "+ Add Size" click — drop them silently rather than
+    // making the user delete their own accidental blank row. A row with
+    // *some* data but not both required fields is a real mistake — stop and
+    // tell the user exactly which row, instead of letting it hit the backend
+    // as an invisible HTTP 400.
+    const variants = (this.form.variants || []).filter(
+      (v: any) => v.size?.trim() || v.color?.trim() || v.stock
+    );
+    const incomplete = variants
+      .map((v: any, i: number) => ({ v, row: i + 1 }))
+      .filter(({ v }: any) => !v.size?.trim() || !v.color?.trim());
+    if (incomplete.length) {
+      const rows = incomplete.map(({ row }: any) => row).join(', ');
+      this.dialog.warn(
+        `Size and Color are both required for a variant. Please fill in the missing field${incomplete.length > 1 ? 's' : ''} on row ${incomplete.length > 1 ? 's' : ''} ${rows}, or remove ${incomplete.length > 1 ? 'those rows' : 'that row'}.`,
+        'Missing variant details'
+      );
+      return;
+    }
+
     this.saving = true;
     const payload = {
       ...this.form,
+      variants,
       basePrice: +this.form.basePrice,
       images: this.form.images ? this.form.images.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
     };
@@ -126,13 +153,22 @@ export class Products implements OnInit {
       : this.api.createProduct(payload);
     req.subscribe({
       next: () => { this.showModal = false; this.saving = false; this.load(); },
-      error: () => { this.saving = false; },
+      error: (err) => {
+        this.saving = false;
+        this.dialog.error(err.error?.error || 'Could not save this product — please try again.');
+      },
     });
   }
 
-  remove(id: string) {
-    if (!confirm('Remove this product?')) return;
-    this.api.deleteProduct(id).subscribe(() => this.load());
+  async remove(id: string) {
+    const ok = await this.dialog.confirm('Remove this product? This cannot be undone.', {
+      title: 'Remove product', confirmLabel: 'Remove', type: 'warning',
+    });
+    if (!ok) return;
+    this.api.deleteProduct(id).subscribe({
+      next: () => this.load(),
+      error: (err) => this.dialog.error(err.error?.error || 'Could not remove this product — please try again.'),
+    });
   }
 
   totalStock(product: any): number {

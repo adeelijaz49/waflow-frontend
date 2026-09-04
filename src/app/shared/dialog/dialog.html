@@ -1,0 +1,31 @@
+@if (dialogService.state; as s) {
+  <div class="modal-overlay dialog-overlay" (click)="respond(false)">
+    <div class="modal dialog-card" (click)="$event.stopPropagation()">
+      <button type="button" class="close-btn dialog-close" (click)="respond(false)" aria-label="Close">&times;</button>
+      <div class="modal-body dialog-body">
+        <div class="dialog-icon dialog-icon-{{ s.type }}">
+          @switch (s.type) {
+            @case ('success') { <span>&#10003;</span> }
+            @case ('error') { <span>&#10005;</span> }
+            @case ('warning') { <span>&#33;</span> }
+            @default { <span>&#8505;</span> }
+          }
+        </div>
+        <div class="dialog-title">{{ s.title }}</div>
+        <div class="dialog-message">{{ s.message }}</div>
+      </div>
+      <div class="modal-footer">
+        @if (s.cancelLabel) {
+          <button type="button" class="btn btn-outline" (click)="respond(false)">{{ s.cancelLabel }}</button>
+        }
+        <button
+          type="button"
+          class="btn"
+          [class.btn-danger]="s.type === 'error' || s.type === 'warning'"
+          [class.btn-primary]="s.type !== 'error' && s.type !== 'warning'"
+          (click)="respond(true)"
+        >{{ s.confirmLabel }}</button>
+      </div>
+    </div>
+  </div>
+}

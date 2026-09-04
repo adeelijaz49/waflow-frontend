@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
+import { DialogService } from '../../shared/dialog.service';
 
 @Component({
   selector: 'app-orders',
@@ -26,7 +27,7 @@ export class Orders implements OnInit {
   readonly statuses = ['', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
   readonly sources  = ['', 'product', 'campaign', 'booking', 'manual'];
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private dialog: DialogService) {}
 
   ngOnInit() { this.load(); }
 
@@ -37,15 +38,16 @@ export class Orders implements OnInit {
     if (this.filterSource) params.source = this.filterSource;
     this.api.getOrders(params).subscribe({
       next: (res) => { this.orders = res.orders; this.total = res.total; this.pages = res.pages; this.loading = false; },
-      error: () => { this.loading = false; },
+      error: (err) => { this.loading = false; this.dialog.error(err.error?.error || 'Could not load orders — please try again.'); },
     });
   }
 
   onFilter() { this.page = 1; this.load(); }
 
   updateStatus(order: any, status: string) {
-    this.api.updateOrderStatus(order._id, status).subscribe(() => {
-      order.status = status;
+    this.api.updateOrderStatus(order._id, status).subscribe({
+      next: () => { order.status = status; },
+      error: (err) => this.dialog.error(err.error?.error || 'Could not update order status — please try again.'),
     });
   }
 
@@ -62,8 +64,12 @@ export class Orders implements OnInit {
   openDetail(order: any) { this.selectedOrder = order; }
   closeDetail() { this.selectedOrder = null; }
 
-  refundOrder(order: any) {
-    if (!confirm(`Refund this order's payment (${order.total})? This issues a real Stripe refund and cannot be undone.`)) return;
+  async refundOrder(order: any) {
+    const ok = await this.dialog.confirm(
+      `Refund this order's payment (${order.total})? This issues a real Stripe refund and cannot be undone.`,
+      { title: 'Refund order', confirmLabel: 'Refund', type: 'error' }
+    );
+    if (!ok) return;
     this.refunding = true;
     this.api.refundOrder(order._id).subscribe({
       next: (updated) => {
@@ -71,7 +77,7 @@ export class Orders implements OnInit {
         if (this.selectedOrder?._id === order._id) this.selectedOrder = { ...this.selectedOrder, paymentStatus: updated.paymentStatus };
         this.refunding = false;
       },
-      error: () => { this.refunding = false; alert('Refund failed. Check backend logs.'); },
+      error: (err) => { this.refunding = false; this.dialog.error(err.error?.error || 'Refund failed. Check backend logs.'); },
     });
   }
 

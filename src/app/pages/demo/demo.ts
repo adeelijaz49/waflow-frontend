@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
+import { DialogService } from '../../shared/dialog.service';
 
 // Orchestrates the existing send/report endpoints — no simulation, no new
 // backend logic. A real WhatsApp send to a real (isDemo:true) phone, then
@@ -55,7 +56,7 @@ export class Demo implements OnInit, OnDestroy {
   private pollHandle: any = null;
   private pollStartedAt = 0;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private dialog: DialogService) {}
 
   ngOnInit() { this.loadTemplates(); this.loadFlows(); this.loadDemoData(); }
   ngOnDestroy() { this.stopPolling(); }
@@ -167,10 +168,13 @@ export class Demo implements OnInit, OnDestroy {
     return this.demoCustomers.filter(c => this.selectedCustomerIds.has(c._id));
   }
 
-  sendNow() {
+  async sendNow() {
     if (!this.selectedCustomerIds.size) return;
     const phones = this.selectedCustomers.map(c => c.phone).join(', ');
-    if (!confirm(`Send a REAL WhatsApp message right now to: ${phones}?\n\nThis is not a simulation.`)) return;
+    const ok = await this.dialog.confirm(`Send a REAL WhatsApp message right now to: ${phones}?\n\nThis is not a simulation.`, {
+      title: 'Send live message', confirmLabel: 'Send now', type: 'warning',
+    });
+    if (!ok) return;
     this.sending = true;
     this.sendResult = null;
     this.api.sendLiveDemoPromotion(this.selectedPromotion._id, [...this.selectedCustomerIds]).subscribe({

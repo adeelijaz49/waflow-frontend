@@ -1,0 +1,50 @@
+.dialog-overlay {
+  z-index: 2000; /* above regular page modals, which use the shared .modal-overlay at z-index 1000 */
+}
+
+.dialog-card {
+  max-width: 420px;
+  position: relative;
+}
+
+.dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+}
+
+.dialog-body {
+  padding-top: 30px;
+  text-align: center;
+}
+
+.dialog-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.dialog-icon-success { background: #d1fae5; color: var(--success); }
+.dialog-icon-error   { background: #fee2e2; color: var(--danger); }
+.dialog-icon-warning { background: #fef3c7; color: var(--warning); }
+.dialog-icon-info    { background: #e0e7ff; color: var(--info); }
+
+.dialog-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.dialog-message {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  white-space: pre-line;
+}

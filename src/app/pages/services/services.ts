@@ -7,6 +7,7 @@ import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { SettingsService } from '../../shared/settings.service';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 import { ImageCarousel } from '../../shared/image-carousel/image-carousel';
+import { DialogService } from '../../shared/dialog.service';
 
 @Component({
   selector: 'app-services',
@@ -41,7 +42,7 @@ export class Services implements OnInit {
   selectedNewSlotId = '';
   rescheduling = false;
 
-  constructor(private api: ApiService, private settings: SettingsService) {}
+  constructor(private api: ApiService, private settings: SettingsService, private dialog: DialogService) {}
 
   get currencyCode(): string {
     return this.settings.currencySnapshot;
@@ -158,16 +159,20 @@ export class Services implements OnInit {
       : this.api.createService(payload);
     req.subscribe({
       next: () => { this.showServiceModal = false; this.savingService = false; this.loadServices(); },
-      error: () => { this.savingService = false; },
+      error: (err) => { this.savingService = false; this.dialog.error(err.error?.error || 'Could not save this service — please try again.'); },
     });
   }
 
-  deleteService(s: any, event: Event) {
+  async deleteService(s: any, event: Event) {
     event.stopPropagation();
-    if (!confirm(`Remove "${s.name}"?`)) return;
-    this.api.deleteService(s._id).subscribe(() => {
-      this.loadServices();
-      if (this.activeService?._id === s._id) this.activeService = null;
+    const ok = await this.dialog.confirm(`Remove "${s.name}"?`, { title: 'Remove service', confirmLabel: 'Remove', type: 'warning' });
+    if (!ok) return;
+    this.api.deleteService(s._id).subscribe({
+      next: () => {
+        this.loadServices();
+        if (this.activeService?._id === s._id) this.activeService = null;
+      },
+      error: (err) => this.dialog.error(err.error?.error || 'Could not remove this service — please try again.'),
     });
   }
 
@@ -192,19 +197,29 @@ export class Services implements OnInit {
       : this.api.createSlot(this.activeService._id, payload);
     req.subscribe({
       next: () => { this.showSlotModal = false; this.savingSlot = false; this.loadDetail(); },
-      error: () => { this.savingSlot = false; },
+      error: (err) => { this.savingSlot = false; this.dialog.error(err.error?.error || 'Could not save this time slot — please try again.'); },
     });
   }
 
-  deleteSlot(slotId: string) {
-    if (!confirm('Delete this time slot?')) return;
-    this.api.deleteSlot(this.activeService._id, slotId).subscribe(() => this.loadDetail());
+  async deleteSlot(slotId: string) {
+    const ok = await this.dialog.confirm('Delete this time slot?', { title: 'Delete time slot', confirmLabel: 'Delete', type: 'error' });
+    if (!ok) return;
+    this.api.deleteSlot(this.activeService._id, slotId).subscribe({
+      next: () => this.loadDetail(),
+      error: (err) => this.dialog.error(err.error?.error || 'Could not delete this time slot — please try again.'),
+    });
   }
 
   // ── Bookings ───────────────────────────────────────────────────────────────
-  cancelBooking(bookingId: string) {
-    if (!confirm('Cancel this booking? A WhatsApp message will be sent to the customer offering to rebook.')) return;
-    this.api.cancelBooking(bookingId).subscribe(() => this.loadDetail());
+  async cancelBooking(bookingId: string) {
+    const ok = await this.dialog.confirm('Cancel this booking? A WhatsApp message will be sent to the customer offering to rebook.', {
+      title: 'Cancel booking', confirmLabel: 'Cancel booking', type: 'warning',
+    });
+    if (!ok) return;
+    this.api.cancelBooking(bookingId).subscribe({
+      next: () => this.loadDetail(),
+      error: (err) => this.dialog.error(err.error?.error || 'Could not cancel this booking — please try again.'),
+    });
   }
 
   openReschedule(bookingId: string) {
@@ -217,26 +232,42 @@ export class Services implements OnInit {
     this.rescheduling = true;
     this.api.rescheduleBooking(this.showRescheduleModal, this.selectedNewSlotId).subscribe({
       next: () => { this.showRescheduleModal = null; this.rescheduling = false; this.loadDetail(); },
-      error: () => { this.rescheduling = false; },
+      error: (err) => { this.rescheduling = false; this.dialog.error(err.error?.error || 'Could not reschedule this booking — please try again.'); },
     });
   }
 
   completeBooking(bookingId: string) {
-    this.api.completeBooking(bookingId).subscribe(() => this.loadDetail());
+    this.api.completeBooking(bookingId).subscribe({
+      next: () => this.loadDetail(),
+      error: (err) => this.dialog.error(err.error?.error || 'Could not complete this booking — please try again.'),
+    });
   }
 
   confirmRequest(bookingId: string) {
-    this.api.confirmBookingRequest(bookingId).subscribe(() => this.loadDetail());
+    this.api.confirmBookingRequest(bookingId).subscribe({
+      next: () => this.loadDetail(),
+      error: (err) => this.dialog.error(err.error?.error || 'Could not confirm this request — please try again.'),
+    });
   }
 
-  declineRequest(bookingId: string) {
-    if (!confirm('Decline this reservation request? The slot will be freed and the customer notified.')) return;
-    this.api.declineBookingRequest(bookingId).subscribe(() => this.loadDetail());
+  async declineRequest(bookingId: string) {
+    const ok = await this.dialog.confirm('Decline this reservation request? The slot will be freed and the customer notified.', {
+      title: 'Decline request', confirmLabel: 'Decline', type: 'warning',
+    });
+    if (!ok) return;
+    this.api.declineBookingRequest(bookingId).subscribe({
+      next: () => this.loadDetail(),
+      error: (err) => this.dialog.error(err.error?.error || 'Could not decline this request — please try again.'),
+    });
   }
 
-  markNoShow(bookingId: string) {
-    if (!confirm('Mark this booking as a no-show?')) return;
-    this.api.markNoShow(bookingId).subscribe(() => this.loadDetail());
+  async markNoShow(bookingId: string) {
+    const ok = await this.dialog.confirm('Mark this booking as a no-show?', { title: 'Mark as no-show', confirmLabel: 'Mark no-show', type: 'warning' });
+    if (!ok) return;
+    this.api.markNoShow(bookingId).subscribe({
+      next: () => this.loadDetail(),
+      error: (err) => this.dialog.error(err.error?.error || 'Could not mark this booking as a no-show — please try again.'),
+    });
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────

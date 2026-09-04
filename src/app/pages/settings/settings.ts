@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { SettingsService } from '../../shared/settings.service';
 import { AuthService } from '../../shared/auth.service';
+import { DialogService } from '../../shared/dialog.service';
 
 @Component({
   selector: 'app-settings',
@@ -48,7 +49,7 @@ export class Settings implements OnInit {
   sendingConsentRequests = false;
   consentRequestResult: any = null;
 
-  constructor(private api: ApiService, private settings: SettingsService, public auth: AuthService) {}
+  constructor(private api: ApiService, private settings: SettingsService, public auth: AuthService, private dialog: DialogService) {}
 
   ngOnInit() {
     this.loadLoyaltySettings();
@@ -208,11 +209,14 @@ export class Settings implements OnInit {
     this.api.revokeInvite(id).subscribe({ next: () => this.loadInvites() });
   }
 
-  removeMember(userId: string) {
-    if (!confirm('Remove this person from the workspace?')) return;
+  async removeMember(userId: string) {
+    const ok = await this.dialog.confirm('Remove this person from the workspace?', {
+      title: 'Remove member', confirmLabel: 'Remove', type: 'warning',
+    });
+    if (!ok) return;
     this.api.removeMember(userId).subscribe({
       next: () => this.loadMembers(),
-      error: (err) => alert(err.error?.error || 'Something went wrong — please try again.'),
+      error: (err) => this.dialog.error(err.error?.error || 'Something went wrong — please try again.'),
     });
   }
 
