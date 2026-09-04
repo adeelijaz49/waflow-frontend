@@ -144,7 +144,6 @@
                   </div>
                 }
               </div>
-              <div class="text-muted" style="font-size:11px;margin-top:4px">{{ preview.footer }}</div>
               <div class="test-send-row">
                 <input type="text" [(ngModel)]="testPhone" placeholder="Phone number, e.g. 61412345678" />
                 <button class="btn btn-outline btn-sm" (click)="sendTestMessage()" [disabled]="sendingTest || !testPhone.trim()">
