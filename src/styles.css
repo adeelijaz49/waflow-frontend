@@ -245,3 +245,41 @@ textarea { resize: vertical; min-height: 80px; }
   color: var(--text-muted);
   margin: 1px;
 }
+
+/* ── Responsive (mobile/tablet) ──
+   Global, shared classes only — every page built on .page/.form-row/
+   .search-bar/.modal-* automatically benefits without per-page changes.
+   Nothing here touches desktop sizing (>900px is untouched). */
+@media (max-width: 900px) {
+  .page { padding: 16px; }
+
+  .page-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Every page's 2-column field layout stacks to one column — avoids
+     cramming two inputs into ~150px each on a phone. */
+  .form-row { grid-template-columns: 1fr; }
+
+  .search-bar { flex-wrap: wrap; }
+  .search-bar input { max-width: 100%; flex: 1 1 200px; }
+
+  .stat-card { padding: 14px; }
+
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal {
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 14px 14px 0 0; /* sheet-style on mobile, matches slide-up conventions instead of a floating centered box */
+  }
+  .modal-lg { max-width: 100%; }
+  .modal-header, .modal-body, .modal-footer { padding-left: 16px; padding-right: 16px; }
+
+  /* Cards/rows built with an unwrapped flex row (button groups, filter bars,
+     stat rows not already covered by .stats-grid) — wrapping is always a
+     safe default; nothing in this codebase relies on a flex row staying on
+     one line at narrow widths. */
+  .flex-between { flex-wrap: wrap; gap: 8px; }
+}

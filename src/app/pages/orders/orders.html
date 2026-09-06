@@ -4,14 +4,14 @@
       <div class="page-title">Orders</div>
       <div class="page-sub">{{ total | number }} total orders</div>
     </div>
-    <div class="flex gap-2">
-      <select [(ngModel)]="filterSource" (ngModelChange)="onFilter()" style="width:150px">
+    <div class="flex gap-2" style="flex-wrap:wrap">
+      <select [(ngModel)]="filterSource" (ngModelChange)="onFilter()" style="width:150px;max-width:100%">
         <option value="">All Sources</option>
         @for (s of sources.slice(1); track s) {
           <option [value]="s">{{ sourceLabel(s) }}</option>
         }
       </select>
-      <select [(ngModel)]="filterStatus" (ngModelChange)="onFilter()" style="width:160px">
+      <select [(ngModel)]="filterStatus" (ngModelChange)="onFilter()" style="width:160px;max-width:100%">
         <option value="">All Statuses</option>
         @for (s of statuses.slice(1); track s) {
           <option [value]="s">{{ s | titlecase }}</option>

@@ -1,6 +1,19 @@
 <div class="shell">
   @if (auth.isLoggedIn) {
-    <aside class="sidebar">
+    <!-- Mobile/tablet only (<=1024px, see app.css) — the sidebar itself is
+         off-canvas below that width, so this is the only persistent way to
+         reach it or see the Waflow wordmark there. -->
+    <header class="mobile-topbar">
+      <button type="button" class="mobile-menu-btn" (click)="sidebarOpen = !sidebarOpen" aria-label="Toggle menu">☰</button>
+      <span class="logo-mark">W</span>
+      <span class="logo-text">Waflow</span>
+    </header>
+
+    @if (sidebarOpen) {
+      <div class="sidebar-backdrop" (click)="sidebarOpen = false"></div>
+    }
+
+    <aside class="sidebar" [class.open]="sidebarOpen">
       <div class="sidebar-logo">
         <span class="logo-mark">W</span>
         <span class="logo-text">Waflow</span>

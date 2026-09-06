@@ -97,4 +97,62 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* lets flex children (tables, wide content) shrink instead of overflowing the row */
+}
+
+/* ── Mobile top bar + off-canvas sidebar (<=1024px) ──
+   Above 1024px this is all inert: .mobile-topbar stays hidden and .sidebar
+   keeps its normal, always-visible flex-column place in .shell — nothing
+   here changes desktop/laptop behavior at all. */
+.mobile-topbar { display: none; }
+.sidebar-backdrop { display: none; }
+
+@media (max-width: 1024px) {
+  .shell {
+    /* .main-content used to sit beside a permanent 220px sidebar; now the
+       sidebar floats above everything, so content stacks under the top bar. */
+    flex-direction: column;
+  }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--sidebar-bg);
+    flex-shrink: 0;
+  }
+  .mobile-topbar .logo-mark { width: 26px; height: 26px; font-size: 13px; }
+  .mobile-topbar .logo-text { font-size: 15px; }
+
+  .mobile-menu-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    line-height: 1;
+    padding: 4px 8px;
+    cursor: pointer;
+    margin-right: 2px;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1101; /* above its own backdrop (1100) and the AI Mode suggestions drawer (1000/1001); below the global dialog overlay (2000), so a confirm dialog always wins */
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 4px 0 16px rgba(0,0,0,0.2);
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1100;
+  }
 }

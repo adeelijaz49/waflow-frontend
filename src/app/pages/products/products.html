@@ -152,7 +152,7 @@
         <div class="form-group">
           <label>Sizes &amp; Stock</label>
           @for (v of form.variants; track $index; let i = $index) {
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px">
               <input [(ngModel)]="v.size" placeholder="Size (S, M, L, XL...)" style="width:120px" />
               <input [(ngModel)]="v.color" placeholder="Color (required)" style="width:120px" />
               <input type="number" [(ngModel)]="v.stock" placeholder="Stock" min="0" style="width:80px" />

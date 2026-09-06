@@ -80,6 +80,11 @@
 }
 .mapping-row-header { font-weight: 600; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: none; }
 
+@media (max-width: 480px) {
+  .mapping-row { grid-template-columns: 1fr; gap: 4px; }
+  .mapping-row-header { display: none; } /* a stacked header row above single-column values reads as orphaned labels, not a header */
+}
+
 /* Step 3 — discrepancy review */
 .discrepancy-box {
   padding: 12px 14px;

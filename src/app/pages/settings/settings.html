@@ -101,7 +101,7 @@
           </div>
         }
 
-        <div style="margin-top:14px;display:flex;gap:10px">
+        <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px">
           <button class="btn btn-primary" (click)="refreshToken()" [disabled]="refreshing || !tokenStatus.hasAppCredentials">
             {{ refreshing ? 'Refreshing...' : '🔄 Refresh Token Now' }}
           </button>

@@ -27,7 +27,7 @@
   font-size: 13px;
 }
 
-.wizard-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.wizard-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .wizard-tab {
   padding: 7px 14px;
   border: 1px solid var(--border);
