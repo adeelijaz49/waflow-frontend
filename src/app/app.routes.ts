@@ -10,6 +10,7 @@ export const routes: Routes = [
   { path: 'demo',       canActivate: [authGuard], loadComponent: () => import('./pages/demo/demo').then(m => m.Demo) },
   { path: 'products',   canActivate: [authGuard], loadComponent: () => import('./pages/products/products').then(m => m.Products) },
   { path: 'customers',  canActivate: [authGuard], loadComponent: () => import('./pages/customers/customers').then(m => m.Customers) },
+  { path: 'inbox',      canActivate: [authGuard], loadComponent: () => import('./pages/inbox/inbox').then(m => m.Inbox) },
   { path: 'orders',     canActivate: [authGuard], loadComponent: () => import('./pages/orders/orders').then(m => m.Orders) },
   { path: 'promotions', canActivate: [authGuard], loadComponent: () => import('./pages/promotions/promotions').then(m => m.Promotions) },
   { path: 'flows',      canActivate: [authGuard], loadComponent: () => import('./pages/flows/flows').then(m => m.Flows) },

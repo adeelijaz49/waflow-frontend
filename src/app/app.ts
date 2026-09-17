@@ -36,6 +36,7 @@ export class App {
     { path: '/demo',       label: 'Demo Mode',    icon: '▶' },
     { path: '/products',   label: 'Products',     icon: '⊞' },
     { path: '/customers',  label: 'Customers',    icon: '◎' },
+    { path: '/inbox',      label: 'WhatsApp Inbox', icon: '💬' },
     { path: '/orders',     label: 'Orders',       icon: '▤' },
     { path: '/promotions', label: 'Promotions',   icon: '◈' },
     { path: '/flows',      label: 'Automated Flows', icon: '⟳' },

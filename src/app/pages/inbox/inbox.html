@@ -1,0 +1,211 @@
+<div class="page inbox-page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">WhatsApp Inbox</div>
+      <div class="page-sub">{{ conversations.length }} conversation{{ conversations.length === 1 ? '' : 's' }}</div>
+    </div>
+  </div>
+
+  <div class="inbox-layout">
+    <!-- Left panel — conversation list -->
+    <div class="inbox-list card">
+      <div class="inbox-list-header">
+        <input placeholder="Search by name or phone..." [(ngModel)]="search" (ngModelChange)="onSearch()" />
+        <div class="inbox-filters">
+          @for (f of filters; track f.value) {
+            <button type="button" class="filter-chip" [class.active]="filter === f.value" (click)="setFilter(f.value)">{{ f.label }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="inbox-rows">
+        @if (loadingList) {
+          <div class="loading">Loading conversations...</div>
+        } @else {
+          @for (c of conversations; track c.customerId) {
+            <button type="button" class="conv-row" [class.active]="selected?.customerId === c.customerId" (click)="open(c)">
+              <div class="conv-row-top">
+                <span class="conv-name">{{ c.name }}</span>
+                @if (c.lastMessageAt) { <span class="conv-time">{{ c.lastMessageAt | date:'d MMM, h:mm a' }}</span> }
+              </div>
+              <div class="conv-row-bottom">
+                <span class="conv-preview">{{ c.lastMessagePreview || 'No messages yet' }}</span>
+                @if (c.unreadCount > 0) { <span class="unread-badge">{{ c.unreadCount }}</span> }
+              </div>
+              <div class="conv-phone">{{ c.phone }}</div>
+              @if (c.tags.length || c.optedOut) {
+                <div class="conv-tags">
+                  @if (c.optedOut) { <span class="badge badge-danger">Opted out</span> }
+                  @for (t of c.tags; track t) { <span class="badge {{ tagBadge(t) }}">{{ t }}</span> }
+                </div>
+              }
+            </button>
+          } @empty {
+            <div class="empty-state">No conversations yet — they'll appear here as customers message you on WhatsApp.</div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Centre panel — conversation thread -->
+    <div class="inbox-thread card">
+      @if (!selected) {
+        <div class="empty-state">Select a conversation to view the WhatsApp history.</div>
+      } @else {
+        <div class="thread-header">
+          <div>
+            <div class="thread-name">{{ threadCustomer?.name || selected.name }}</div>
+            <div class="thread-phone">{{ threadCustomer?.phone || selected.phone }}</div>
+          </div>
+          @if (threadCustomer?.optedOut) {
+            <span class="badge badge-danger" title="Opted out of promotional messages — you can still reply to them directly.">Opted out of promotions</span>
+          }
+        </div>
+
+        <div class="quick-actions">
+          <button type="button" class="btn btn-outline btn-sm" (click)="useOfferDraft()"
+            [disabled]="threadCustomer?.optedOut" [title]="threadCustomer?.optedOut ? 'Opted out of promotional messages' : ''">🎁 Send Offer</button>
+          <button type="button" class="btn btn-outline btn-sm" (click)="openPaymentModal()">💳 Send Payment Link</button>
+          <button type="button" class="btn btn-outline btn-sm" (click)="sendLoyaltyReminder()"
+            [disabled]="sendingLoyalty || threadCustomer?.optedOut" [title]="threadCustomer?.optedOut ? 'Opted out of promotional messages' : ''">
+            💎 {{ sendingLoyalty ? 'Sending...' : 'Send Loyalty Reminder' }}
+          </button>
+          <a class="btn btn-outline btn-sm" [routerLink]="['/services']">📅 Create Booking</a>
+          <a class="btn btn-outline btn-sm" [routerLink]="['/orders']">🛍️ View Order</a>
+        </div>
+
+        <div class="thread-body" #threadEl>
+          @if (loadingThread) {
+            <div class="loading">Loading conversation...</div>
+          } @else {
+            @for (m of messages; track m.id) {
+              <div class="msg-row" [class.outbound]="m.direction === 'outbound'" [class.inbound]="m.direction === 'inbound'">
+                <div class="msg-bubble">
+                  @if (messageTypeLabel(m.messageType)) { <div class="msg-type">{{ messageTypeLabel(m.messageType) }}</div> }
+                  <div class="msg-body">{{ m.body }}</div>
+                  <div class="msg-meta">
+                    <span>{{ m.timestamp | date:'d MMM, h:mm a' }}</span>
+                    @if (m.direction === 'outbound' && m.status) {
+                      <span class="msg-status" [class.read]="m.status === 'read'">{{ statusIcon(m.status) }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-state">No messages yet.</div>
+            }
+          }
+        </div>
+
+        <div class="composer">
+          <textarea rows="1" placeholder="Type a WhatsApp message..." [(ngModel)]="composerText" (keydown.enter)="onComposerEnter($event)"></textarea>
+          <button type="button" class="btn btn-primary" (click)="send()" [disabled]="!composerText.trim() || sending">{{ sending ? 'Sending...' : 'Send' }}</button>
+        </div>
+      }
+    </div>
+
+    <!-- Right panel — customer snapshot -->
+    <div class="inbox-snapshot card">
+      @if (!selected) {
+        <div class="empty-state">Customer details will appear here.</div>
+      } @else if (loadingSnapshot || !snapshot) {
+        <div class="loading">Loading...</div>
+      } @else {
+        <div class="card-header"><span class="card-title">Customer Snapshot</span></div>
+        <div class="card-body snapshot-body">
+          <div class="snap-name">{{ snapshot.customer.name }}</div>
+          <div class="snap-phone">{{ snapshot.customer.phone }}</div>
+
+          @if (snapshot.tags.length) {
+            <div class="snap-tags">
+              @for (t of snapshot.tags; track t) { <span class="badge {{ tagBadge(t) }}">{{ t }}</span> }
+            </div>
+          }
+
+          @if (snapshot.prompts.length) {
+            <div class="snap-prompts">
+              @for (p of snapshot.prompts; track p) { <div class="prompt-item">💡 {{ p }}</div> }
+            </div>
+          }
+
+          <div class="meta-item">
+            <span class="meta-label">Consent</span>
+            @if (snapshot.customer.optedOut) {
+              <span class="badge badge-danger">Opted out{{ snapshot.customer.optedOutAt ? (' · ' + (snapshot.customer.optedOutAt | date:'d MMM y')) : '' }}</span>
+            } @else if (snapshot.customer.marketingConsent) {
+              <span class="badge badge-success">Consented</span>
+            } @else {
+              <span class="badge badge-neutral">Not yet consented</span>
+            }
+          </div>
+
+          <div class="meta-item"><span class="meta-label">Loyalty Balance</span><span class="badge badge-info">{{ snapshot.customer.loyaltyPoints }} pts</span></div>
+          <div class="meta-item"><span class="meta-label">Total Orders</span><span class="fw-600">{{ snapshot.totalOrders }}</span></div>
+          <div class="meta-item"><span class="meta-label">Total Spend</span><span class="fw-600">{{ snapshot.totalSpent | appCurrency }}</span></div>
+
+          <div class="meta-item">
+            <span class="meta-label">Last Order</span>
+            @if (snapshot.lastOrder) {
+              <span>{{ snapshot.lastOrder.total | appCurrency }} · {{ snapshot.lastOrder.createdAt | date:'d MMM y' }}</span>
+            } @else { <span class="text-muted">—</span> }
+          </div>
+
+          <div class="meta-item">
+            <span class="meta-label">Last Payment Status</span>
+            @if (snapshot.lastOrder?.paymentStatus) { <span class="badge badge-neutral">{{ snapshot.lastOrder.paymentStatus }}</span> } @else { <span class="text-muted">—</span> }
+          </div>
+
+          <div class="meta-item">
+            <span class="meta-label">Last Campaign</span>
+            @if (snapshot.lastCampaign) {
+              <span>{{ snapshot.lastCampaign.promotionName || (snapshot.lastCampaign.kind | titlecase) }}</span>
+            } @else { <span class="text-muted">—</span> }
+          </div>
+
+          <div class="meta-item"><span class="meta-label">First Interaction</span><span>{{ snapshot.customer.createdAt | date:'d MMM y' }}</span></div>
+
+          <div class="snap-section">
+            <div class="snap-section-title">Products Purchased ({{ snapshot.productsPurchased.length }})</div>
+            <div class="order-list">
+              @for (p of snapshot.productsPurchased; track p.name) {
+                <div class="order-row"><span class="fw-600" style="font-size:12px">{{ p.name }}</span><span class="text-muted" style="font-size:12px">{{ p.quantity }} unit(s)</span></div>
+              } @empty { <div class="text-muted" style="font-size:12px">None yet</div> }
+            </div>
+          </div>
+
+          <div class="snap-section">
+            <div class="snap-section-title">Services Booked ({{ snapshot.servicesBooked.length }})</div>
+            <div class="order-list">
+              @for (b of snapshot.servicesBooked; track $index) {
+                <div class="order-row"><span class="fw-600" style="font-size:12px">{{ b.name }}</span><span class="text-muted" style="font-size:12px">{{ b.status }}</span></div>
+              } @empty { <div class="text-muted" style="font-size:12px">None yet</div> }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+@if (showPaymentModal) {
+  <div class="modal-overlay" (click)="showPaymentModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">Send Payment Link</span>
+        <button type="button" class="close-btn" (click)="showPaymentModal = false">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Amount</label>
+          <input type="number" min="0" step="0.01" [(ngModel)]="paymentAmount" placeholder="0.00" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="showPaymentModal = false">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="sendPaymentLink()" [disabled]="!paymentAmount || paymentAmount <= 0 || sendingPayment">
+          {{ sendingPayment ? 'Sending...' : 'Send Link' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
