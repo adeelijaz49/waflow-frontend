@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { SettingsService } from '../../shared/settings.service';
+import { Insight } from '../../shared/insight-card/insight-card';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -83,6 +84,13 @@ export class AiMode implements OnInit {
   // of a fixed column. Unused on desktop (panel is always visible via CSS).
   suggestionsOpen = false;
 
+  // Smart Insights — same live-computed cards as Dashboard/Promotions/Customers,
+  // but this panel reuses the existing chip interaction (fills the input,
+  // merchant still hits Send) rather than InsightActionsService's direct
+  // navigate+actioned flow, since here the AI (not a link) decides what to do
+  // next — the existing confirm-gate covers everything after Send untouched.
+  insights: Insight[] = [];
+
   constructor(private api: ApiService, private settings: SettingsService) {}
 
   ngOnInit() {
@@ -100,12 +108,24 @@ export class AiMode implements OnInit {
       },
       error: () => { this.loadingSession = false; },
     });
+
+    this.api.getInsights('aimode').subscribe({ next: (data) => { this.insights = data; }, error: () => {} });
   }
 
   useChip(text: string) {
     this.input = text;
     this.syncInputHeight();
     this.suggestionsOpen = false; // no-op on desktop; closes the mobile drawer after picking one
+  }
+
+  // Chip label stays short (insight.title); the actual text dropped into the
+  // input includes insight.message too, so the AI (and the merchant, reading
+  // it back before hitting Send) has the full grounded context in one line —
+  // e.g. "Summer Sale was your top campaign this week. It generated $450 from
+  // 12 orders. Run it again?" — rather than an ambiguous "Run it again?" with
+  // nothing for "it" to refer to.
+  useInsightChip(insight: Insight) {
+    this.useChip(`${insight.title}. ${insight.message}`);
   }
 
   // Grows the textarea with content (ChatGPT-style) up to a CSS-defined max

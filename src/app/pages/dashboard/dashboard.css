@@ -91,3 +91,19 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   transform: translateY(-2px);
 }
+
+/* Smart Insights — .section-label copied from pages/promotions (Angular view
+   encapsulation means component styles don't carry across files). */
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}

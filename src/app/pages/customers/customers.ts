@@ -1,14 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
+import { InsightCardComponent, Insight } from '../../shared/insight-card/insight-card';
+import { InsightActionsService } from '../../shared/insight-actions.service';
 
 @Component({
   selector: 'app-customers',
-  imports: [CommonModule, FormsModule, RouterLink, AppCurrencyPipe, DatePipe, StatusBadgePipe],
+  imports: [CommonModule, FormsModule, RouterLink, AppCurrencyPipe, DatePipe, StatusBadgePipe, InsightCardComponent],
   templateUrl: './customers.html',
   styleUrl: './customers.css',
 })
@@ -19,6 +21,11 @@ export class Customers implements OnInit {
   pages = 1;
   loading = false;
   search = '';
+  insights: Insight[] = [];
+  // Set by a Smart Insights "View Customers" CTA (?ids=...) — narrows the
+  // list to exactly the customers that insight was about, instead of the
+  // normal free-text search.
+  private filterIds: string[] | null = null;
 
   selectedCustomer: any = null;
   detailLoading = false;
@@ -33,14 +40,24 @@ export class Customers implements OnInit {
   saving = false;
   form = { firstname: '', lastname: '', phone: '', email: '', marketingConsent: false };
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private route: ActivatedRoute, private insightActions: InsightActionsService) {}
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    const ids = this.route.snapshot.queryParamMap.get('ids')?.split(',').filter(Boolean);
+    if (ids?.length) this.filterIds = ids;
+    this.load();
+    this.api.getInsights('customers').subscribe({ next: (data) => { this.insights = data; }, error: () => {} });
+  }
+
+  dismissInsight(insight: Insight)   { this.insightActions.dismiss(insight, this.insights); }
+  insightPrimary(insight: Insight)   { this.insightActions.primaryAction(insight, this.insights); }
+  insightSecondary(insight: Insight) { this.insightActions.secondaryAction(insight); }
 
   load() {
     this.loading = true;
     const params: any = { page: this.page, limit: 50 };
     if (this.search) params.search = this.search;
+    if (this.filterIds?.length) params.ids = this.filterIds.join(',');
     this.api.getCustomers(params).subscribe({
       next: (res) => { this.customers = res.customers; this.total = res.total; this.pages = res.pages; this.loading = false; },
       error: () => { this.loading = false; },

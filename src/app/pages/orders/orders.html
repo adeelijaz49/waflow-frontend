@@ -17,6 +17,12 @@
           <option [value]="s">{{ s | titlecase }}</option>
         }
       </select>
+      <select [(ngModel)]="filterPaymentStatus" (ngModelChange)="onFilter()" style="width:160px;max-width:100%">
+        <option value="">All Payments</option>
+        @for (s of paymentStatuses.slice(1); track s) {
+          <option [value]="s">{{ s | titlecase }}</option>
+        }
+      </select>
     </div>
   </div>
 

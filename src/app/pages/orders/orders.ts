@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
@@ -20,22 +21,30 @@ export class Orders implements OnInit {
   loading = false;
   filterStatus = '';
   filterSource = '';
+  filterPaymentStatus = '';
 
   selectedOrder: any = null;
   refunding = false;
 
   readonly statuses = ['', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
   readonly sources  = ['', 'product', 'campaign', 'booking', 'manual'];
+  readonly paymentStatuses = ['', 'pending', 'paid', 'failed', 'refunded'];
 
-  constructor(private api: ApiService, private dialog: DialogService) {}
+  constructor(private api: ApiService, private dialog: DialogService, private route: ActivatedRoute) {}
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    // A Smart Insights "View Unpaid Orders" CTA lands here with this param.
+    const paymentStatus = this.route.snapshot.queryParamMap.get('paymentStatus');
+    if (paymentStatus) this.filterPaymentStatus = paymentStatus;
+    this.load();
+  }
 
   load() {
     this.loading = true;
     const params: any = { page: this.page, limit: 50 };
     if (this.filterStatus) params.status = this.filterStatus;
     if (this.filterSource) params.source = this.filterSource;
+    if (this.filterPaymentStatus) params.paymentStatus = this.filterPaymentStatus;
     this.api.getOrders(params).subscribe({
       next: (res) => { this.orders = res.orders; this.total = res.total; this.pages = res.pages; this.loading = false; },
       error: (err) => { this.loading = false; this.dialog.error(err.error?.error || 'Could not load orders — please try again.'); },

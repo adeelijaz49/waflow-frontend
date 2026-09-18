@@ -352,4 +352,12 @@ export class ApiService {
   confirmAiAction(sessionId: string, actionId: string, confirm: boolean): Observable<any> {
     return this.http.post(`${API}/ai-chat/confirm-action`, { sessionId, actionId, confirm });
   }
+
+  // ── Smart Insights ───────────────────────────────────────────────────────
+  getInsights(surface: 'dashboard' | 'campaigns' | 'customers' | 'aimode'): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/insights`, { params: { surface } });
+  }
+  updateInsightStatus(insightKey: string, status: 'dismissed' | 'actioned', rawMetric?: number): Observable<any> {
+    return this.http.post(`${API}/insights/status`, { insightKey, status, rawMetric });
+  }
 }

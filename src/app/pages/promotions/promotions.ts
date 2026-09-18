@@ -9,6 +9,8 @@ import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 import { DialogService } from '../../shared/dialog.service';
 import { MessageNodeEditor, MessageNodeDraft, MessageNodeButtonDraft } from '../../shared/message-node-editor/message-node-editor';
 import { ConversationFlowViewer } from '../../shared/conversation-flow-viewer/conversation-flow-viewer';
+import { InsightCardComponent, Insight } from '../../shared/insight-card/insight-card';
+import { InsightActionsService } from '../../shared/insight-actions.service';
 
 const MAX_BRANCH_DEPTH = 3; // mirrors shared/operations.js#MAX_BRANCH_DEPTH
 
@@ -51,7 +53,7 @@ const CAMPAIGN_TYPES = [
 
 @Component({
   selector: 'app-promotions',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, MessageNodeEditor, ConversationFlowViewer],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, MessageNodeEditor, ConversationFlowViewer, InsightCardComponent],
   templateUrl: './promotions.html',
   styleUrl: './promotions.css',
 })
@@ -118,14 +120,84 @@ export class Promotions implements OnInit {
   sendingLoyalty = false;
   loyaltyResult: any = null;
 
-  constructor(private api: ApiService, private route: ActivatedRoute, private dialog: DialogService) {}
+  // Smart Insights
+  insights: Insight[] = [];
+  // Customer selection lives in the post-save Campaign Panel, not the create
+  // form itself — a "Create Comeback Campaign" insight CTA can't pre-select
+  // the exact 20 inactive customers at create time, so this is stashed here
+  // and applied once the newly-created promotion's Campaign Panel opens
+  // (see savePromotion()).
+  private pendingInsightCustomerIds: string[] | null = null;
+
+  constructor(
+    private api: ApiService, private route: ActivatedRoute, private dialog: DialogService,
+    private insightActions: InsightActionsService,
+  ) {}
 
   ngOnInit() {
     this.loadPromotions();
     this.api.getProductCategories().subscribe(cats => this.categories = cats);
     this.api.getProducts({ limit: 500 }).subscribe(res => this.allProducts = res.products);
     this.api.getServices().subscribe(svcs => this.allServices = svcs);
-    if (this.route.snapshot.queryParamMap.get('openLoyalty') === 'true') this.showLoyaltyModal = true;
+    this.api.getInsights('campaigns').subscribe({ next: (data) => { this.insights = data; }, error: () => {} });
+
+    const params = this.route.snapshot.queryParamMap;
+    if (params.get('openLoyalty') === 'true') this.showLoyaltyModal = true;
+
+    if (params.get('openCreate') === 'true') {
+      const campaignType = params.get('campaignType');
+      const customerIds = params.get('customerIds')?.split(',').filter(Boolean);
+      const productName = params.get('productName') || undefined;
+      this.openCreateFromInsight(campaignType, customerIds, productName);
+    }
+    const viewId = params.get('viewPromotionId');
+    if (viewId) this.api.getPromotion(viewId).subscribe({ next: (p) => this.openViewEdit(p), error: () => {} });
+
+    const runAgainId = params.get('runAgainPromotionId');
+    if (runAgainId) this.api.getPromotion(runAgainId).subscribe({ next: (p) => this.duplicatePromotion(p), error: () => {} });
+  }
+
+  dismissInsight(insight: Insight)   { this.insightActions.dismiss(insight, this.insights); }
+  insightPrimary(insight: Insight)   { this.insightActions.primaryAction(insight, this.insights); }
+  insightSecondary(insight: Insight) { this.insightActions.secondaryAction(insight); }
+
+  // "Create Comeback Campaign" / "Create Product Campaign" / "Send Loyalty
+  // Reward" insight CTAs all land here — skips the manual type-picker screen
+  // since the insight already determined the right campaign type.
+  openCreateFromInsight(campaignType: string | null, customerIds?: string[], productName?: string) {
+    this.openCreate();
+    const ct = this.campaignTypes.find(c => c.value === campaignType);
+    if (ct) this.selectCampaignType(ct);
+    if (productName) {
+      const match = this.allProducts.find(p => p.name === productName);
+      if (match) this.form.selectedProducts = [match._id];
+      // No exact match — the suggested description already names the
+      // product in plain text, which is enough context for the merchant to
+      // pick it manually below.
+      else this.form.description = `${this.form.description} Featuring ${productName}.`.trim();
+    }
+    this.pendingInsightCustomerIds = customerIds?.length ? customerIds : null;
+  }
+
+  // "Run Again" — duplicates the campaign setup and opens it for review
+  // before sending; never sends anything itself.
+  duplicatePromotion(source: any) {
+    this.openCreate();
+    this.pickingType = false;
+    this.form = {
+      ...this.emptyForm(),
+      name: `${source.name} (Copy)`,
+      description: source.description || '',
+      scope: source.scope || 'products',
+      customerType: source.customerType || 'cash',
+      type: source.type || 'specific_products',
+      campaignType: source.campaignType || null,
+      discountPercent: source.discountPercent ?? 20,
+      pointsPrice: source.pointsPrice ?? 100,
+      categories: [...(source.categories || [])],
+      selectedProducts: (source.products || []).map((x: any) => x._id ?? x),
+      selectedServices: (source.services || []).map((x: any) => x._id ?? x),
+    };
   }
 
   emptyForm() {
@@ -398,11 +470,26 @@ export class Promotions implements OnInit {
       status:          this.form.status,
       sendFormat:      this.form.sendFormat,
     };
+    const isNew = !this.editingPromoId;
     const req = this.editingPromoId
       ? this.api.updatePromotion(this.editingPromoId, payload)
       : this.api.createPromotion(payload);
     req.subscribe({
-      next: () => { this.closeModal(); this.saving = false; this.loadPromotions(); },
+      next: (saved) => {
+        this.closeModal();
+        this.saving = false;
+        this.loadPromotions();
+        // An insight CTA ("Create Comeback Campaign" etc.) pre-selected
+        // specific customers — apply them the moment the new promotion's
+        // Campaign Panel opens, since the create form itself has no
+        // customer-selection step.
+        if (isNew && this.pendingInsightCustomerIds) {
+          const ids = this.pendingInsightCustomerIds;
+          this.pendingInsightCustomerIds = null;
+          this.openCampaign(saved);
+          ids.forEach(id => this.selectedCustomerIds.add(id));
+        }
+      },
       error: (err) => { this.saving = false; this.dialog.error(err.error?.error || 'Could not save this promotion — please try again.'); },
     });
   }

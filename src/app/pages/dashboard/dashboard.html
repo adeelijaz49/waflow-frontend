@@ -79,6 +79,20 @@
       </div>
     </div>
 
+    @if (insights.length) {
+      <div class="section-label" style="margin:20px 0 10px">Today's Growth Opportunities</div>
+      <div class="insights-grid">
+        @for (insight of insights; track insight.insightKey) {
+          <app-insight-card
+            [insight]="insight"
+            (dismiss)="dismissInsight($event)"
+            (primaryAction)="insightPrimary($event)"
+            (secondaryAction)="insightSecondary($event)">
+          </app-insight-card>
+        }
+      </div>
+    }
+
     <div class="card">
       <div class="card-header">
         <span class="card-title">Recent Orders</span>

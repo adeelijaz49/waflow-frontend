@@ -1,0 +1,25 @@
+<div class="insight-card" [class.insight-high]="insight.priorityTier === 'high'">
+  <button type="button" class="insight-dismiss" title="Dismiss" (click)="dismiss.emit(insight)">×</button>
+
+  <div class="insight-top">
+    <span class="insight-icon">{{ insight.icon }}</span>
+    <span class="badge badge-neutral insight-category">{{ insight.categoryLabel }}</span>
+  </div>
+
+  <div class="insight-title">{{ insight.title }}</div>
+  <div class="insight-message">{{ insight.message }}</div>
+
+  <div class="insight-metric">
+    <span class="insight-metric-label">{{ insight.metricLabel }}</span>
+    <span class="insight-metric-value">{{ insight.metricValue }}</span>
+  </div>
+
+  <div class="insight-ctas">
+    <button type="button" class="btn btn-primary btn-sm" (click)="primaryAction.emit(insight)">{{ insight.primaryCta.label }}</button>
+    @if (insight.secondaryCta) {
+      <button type="button" class="btn btn-outline btn-sm" (click)="secondaryAction.emit(insight)">{{ insight.secondaryCta.label }}</button>
+    }
+  </div>
+
+  <div class="insight-timestamp">{{ timeAgo(insight.updatedAt) }}</div>
+</div>

@@ -10,6 +10,15 @@
     </div>
   </div>
 
+  @if (insights.length) {
+    <div class="section-label">Customer Opportunities</div>
+    <div class="insights-grid">
+      @for (insight of insights; track insight.insightKey) {
+        <app-insight-card [insight]="insight" (dismiss)="dismissInsight($event)" (primaryAction)="insightPrimary($event)" (secondaryAction)="insightSecondary($event)" />
+      }
+    </div>
+  }
+
   <div class="layout">
     <!-- Customer List -->
     <div class="list-panel">

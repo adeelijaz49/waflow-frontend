@@ -5,6 +5,23 @@
   align-items: start;
 }
 
+/* Smart Insights — .section-label/.insights-grid copied from pages/dashboard
+   (Angular view encapsulation means component styles don't carry across files). */
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
 .list-panel { min-width: 0; }
 
 .detail-panel { position: sticky; top: 0; }

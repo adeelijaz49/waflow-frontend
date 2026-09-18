@@ -73,6 +73,14 @@
           <button type="button" class="ai-suggestions-close" (click)="suggestionsOpen = false" aria-label="Close">×</button>
         </div>
         <div class="ai-suggestions-body">
+          @if (insights.length) {
+            <div class="ai-suggestions-group">
+              <div class="ai-suggestions-group-title">🚀 Suggested Growth Actions</div>
+              @for (insight of insights; track insight.insightKey) {
+                <button type="button" class="ai-suggestion-card" (click)="useInsightChip(insight)">{{ insight.icon }} {{ insight.title }}</button>
+              }
+            </div>
+          }
           @for (group of suggestionGroups; track group.title) {
             <div class="ai-suggestions-group">
               <div class="ai-suggestions-group-title">{{ group.icon }} {{ group.title }}</div>

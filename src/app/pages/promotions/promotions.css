@@ -42,6 +42,12 @@
   margin-bottom: 8px;
 }
 
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
 .product-chips { display: flex; flex-direction: column; gap: 6px; }
 .prod-chip {
   background: #f8fafc;

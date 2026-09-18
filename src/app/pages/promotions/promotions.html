@@ -10,6 +10,19 @@
     </div>
   </div>
 
+  @if (insights.length) {
+    <div class="insights-grid" style="margin-bottom:20px">
+      @for (insight of insights; track insight.insightKey) {
+        <app-insight-card
+          [insight]="insight"
+          (dismiss)="dismissInsight($event)"
+          (primaryAction)="insightPrimary($event)"
+          (secondaryAction)="insightSecondary($event)">
+        </app-insight-card>
+      }
+    </div>
+  }
+
   <!-- Promotions List + Campaign Panel -->
   <div class="promo-layout">
 
