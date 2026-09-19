@@ -1,0 +1,154 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Usage & Limits</div>
+      <div class="page-sub">Your plan, billing cycle and current usage.</div>
+    </div>
+  </div>
+
+  @if (loadingSummary) {
+    <div class="loading">Loading your plan...</div>
+  } @else if (!summary) {
+    <div class="empty-state">Couldn't load your plan details — please try again shortly.</div>
+  } @else {
+    <!-- Plan & billing cycle -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <span class="card-title">Plan & Billing Cycle</span>
+        <span class="badge {{ subscriptionBadge(summary.subscription.status) }}" style="text-transform:capitalize">{{ summary.subscription.status }}</span>
+      </div>
+      <div class="card-body">
+        <div class="plan-grid">
+          <div class="plan-item">
+            <span class="plan-item-label">Plan</span>
+            <span class="plan-item-value">
+              {{ summary.plan.name }}
+              @if (summary.plan.isCustom) { <span class="badge badge-primary" style="margin-left:6px">Custom Plan</span> }
+            </span>
+          </div>
+          <div class="plan-item">
+            <span class="plan-item-label">Billing Cycle</span>
+            <span class="plan-item-value">{{ summary.billingPeriod.start | date:'d MMM y' }} – {{ summary.billingPeriod.end | date:'d MMM y' }}</span>
+          </div>
+          <div class="plan-item">
+            <span class="plan-item-label">Resets In</span>
+            <span class="plan-item-value">{{ summary.billingPeriod.daysRemaining }} day{{ summary.billingPeriod.daysRemaining === 1 ? '' : 's' }}</span>
+          </div>
+          @if (summary.subscription.overageBillingEnabled) {
+            <div class="plan-item">
+              <span class="plan-item-label">Overage</span>
+              <span class="badge badge-info">Overage billing enabled</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Usage bars -->
+    <div class="card mb-4">
+      <div class="card-header"><span class="card-title">Usage</span></div>
+      <div class="card-body">
+        @for (row of summary.usage; track row.type) {
+          <div class="usage-row">
+            <div class="usage-row-top">
+              <span class="usage-label">{{ row.label }}</span>
+              @if (row.warningLevel) {
+                <span class="badge {{ warningBadgeClass(row.warningLevel) }}">{{ warningText(row.warningLevel) }}</span>
+              }
+            </div>
+            <div class="usage-bar-track">
+              <div class="usage-bar-fill {{ barClass(row.warningLevel) }}" [style.width.%]="barWidth(row)"></div>
+            </div>
+            <div class="usage-row-bottom">
+              <span class="usage-numbers">
+                @if (row.kind === 'cycle_currency') {
+                  {{ row.used | appCurrency }} / {{ row.limit | appCurrency }}
+                  <span class="usage-remaining">· {{ row.remaining | appCurrency }} remaining</span>
+                } @else {
+                  {{ row.used }} / {{ row.limit }}
+                  <span class="usage-remaining">· {{ row.remaining }} remaining</span>
+                }
+              </span>
+              <a class="btn {{ ctaClass(row) }} btn-sm" [routerLink]="['/support']" [queryParams]="{ topic: 'upgrade', usageType: row.type }">{{ ctaLabel(row) }}</a>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">No usage data yet.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Add-ons -->
+    <div class="card mb-4">
+      <div class="card-header"><span class="card-title">Add-ons</span></div>
+      <div class="card-body">
+        @if (summary.addOns.length) {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Type</th><th>Quantity</th><th>Status</th><th>Activated</th><th>Expires</th></tr>
+              </thead>
+              <tbody>
+                @for (a of summary.addOns; track a._id) {
+                  <tr>
+                    <td class="fw-600">{{ usageTypeLabel(a.type) }}</td>
+                    <td>{{ a.quantity }}</td>
+                    <td><span class="badge {{ addOnBadge(a.status) }}" style="text-transform:capitalize">{{ a.status.replace('_',' ') }}</span></td>
+                    <td class="text-muted">{{ a.activatedAt ? (a.activatedAt | date:'d MMM y') : '—' }}</td>
+                    <td class="text-muted">{{ a.expiresAt ? (a.expiresAt | date:'d MMM y') : '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-state">No add-ons active.</div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Usage history -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Usage History</span>
+      <select [(ngModel)]="selectedType" (ngModelChange)="onTypeFilterChange()" style="max-width:240px">
+        @for (opt of typeOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="card-body">
+      @if (loadingEvents) {
+        <div class="loading">Loading usage history...</div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Type</th><th>Quantity</th><th>Cost</th></tr>
+            </thead>
+            <tbody>
+              @for (e of events; track e._id) {
+                <tr>
+                  <td class="text-muted">{{ e.createdAt | date:'d MMM y, h:mm a' }}</td>
+                  <td>{{ ledgerTypeLabel(e.usageType) }}</td>
+                  <td>{{ e.quantity }}</td>
+                  <td>{{ e.customerCharge ? (e.customerCharge | appCurrency) : '—' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="empty-state">No usage events yet.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (pages > 1) {
+          <div class="pagination">
+            <button type="button" class="btn btn-outline btn-sm" (click)="prevPage()" [disabled]="page === 1">← Prev</button>
+            <span>{{ page }} / {{ pages }}</span>
+            <button type="button" class="btn btn-outline btn-sm" (click)="nextPage()" [disabled]="page === pages">Next →</button>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
