@@ -216,6 +216,16 @@
 }
 .btn-send:disabled { opacity: 0.5; cursor: default; }
 
+/* Persistent, quiet reminder under the input — helper-text treatment, not a
+   warning box. Always visible, no dismiss/acknowledge step; does not replace
+   the pendingAction confirm/cancel step above for an actual AI-suggested action. */
+.ai-disclaimer {
+  font-size: 11.5px;
+  color: var(--text-muted, #64748b);
+  text-align: center;
+  margin-top: -2px;
+}
+
 /* ── Suggested Actions panel ── */
 .ai-suggestions-panel {
   width: 300px;
