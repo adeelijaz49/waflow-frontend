@@ -1,0 +1,51 @@
+.legal-accept-wrap {
+  display: flex;
+  justify-content: center;
+  padding-top: 40px;
+}
+
+.legal-accept-card { width: 100%; max-width: 520px; }
+
+.legal-accept-step {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.legal-accept-intro {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.legal-accept-doc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.legal-accept-doc-list a { color: var(--primary); font-size: 14px; font-weight: 500; }
+
+.legal-accept-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.legal-accept-checkbox input { margin-top: 3px; }
+
+.legal-accept-error {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}

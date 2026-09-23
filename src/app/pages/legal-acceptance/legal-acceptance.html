@@ -1,0 +1,59 @@
+<div class="page">
+  @if (loading) {
+    <div class="loading">Loading...</div>
+  } @else if (status) {
+    <div class="legal-accept-wrap">
+      <div class="card legal-accept-card">
+        @if (step === 'combined') {
+          <div class="card-header">
+            <span class="card-title">Before you continue</span>
+            <span class="legal-accept-step">Step 1 of {{ status.requiresDpaAcceptance ? 2 : 1 }}</span>
+          </div>
+          <div class="card-body">
+            <p class="legal-accept-intro">
+              By continuing, you agree to our Terms of Service, Privacy Policy, and Acceptable Use Policy.
+            </p>
+            <ul class="legal-accept-doc-list">
+              @for (doc of status.combined.documents; track doc.slug) {
+                <li><a [routerLink]="['/legal', doc.slug]" target="_blank" rel="noopener">{{ doc.title }}</a></li>
+              }
+            </ul>
+
+            @if (error) { <div class="legal-accept-error">{{ error }}</div> }
+
+            <label class="legal-accept-checkbox">
+              <input type="checkbox" [(ngModel)]="combinedChecked" />
+              I agree to the Terms of Service, Privacy Policy, and Acceptable Use Policy
+            </label>
+
+            <button class="btn btn-primary" style="margin-top:16px" [disabled]="!combinedChecked || saving" (click)="acceptCombined()">
+              {{ saving ? 'Saving...' : 'Agree & Continue' }}
+            </button>
+          </div>
+        }
+
+        @if (step === 'dpa') {
+          <div class="card-header">
+            <span class="card-title">Data Processing Agreement</span>
+            <span class="legal-accept-step">Step 2 of 2</span>
+          </div>
+          <div class="card-body">
+            <p class="legal-accept-intro">{{ status.dpa.summary }}</p>
+            <a [routerLink]="['/legal', status.dpa.slug]" target="_blank" rel="noopener">Read the full Data Processing Agreement</a>
+
+            @if (error) { <div class="legal-accept-error" style="margin-top:14px">{{ error }}</div> }
+
+            <label class="legal-accept-checkbox" style="margin-top:14px">
+              <input type="checkbox" [(ngModel)]="dpaChecked" />
+              As the workspace Owner, I accept the Data Processing Agreement on behalf of my business
+            </label>
+
+            <button class="btn btn-primary" style="margin-top:16px" [disabled]="!dpaChecked || saving" (click)="acceptDpa()">
+              {{ saving ? 'Saving...' : 'Agree & Continue' }}
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

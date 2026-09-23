@@ -1,0 +1,50 @@
+/* .hint-box copied from pages/settings/settings.css (Angular view
+   encapsulation means component styles don't carry across files). */
+.hint-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #92400e;
+  line-height: 1.6;
+}
+
+.legal-doc-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.legal-doc-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Basic prose styling for marked's rendered Markdown output — this app has
+   no other place that renders freeform long-form content, so nothing global
+   to reuse here. */
+.legal-doc-body {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  max-width: 720px;
+}
+.legal-doc-body :first-child { margin-top: 0; }
+.legal-doc-body h1 { font-size: 22px; margin: 0 0 16px; }
+.legal-doc-body h2 { font-size: 17px; margin: 28px 0 10px; }
+.legal-doc-body h3 { font-size: 15px; margin: 20px 0 8px; }
+.legal-doc-body p, .legal-doc-body ul, .legal-doc-body ol { margin: 0 0 12px; }
+.legal-doc-body ul, .legal-doc-body ol { padding-left: 22px; }
+.legal-doc-body li { margin-bottom: 4px; }
+.legal-doc-body hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+.legal-doc-body a { color: var(--primary); }
+.legal-doc-body strong { font-weight: 700; }
+.legal-doc-body code { background: #f8fafc; padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+.legal-doc-body table { border-collapse: collapse; width: 100%; margin: 0 0 14px; font-size: 13px; }
+.legal-doc-body th, .legal-doc-body td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.legal-doc-body th { background: #f8fafc; font-weight: 600; }

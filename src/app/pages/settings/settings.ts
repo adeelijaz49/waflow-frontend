@@ -5,10 +5,11 @@ import { ApiService } from '../../services/api.service';
 import { SettingsService } from '../../shared/settings.service';
 import { AuthService } from '../../shared/auth.service';
 import { DialogService } from '../../shared/dialog.service';
+import { LegalSection } from './legal-section/legal-section';
 
 @Component({
   selector: 'app-settings',
-  imports: [CommonModule, DatePipe, FormsModule],
+  imports: [CommonModule, DatePipe, FormsModule, LegalSection],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
 })

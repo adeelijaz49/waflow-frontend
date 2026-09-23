@@ -1,0 +1,46 @@
+<div class="card mb-4">
+  <div class="card-header">
+    <span class="card-title">📄 Legal</span>
+  </div>
+  <div class="card-body">
+    @if (loading) {
+      <div class="loading" style="padding:16px">Loading...</div>
+    } @else {
+      <div class="legal-doc-list">
+        @for (doc of documents; track doc.slug) {
+          <div class="legal-doc-row">
+            <div class="legal-doc-info">
+              <div class="legal-doc-title">{{ doc.title }}</div>
+              <div class="legal-doc-meta">
+                Last updated {{ doc.effectiveDate | date:'d MMM y' }}
+                @if (doc.status === 'draft') { <span class="badge badge-neutral" style="margin-left:6px">Draft</span> }
+              </div>
+
+              @if (isDpa(doc.slug) && status) {
+                @if (status.dpa.accepted) {
+                  <div class="legal-doc-accepted">
+                    ✅ Accepted {{ status.dpa.acceptedAt | date:'d MMM y, HH:mm' }} (version {{ status.dpa.acceptedVersion }})
+                    <a [routerLink]="['/legal', doc.slug]" [queryParams]="{ version: status.dpa.acceptedVersion }">View/download your accepted copy</a>
+                  </div>
+                } @else {
+                  <div class="legal-doc-pending">Not yet accepted</div>
+                }
+              } @else if (combinedInfoFor(doc.slug); as info) {
+                @if (info.accepted) {
+                  <div class="legal-doc-accepted">✅ You accepted this on {{ info.acceptedAt | date:'d MMM y' }}</div>
+                } @else {
+                  <div class="legal-doc-pending">Not yet accepted</div>
+                }
+              }
+            </div>
+            <a class="btn btn-outline btn-sm" [routerLink]="['/legal', doc.slug]">Read</a>
+          </div>
+        }
+      </div>
+
+      <div class="hint-box" style="margin-top:16px">
+        💡 These documents are still marked DRAFT — final, lawyer-approved text will replace them before real launch. Past acceptances of an earlier version always stay retrievable.
+      </div>
+    }
+  </div>
+</div>

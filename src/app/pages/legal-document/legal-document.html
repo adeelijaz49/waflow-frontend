@@ -1,0 +1,35 @@
+<div class="page">
+  @if (loading) {
+    <div class="loading">Loading...</div>
+  } @else if (notFound) {
+    <div class="card">
+      <div class="card-body">
+        <div class="empty-state">This document couldn't be found.</div>
+        <button class="btn btn-outline" style="margin-top:12px" (click)="goBack()">← Back</button>
+      </div>
+    </div>
+  } @else if (doc) {
+    <div class="legal-doc-header">
+      <button class="btn btn-outline btn-sm" (click)="goBack()">← Back</button>
+      <button class="btn btn-outline btn-sm" (click)="download()">⬇ Download</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{{ doc.title }}</span>
+        @if (doc.status === 'draft') { <span class="badge badge-neutral">Draft — for legal review</span> }
+      </div>
+      <div class="card-body">
+        <div class="legal-doc-meta">
+          Last updated {{ doc.effectiveDate | date:'d MMM y' }} · version {{ doc.version }}
+        </div>
+        @if (!doc.isCurrentVersion) {
+          <div class="hint-box">
+            💡 You're viewing version {{ doc.version }}, which is no longer the current version of this document. This is the exact version you (or your workspace) accepted on the date shown in Settings → Legal.
+          </div>
+        }
+        <div class="legal-doc-body" [innerHTML]="html"></div>
+      </div>
+    </div>
+  }
+</div>
