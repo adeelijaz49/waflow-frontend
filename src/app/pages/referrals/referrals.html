@@ -1,0 +1,306 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Referral Promotions</div>
+      <div class="page-sub">Turn customers into referrers — give and get rewards when a friend buys.</div>
+    </div>
+    @if (!selected) {
+      <button class="btn btn-primary" (click)="openCreate()">+ Create Referral Promotion</button>
+    }
+  </div>
+
+  @if (!selected) {
+    <!-- ── List ── -->
+    <div class="card">
+      @if (loadingList) {
+        <div class="loading">Loading referral promotions...</div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Name</th><th>Status</th><th>Rewards</th><th>Qualifying action</th><th>Dates</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (p of promotions; track p._id) {
+                <tr (click)="open(p)" style="cursor:pointer">
+                  <td class="fw-600">{{ p.name }}</td>
+                  <td><span class="badge {{ statusBadge(p.status) }}">{{ p.status }}</span></td>
+                  <td class="text-muted" style="font-size:12.5px">{{ rewardSummary(p) }}</td>
+                  <td class="text-muted" style="font-size:12.5px">{{ rewardLabel(p.qualifyingAction) }}</td>
+                  <td class="text-muted" style="font-size:12px">
+                    {{ p.startsAt ? (p.startsAt | date:'d MMM y') : 'No start' }} – {{ p.endsAt ? (p.endsAt | date:'d MMM y') : 'ongoing' }}
+                  </td>
+                  <td (click)="$event.stopPropagation()">
+                    <button class="btn btn-outline btn-sm" (click)="openEdit(p)">Edit</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="empty-state">No referral promotions yet — create one to get started.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- ── Detail ── -->
+    <div class="flex-between mb-4">
+      <button class="btn btn-outline btn-sm" (click)="close()">← All referral promotions</button>
+      <div class="flex gap-2">
+        <span class="badge {{ statusBadge(selected.status) }}" style="font-size:12px">{{ selected.status }}</span>
+        <button class="btn btn-outline btn-sm" (click)="openEdit(selected)">Edit</button>
+        @if (selected.status !== 'active') {
+          <button class="btn btn-success btn-sm" (click)="setStatus(selected, 'active')">Activate</button>
+        } @else {
+          <button class="btn btn-outline btn-sm" (click)="setStatus(selected, 'paused')">Pause</button>
+        }
+        @if (selected.status !== 'ended') {
+          <button class="btn btn-danger btn-sm" (click)="setStatus(selected, 'ended')">End</button>
+        }
+      </div>
+    </div>
+
+    <div class="page-title" style="font-size:17px;margin-bottom:4px">{{ selected.name }}</div>
+    <div class="page-sub mb-4">{{ selected.description || rewardSummary(selected) }}</div>
+
+    <!-- Generic link + QR -->
+    <div class="card mb-4">
+      <div class="card-header"><span class="card-title">🔗 Generic Promotion Link</span></div>
+      <div class="card-body">
+        <div class="text-muted" style="font-size:12.5px;margin-bottom:10px">Share on social media, in a QR code, or anywhere you don't need to track a specific referrer.</div>
+        @if (loadingGenericLink) {
+          <div class="loading">Loading link...</div>
+        } @else if (genericLink) {
+          <div class="link-row">
+            <input readonly [value]="genericLink.shortUrl" (click)="selectInputText($event)" />
+            <button class="btn btn-outline btn-sm" (click)="copyLink(genericLink.shortUrl)">Copy</button>
+            <button class="btn btn-outline btn-sm" (click)="loadGenericQr()">{{ genericQr ? 'QR below ↓' : 'Show QR' }}</button>
+          </div>
+          @if (genericQr) {
+            <img [src]="genericQr" alt="QR code" class="qr-img" />
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Generate + send customer links -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <span class="card-title">👥 Generate &amp; Send Customer Links</span>
+        @if (!showPicker) { <button class="btn btn-outline btn-sm" (click)="openPicker()">Select Customers</button> }
+      </div>
+      @if (showPicker) {
+        <div class="card-body">
+          <div class="search-bar">
+            <input placeholder="Search by name or phone..." [(ngModel)]="customerSearch" (ngModelChange)="searchCustomers()" />
+            <span class="text-muted" style="font-size:12px">{{ selectedCustomerIds.size }} selected</span>
+          </div>
+          @if (loadingCustomers) {
+            <div class="loading">Loading customers...</div>
+          } @else {
+            <div class="customer-picker-list">
+              @for (c of customers; track c._id) {
+                <label class="customer-picker-row">
+                  <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" (change)="toggleCustomer(c._id)" />
+                  <span class="fw-600">{{ c.firstname }} {{ c.lastname }}</span>
+                  <span class="text-muted">{{ c.phone }}</span>
+                  @if (c.optedOut) { <span class="badge badge-danger" style="font-size:10px">Opted out</span> }
+                </label>
+              } @empty {
+                <div class="text-muted" style="font-size:13px">No customers found.</div>
+              }
+            </div>
+          }
+          <div class="flex gap-2 mt-4">
+            <button class="btn btn-outline btn-sm" [disabled]="!selectedCustomerIds.size || workingOnLinks" (click)="generateLinks()">Generate Links Only</button>
+            <button class="btn btn-primary btn-sm" [disabled]="!selectedCustomerIds.size || workingOnLinks" (click)="sendLinks()">
+              {{ workingOnLinks ? 'Sending...' : 'Send via WhatsApp' }}
+            </button>
+            <button class="btn btn-outline btn-sm" (click)="showPicker = false">Cancel</button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Pending reward approvals -->
+    @if (selected.requiresManualApproval && pendingApprovals.length) {
+      <div class="card mb-4">
+        <div class="card-header"><span class="card-title">⏳ Pending Reward Approvals ({{ pendingApprovals.length }})</span></div>
+        <div class="card-body">
+          <div class="order-list">
+            @for (r of pendingApprovals; track r._id) {
+              <div class="order-row">
+                <div>
+                  <div class="fw-600" style="font-size:12px">{{ rewardLabel(r.rewardType) }} — {{ r.rewardValue }}</div>
+                  <div class="text-muted" style="font-size:11px">Requested {{ r.createdAt | date:'d MMM y' }}</div>
+                </div>
+                <div class="flex gap-2">
+                  <button class="btn btn-success btn-sm" (click)="respondToApproval(r, true)">Approve</button>
+                  <button class="btn btn-danger btn-sm" (click)="respondToApproval(r, false)">Reject</button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Performance -->
+    <div class="card mb-4">
+      <div class="card-header"><span class="card-title">📊 Performance</span></div>
+      <div class="card-body">
+        @if (loadingReport) {
+          <div class="loading">Loading report...</div>
+        } @else if (report) {
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-label">Links Generated</div><div class="stat-value">{{ report.linksGenerated }}</div></div>
+            <div class="stat-card"><div class="stat-label">Clicks</div><div class="stat-value">{{ report.clicks }}</div></div>
+            <div class="stat-card"><div class="stat-label">WhatsApp Started</div><div class="stat-value">{{ report.whatsappStarted }}</div></div>
+            <div class="stat-card"><div class="stat-label">New Customers</div><div class="stat-value">{{ report.newCustomers }}</div></div>
+            <div class="stat-card"><div class="stat-label">Conversions</div><div class="stat-value">{{ report.conversions }}</div></div>
+            <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value">{{ report.revenue | appCurrency }}</div></div>
+            <div class="stat-card"><div class="stat-label">Conversion Rate</div><div class="stat-value">{{ report.conversionRate }}%</div></div>
+            <div class="stat-card"><div class="stat-label">Referrers Rewarded</div><div class="stat-value">{{ report.referrersRewarded }}</div></div>
+            <div class="stat-card"><div class="stat-label">Points Issued</div><div class="stat-value">{{ report.pointsIssued }}</div></div>
+            <div class="stat-card"><div class="stat-label">Vouchers Issued</div><div class="stat-value">{{ report.vouchersIssued }}</div></div>
+          </div>
+
+          @if (report.topReferrers?.length) {
+            <div style="margin-top:20px">
+              <div class="fw-600" style="font-size:13px;margin-bottom:10px">🏆 Top Referrers</div>
+              <div class="order-list">
+                @for (t of report.topReferrers; track t.referrerCustomerId) {
+                  <div class="order-row">
+                    <span class="fw-600" style="font-size:12px">{{ t.name }}</span>
+                    <span class="text-muted" style="font-size:12px">{{ t.successfulReferrals }} successful referral(s)</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Referrals list -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Referrals ({{ report?.referrals?.length || 0 }})</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Status</th><th>Clicked</th><th>Customer Created</th><th>Reward</th><th></th></tr></thead>
+          <tbody>
+            @for (r of report?.referrals; track r._id) {
+              <tr>
+                <td><span class="badge {{ referralStatusBadge(r.status) }}">{{ r.status.replace('_',' ') }}</span></td>
+                <td class="text-muted" style="font-size:12px">{{ r.firstClickAt ? (r.firstClickAt | date:'d MMM, h:mm a') : '—' }}</td>
+                <td class="text-muted" style="font-size:12px">{{ r.customerCreatedAt ? (r.customerCreatedAt | date:'d MMM, h:mm a') : '—' }}</td>
+                <td class="text-muted" style="font-size:12px">{{ r.rewardType ? (rewardLabel(r.rewardType) + ' · ' + r.rewardValue) : '—' }}</td>
+                <td>
+                  @if (!['reward_issued','rejected','expired','voided'].includes(r.status)) {
+                    <button class="btn btn-outline btn-sm" (click)="voidReferral(r)">Void</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="empty-state">No referrals yet.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+@if (showForm) {
+  <div class="modal-overlay" (click)="showForm = false">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">{{ editingId ? 'Edit' : 'Create' }} Referral Promotion</span>
+        <button class="close-btn" (click)="showForm = false">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Promotion Name</label>
+          <input [(ngModel)]="form.name" placeholder="e.g. Weekend Coffee Referral" />
+        </div>
+        <div class="form-group">
+          <label>Description (optional)</label>
+          <input [(ngModel)]="form.description" placeholder="Shown internally, not sent to customers" />
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Start Date</label><input type="date" [(ngModel)]="form.startsAt" /></div>
+          <div class="form-group"><label>End Date</label><input type="date" [(ngModel)]="form.endsAt" /></div>
+        </div>
+
+        <div class="hint-box" style="margin-bottom:16px">💡 "Give and Get" — give your friend 15% off, you get 50 points when they buy.</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Friend Reward Type</label>
+            <select [(ngModel)]="form.friendRewardType">
+              @for (t of friendRewardTypes; track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Friend Reward Value</label>
+            <input type="number" [(ngModel)]="form.friendRewardValue" [disabled]="form.friendRewardType === 'none'" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Friend Reward Label (optional — for voucher/free item)</label>
+          <input [(ngModel)]="form.friendRewardLabel" placeholder="e.g. Free dessert" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Referrer Reward Type</label>
+            <select [(ngModel)]="form.referrerRewardType">
+              @for (t of referrerRewardTypes; track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Referrer Reward Value</label>
+            <input type="number" [(ngModel)]="form.referrerRewardValue" [disabled]="form.referrerRewardType === 'none' || form.referrerRewardType === 'manual'" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Referrer Reward Label (optional)</label>
+          <input [(ngModel)]="form.referrerRewardLabel" placeholder="e.g. SAR 25 off next treatment" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Qualifying Action</label>
+            <select [(ngModel)]="form.qualifyingAction">
+              @for (a of qualifyingActions; track a.value) { <option [value]="a.value">{{ a.label }}</option> }
+            </select>
+          </div>
+          @if (form.qualifyingAction === 'minimum_spend') {
+            <div class="form-group"><label>Minimum Spend</label><input type="number" [(ngModel)]="form.minimumSpend" /></div>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="form-group"><label>Max Rewards Per Referrer (0 = unlimited)</label><input type="number" [(ngModel)]="form.maxRewardsPerReferrer" /></div>
+          <div class="form-group"><label>Max Total Rewards (0 = unlimited)</label><input type="number" [(ngModel)]="form.maxTotalRewards" /></div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-row" style="display:flex;align-items:center;gap:8px;font-weight:normal;text-transform:none">
+            <input type="checkbox" [(ngModel)]="form.requiresManualApproval" />
+            Require manual approval before issuing referrer rewards
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>Terms &amp; Conditions (optional)</label>
+          <textarea [(ngModel)]="form.termsText" rows="3" placeholder="Shown to customers if needed"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showForm = false">Cancel</button>
+        <button class="btn btn-primary" [disabled]="saving || !form.name.trim()" (click)="save()">{{ saving ? 'Saving...' : 'Save' }}</button>
+      </div>
+    </div>
+  </div>
+}

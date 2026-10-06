@@ -39,6 +39,7 @@ export class App {
     { path: '/inbox',      label: 'WhatsApp Inbox', icon: '💬' },
     { path: '/orders',     label: 'Orders',       icon: '▤' },
     { path: '/promotions', label: 'Promotions',   icon: '◈' },
+    { path: '/referrals',  label: 'Referral Promotions', icon: '🤝' },
     { path: '/flows',      label: 'Automated Flows', icon: '⟳' },
     { path: '/services',   label: 'Services',     icon: '✂' },
     { path: '/settings',   label: 'Settings',     icon: '⚙' },

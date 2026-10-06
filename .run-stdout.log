@@ -1,0 +1,59 @@
+> Building...
+√ Building...
+Initial chunk files | Names         |  Raw size
+main.js             | main          |  33.99 kB | 
+chunk-ZXVWWQ3F.js   | -             |  15.73 kB | 
+styles.css          | styles        |   7.17 kB | 
+chunk-45CKSON7.js   | -             |   2.37 kB | 
+chunk-DOD3E43Y.js   | -             |   2.30 kB | 
+chunk-XLBTJCTX.js   | -             |   1.61 kB | 
+chunk-RRWAGBC7.js   | -             |   1.55 kB | 
+chunk-SOYTHV2S.js   | -             |   1.21 kB | 
+
+                    | Initial total |  65.94 kB
+
+Lazy chunk files    | Names         |  Raw size
+chunk-TCOCWXNS.js   | promotions    | 251.77 kB | 
+chunk-TKOARSMH.js   | services      |  92.42 kB | 
+chunk-ICTNCHXR.js   | referrals     |  91.00 kB | 
+chunk-FSOA3BPV.js   | settings      |  89.11 kB | 
+chunk-2LX6G4DY.js   | flows         |  85.48 kB | 
+chunk-A4BM4ORI.js   | demo          |  79.39 kB | 
+chunk-WL5XK676.js   | inbox         |  73.03 kB | 
+chunk-6U74LDKZ.js   | customers     |  66.58 kB | 
+chunk-DOPDCU6R.js   | onboarding    |  65.14 kB | 
+chunk-PQUO4AMH.js   | imports       |  47.56 kB | 
+chunk-ISU7FJGP.js   | products      |  46.26 kB | 
+chunk-MS4JHNOV.js   | ai-mode       |  45.58 kB | 
+chunk-JF66DOEQ.js   | orders        |  38.55 kB | 
+chunk-OKCCRICA.js   | usage-limits  |  38.34 kB | 
+chunk-ZIEGKCBW.js   | login         |  34.23 kB | 
+...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [12.662 seconds] - 2026-10-06T18:35:23.068Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/
+> Changes detected. Rebuilding...
+√ Changes detected. Rebuilding...
+Initial chunk files | Names     | Raw size
+main.js             | main      | 33.99 kB | 
+
+Lazy chunk files    | Names     | Raw size
+chunk-M76C5VD5.js   | referrals | 91.06 kB | 
+
+Application bundle generation complete. [11.282 seconds] - 2026-10-06T18:38:12.391Z
+
+Page reload sent to client(s).
+> Changes detected. Rebuilding...
+√ Changes detected. Rebuilding...
+Initial chunk files | Names     | Raw size
+main.js             | main      | 33.99 kB | 
+
+Lazy chunk files    | Names     | Raw size
+chunk-IQJWTSUB.js   | referrals | 91.08 kB | 
+
+Application bundle generation complete. [1.426 seconds] - 2026-10-06T18:38:13.831Z
+
+Page reload sent to client(s).
