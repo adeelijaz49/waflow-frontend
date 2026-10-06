@@ -1,0 +1,355 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Instagram Promotions</div>
+      <div class="page-sub">Plan, generate, and schedule Instagram posts that drive customers into WhatsApp.</div>
+    </div>
+    @if (entitlementEnabled && !selected) {
+      <button class="btn btn-primary" (click)="openCreate()">+ Create Instagram Promotion</button>
+    }
+  </div>
+
+  @if (loadingEntitlement) {
+    <div class="card"><div class="loading">Loading...</div></div>
+  } @else if (!entitlementEnabled) {
+    <div class="card">
+      <div class="empty-state" style="padding:40px 20px">
+        <div style="font-size:32px;margin-bottom:8px">📷</div>
+        <div class="fw-600" style="margin-bottom:6px">Instagram Promotion Scheduler isn't enabled yet</div>
+        <div class="text-muted" style="font-size:13px;max-width:460px;margin:0 auto 16px">
+          This add-on lets you plan, auto-generate captions for, and schedule Instagram posts that route customers straight into a tracked WhatsApp conversation. Contact us to enable it for your workspace.
+        </div>
+        <a class="btn btn-outline btn-sm" routerLink="/support">Contact Support</a>
+      </div>
+    </div>
+  } @else {
+
+    @if (oauthNotice) {
+      <div class="card mb-4" [style.border-color]="oauthNotice.type === 'success' ? '#16a34a' : '#dc2626'">
+        <div class="card-body" style="font-size:13px">{{ oauthNotice.text }}</div>
+      </div>
+    }
+
+    @if (!selected) {
+      <!-- ── Instagram account connection ── -->
+      <div class="card mb-4">
+        <div class="card-header"><span class="card-title">📸 Instagram Account</span></div>
+        <div class="card-body">
+          @if (loadingAccount) {
+            <div class="loading">Checking connection...</div>
+          } @else if (account?.status === 'connected') {
+            <div class="flex-between">
+              <div>
+                <div class="fw-600">{{ account.accountHandle }}</div>
+                <div class="text-muted" style="font-size:12px">Connected</div>
+              </div>
+              <button class="btn btn-outline btn-sm" (click)="disconnect()">Disconnect</button>
+            </div>
+          } @else {
+            <div class="text-muted" style="font-size:13px;margin-bottom:10px">
+              @if (account && !account.configured) {
+                Instagram connection isn't configured for this environment yet. Contact your administrator.
+              } @else if (account?.status === 'reconnect_required' || account?.status === 'token_expired') {
+                Your Instagram connection needs to be refreshed.
+              } @else {
+                Connect your Instagram Business account to start creating promotions.
+              }
+            </div>
+            <button class="btn btn-primary btn-sm" [disabled]="connecting || (account && !account.configured)" (click)="connect()">
+              {{ connecting ? 'Redirecting...' : 'Connect Instagram' }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- ── List ── -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Promotions</span>
+          <select [(ngModel)]="statusFilter" (ngModelChange)="load()" style="width:auto">
+            <option value="">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="publishing">Publishing</option>
+            <option value="published">Published</option>
+            <option value="failed">Failed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        @if (loadingList) {
+          <div class="loading">Loading promotions...</div>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Name</th><th>Status</th><th>Goal</th><th>Type</th><th>Scheduled / Published</th><th></th></tr>
+              </thead>
+              <tbody>
+                @for (p of posts; track p._id) {
+                  <tr (click)="open(p)" style="cursor:pointer">
+                    <td class="fw-600">{{ p.name }}</td>
+                    <td><span class="badge {{ statusBadge(p.status) }}">{{ p.status }}</span></td>
+                    <td class="text-muted" style="font-size:12.5px">{{ goalLabel(p.goal) }}</td>
+                    <td class="text-muted" style="font-size:12.5px">{{ p.postType }}</td>
+                    <td class="text-muted" style="font-size:12px">
+                      {{ p.publishedAt ? (p.publishedAt | date:'d MMM, h:mm a') : (p.scheduledAt ? (p.scheduledAt | date:'d MMM, h:mm a') : '—') }}
+                    </td>
+                    <td (click)="$event.stopPropagation()">
+                      @if (p.status === 'draft' || p.status === 'failed') {
+                        <button class="btn btn-outline btn-sm" (click)="openEdit(p)">Edit</button>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6" class="empty-state">No Instagram promotions yet — create one to get started.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- ── Detail ── -->
+      <div class="flex-between mb-4">
+        <button class="btn btn-outline btn-sm" (click)="close()">← All promotions</button>
+        <div class="flex gap-2">
+          <span class="badge {{ statusBadge(selected.status) }}" style="font-size:12px">{{ selected.status }}</span>
+          @if (selected.status === 'draft' || selected.status === 'failed') {
+            <button class="btn btn-outline btn-sm" (click)="openEdit(selected)">Edit</button>
+            <button class="btn btn-outline btn-sm" (click)="openSchedule(selected)">Schedule</button>
+            <button class="btn btn-primary btn-sm" [disabled]="publishingNow" (click)="publishNow(selected)">{{ publishingNow ? 'Publishing...' : 'Publish Now' }}</button>
+          }
+          @if (selected.status === 'draft' || selected.status === 'scheduled' || selected.status === 'failed') {
+            <button class="btn btn-danger btn-sm" (click)="cancel(selected)">Cancel</button>
+          }
+          <button class="btn btn-outline btn-sm" (click)="duplicate(selected)">Duplicate</button>
+        </div>
+      </div>
+
+      <div class="page-title" style="font-size:17px;margin-bottom:4px">{{ selected.name }}</div>
+      <div class="page-sub mb-4">{{ goalLabel(selected.goal) }} · {{ selected.postType }}</div>
+
+      @if (selected.status === 'failed' && selected.errorMessage) {
+        <div class="card mb-4" style="border-color:#dc2626">
+          <div class="card-body" style="font-size:13px"><strong>Publish failed:</strong> {{ selected.errorMessage }}</div>
+        </div>
+      }
+
+      <div class="card mb-4">
+        <div class="card-header"><span class="card-title">Post Content</span></div>
+        <div class="card-body">
+          @if (selected.mediaUrl) {
+            @if (selected.postType === 'image') {
+              <img [src]="selected.mediaUrl" alt="Post media" style="max-width:280px;border-radius:8px;margin-bottom:12px;display:block" />
+            } @else {
+              <video [src]="selected.mediaUrl" controls style="max-width:280px;border-radius:8px;margin-bottom:12px;display:block"></video>
+            }
+          }
+          <div style="font-size:13px;white-space:pre-wrap;margin-bottom:8px">{{ selected.caption }}</div>
+          @if (selected.hashtags?.length) {
+            <div class="text-muted" style="font-size:12.5px;margin-bottom:8px">{{ selected.hashtags.join(' ') }}</div>
+          }
+          <div class="text-muted" style="font-size:12.5px">WhatsApp CTA: "{{ selected.whatsappCtaText }}" — {{ destinationLabel(selected.destinationAction) }}</div>
+        </div>
+      </div>
+
+      @if (selected.trackingLinkId && report?.trackingLink) {
+        <div class="card mb-4">
+          <div class="card-header"><span class="card-title">🔗 Tracking Link</span></div>
+          <div class="card-body">
+            <div class="link-row">
+              <input readonly [value]="report.trackingLink.shortUrl" (click)="selectInputText($event)" />
+              <button class="btn btn-outline btn-sm" (click)="copyLink(report.trackingLink.shortUrl)">Copy</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Performance -->
+      <div class="card mb-4">
+        <div class="card-header"><span class="card-title">📊 Performance</span></div>
+        <div class="card-body">
+          @if (loadingReport) {
+            <div class="loading">Loading report...</div>
+          } @else if (report) {
+            <div class="stats-grid">
+              <div class="stat-card"><div class="stat-label">Clicks</div><div class="stat-value">{{ report.clicks }}</div></div>
+              <div class="stat-card"><div class="stat-label">Unique Clicks</div><div class="stat-value">{{ report.uniqueClicks }}</div></div>
+              <div class="stat-card"><div class="stat-label">WhatsApp Conversations</div><div class="stat-value">{{ report.whatsappConversations }}</div></div>
+              <div class="stat-card"><div class="stat-label">New Customers</div><div class="stat-value">{{ report.newCustomers }}</div></div>
+              <div class="stat-card"><div class="stat-label">Orders Created</div><div class="stat-value">{{ report.ordersCreated }}</div></div>
+              <div class="stat-card"><div class="stat-label">Bookings Created</div><div class="stat-value">{{ report.bookingsCreated }}</div></div>
+              <div class="stat-card"><div class="stat-label">Payments Completed</div><div class="stat-value">{{ report.paymentsCompleted }}</div></div>
+              <div class="stat-card"><div class="stat-label">Loyalty Signups</div><div class="stat-value">{{ report.loyaltySignups }}</div></div>
+              <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value">{{ report.revenue | appCurrency }}</div></div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Publish job history -->
+      @if (jobs.length) {
+        <div class="card">
+          <div class="card-header"><span class="card-title">Publish Attempts ({{ jobs.length }})</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Status</th><th>Attempts</th><th>Last Attempt</th><th>Error</th></tr></thead>
+              <tbody>
+                @for (j of jobs; track j._id) {
+                  <tr>
+                    <td><span class="badge {{ statusBadge(j.status) }}">{{ j.status }}</span></td>
+                    <td class="text-muted" style="font-size:12.5px">{{ j.attempts }}</td>
+                    <td class="text-muted" style="font-size:12px">{{ j.lastAttemptAt ? (j.lastAttemptAt | date:'d MMM, h:mm a') : '—' }}</td>
+                    <td class="text-muted" style="font-size:12px">{{ j.errorMessage || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    }
+  }
+</div>
+
+@if (showForm) {
+  <div class="modal-overlay" (click)="showForm = false">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">{{ editingId ? 'Edit' : 'Create' }} Instagram Promotion</span>
+        <button class="close-btn" (click)="showForm = false">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Promotion Name</label>
+          <input [(ngModel)]="form.name" placeholder="e.g. Weekend Facial Special" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Goal</label>
+            <select [(ngModel)]="form.goal">
+              @for (g of goals; track g.value) { <option [value]="g.value">{{ g.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Post Type</label>
+            <select [(ngModel)]="form.postType">
+              @for (t of postTypes; track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Linked Product (optional)</label>
+            <select [(ngModel)]="form.productId">
+              <option value="">None</option>
+              @for (p of products; track p._id) { <option [value]="p._id">{{ p.name }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Linked Service (optional)</label>
+            <select [(ngModel)]="form.serviceId">
+              <option value="">None</option>
+              @for (s of services; track s._id) { <option [value]="s._id">{{ s.name }}</option> }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Offer Description (optional)</label>
+          <input [(ngModel)]="form.offerDescription" placeholder="e.g. 20% off all facials this weekend" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group"><label>Start Date (optional)</label><input type="date" [(ngModel)]="form.startsAt" /></div>
+          <div class="form-group"><label>End Date (optional)</label><input type="date" [(ngModel)]="form.endsAt" /></div>
+        </div>
+
+        <div class="form-group">
+          <label>Media (image or video)</label>
+          <input type="file" accept="image/png,image/jpeg,video/mp4,video/quicktime" (change)="onMediaSelected($event)" />
+          @if (uploadingMedia) { <div class="text-muted" style="font-size:12px;margin-top:4px">Uploading...</div> }
+          @if (form.mediaUrl && !uploadingMedia) {
+            <div style="margin-top:8px">
+              @if (form.postType === 'image') {
+                <img [src]="form.mediaUrl" alt="Preview" style="max-width:180px;border-radius:8px" />
+              } @else {
+                <video [src]="form.mediaUrl" controls style="max-width:180px;border-radius:8px"></video>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="hint-box" style="margin-bottom:16px">💡 Save this promotion first, then use "Generate with AI" to draft a caption, hashtags, and WhatsApp call-to-action.</div>
+
+        <div class="form-group">
+          <div class="flex-between" style="align-items:center">
+            <label style="margin-bottom:0">Caption</label>
+            @if (editingId) {
+              <button type="button" class="btn btn-outline btn-sm" [disabled]="generatingContent" (click)="generateContent()">
+                {{ generatingContent ? 'Generating...' : '✦ Generate with AI' }}
+              </button>
+            }
+          </div>
+          <textarea [(ngModel)]="form.caption" rows="4" placeholder="Write or generate your Instagram caption"></textarea>
+        </div>
+
+        @if (editingId && form.caption) {
+          <div class="form-group">
+            <div class="link-row">
+              <input [(ngModel)]="refineInstruction" placeholder="Refine instruction, e.g. 'make it shorter' or 'add Arabic'" />
+              <button type="button" class="btn btn-outline btn-sm" [disabled]="refining || !refineInstruction.trim()" (click)="refineCaption()">
+                {{ refining ? 'Refining...' : 'Refine' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        <div class="form-group">
+          <label>Hashtags (space-separated)</label>
+          <input [(ngModel)]="form.hashtags" placeholder="#skincare #weekendoffer" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>WhatsApp CTA Text</label>
+            <input [(ngModel)]="form.whatsappCtaText" placeholder="e.g. Tap the link in bio to claim this offer" />
+          </div>
+          <div class="form-group">
+            <label>Destination Action</label>
+            <select [(ngModel)]="form.destinationAction">
+              @for (a of destinationActions; track a.value) { <option [value]="a.value">{{ a.label }}</option> }
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showForm = false">Cancel</button>
+        <button class="btn btn-primary" [disabled]="saving || !form.name.trim()" (click)="save()">{{ saving ? 'Saving...' : 'Save' }}</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showScheduleModal) {
+  <div class="modal-overlay" (click)="showScheduleModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">Schedule Promotion</span>
+        <button class="close-btn" (click)="showScheduleModal = false">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Publish Date &amp; Time</label>
+          <input type="datetime-local" [(ngModel)]="scheduleAt" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="showScheduleModal = false">Cancel</button>
+        <button class="btn btn-primary" [disabled]="scheduling || !scheduleAt" (click)="confirmSchedule()">{{ scheduling ? 'Scheduling...' : 'Schedule' }}</button>
+      </div>
+    </div>
+  </div>
+}

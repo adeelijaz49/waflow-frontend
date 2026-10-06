@@ -40,6 +40,7 @@ export class App {
     { path: '/orders',     label: 'Orders',       icon: '▤' },
     { path: '/promotions', label: 'Promotions',   icon: '◈' },
     { path: '/referrals',  label: 'Referral Promotions', icon: '🤝' },
+    { path: '/instagram-promotions', label: 'Instagram Promotions', icon: '📷' },
     { path: '/flows',      label: 'Automated Flows', icon: '⟳' },
     { path: '/services',   label: 'Services',     icon: '✂' },
     { path: '/settings',   label: 'Settings',     icon: '⚙' },

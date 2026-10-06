@@ -15,6 +15,7 @@ export const routes: Routes = [
   { path: 'orders',     canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/orders/orders').then(m => m.Orders) },
   { path: 'promotions', canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/promotions/promotions').then(m => m.Promotions) },
   { path: 'referrals',  canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/referrals/referrals').then(m => m.Referrals) },
+  { path: 'instagram-promotions', canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/instagram-promotions/instagram-promotions').then(m => m.InstagramPromotions) },
   { path: 'flows',      canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/flows/flows').then(m => m.Flows) },
   { path: 'services',   canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/services/services').then(m => m.Services) },
   { path: 'settings',   canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/settings/settings').then(m => m.Settings) },
