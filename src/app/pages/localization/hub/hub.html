@@ -1,0 +1,47 @@
+<div class="page loc-hub" [appLangDir]="i18n.lang()">
+  @if (i18n.ready()) {
+    <div class="page-header">
+      <div>
+        <div class="page-title">{{ 'hub.title' | t }}</div>
+        <div class="page-sub">{{ 'hub.subtitle' | t }}</div>
+      </div>
+      <button type="button" class="btn btn-outline loc-lang-switch" [attr.lang]="otherLang" [attr.aria-label]="(otherLang === 'ar' ? 'hub.switch.toArabic' : 'hub.switch.toEnglish') | t" (click)="switchLanguage()">
+        {{ ('common.langName.' + otherLang) | t }}
+      </button>
+    </div>
+
+    @if (!state.loaded()) {
+      <div class="loading">{{ 'common.loading' | t }}</div>
+    } @else if (state.failed()) {
+      <div class="loc-error">
+        {{ 'hub.loadFailed' | t }}
+        <button type="button" class="btn btn-outline btn-sm" (click)="state.load(true)">{{ 'common.retry' | t }}</button>
+      </div>
+    } @else if (!state.enabled()) {
+      <div class="card">
+        <div class="card-body loc-locked">
+          <div class="loc-locked-icon" aria-hidden="true">🌐</div>
+          <h2>{{ 'hub.locked.title' | t }}</h2>
+          <p class="loc-muted">{{ 'hub.locked.body' | t }}</p>
+        </div>
+      </div>
+    } @else {
+      <nav class="loc-tabs" [attr.aria-label]="'hub.tabsLabel' | t">
+        @for (tab of tabs; track tab.path) {
+          <a class="loc-tab" [routerLink]="tab.path" routerLinkActive="active" ariaCurrentWhenActive="page" #tabLink (isActiveChange)="onTabActive($event, tabLink)">{{ tab.labelKey | t }}</a>
+        }
+      </nav>
+      <router-outlet />
+    }
+
+    <app-loc-ui-host />
+  } @else if (textsFailed()) {
+    <!-- The texts themselves failed to load, so this message is deliberately in both languages. -->
+    <div class="loc-error" role="alert" dir="auto">
+      <!-- i18n-ignore -->
+      تعذر تحميل الصفحة. Could not load this page.
+      <!-- i18n-ignore -->
+      <button type="button" class="btn btn-outline btn-sm" (click)="start()">إعادة المحاولة / Retry</button>
+    </div>
+  }
+</div>

@@ -1,0 +1,92 @@
+<div class="cap-grid">
+  <div class="loc-stack">
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">{{ 'captions.editor.title' | t }}</h2></div>
+      <div class="card-body loc-stack">
+        <p class="loc-hint">{{ 'captions.editor.hint' | t }}</p>
+        <div class="form-group">
+          <label class="cap-label" for="cap-text">{{ 'captions.editor.label' | t }}</label>
+          <textarea id="cap-text" rows="8" dir="auto" [attr.lang]="textLang()" [value]="text()"
+            [attr.placeholder]="'captions.editor.placeholder' | t" (input)="onInput($event)"></textarea>
+        </div>
+        @if (restored()) {
+          <div class="loc-hint" role="status">{{ 'captions.draftRestored' | t }}</div>
+        }
+
+        <div class="cap-counters" role="group" [attr.aria-label]="'captions.counters' | t">
+          <span class="cap-counter" [class]="'cap-counter cap-' + charsState()">
+            {{ 'captions.counter.chars' | t }}: <span class="loc-phone">{{ stats().chars | locNumber }} / {{ limits.chars | locNumber }}</span>
+          </span>
+          <span class="cap-counter" [class]="'cap-counter cap-' + tagsState()">
+            {{ 'captions.counter.hashtags' | t }}: <span class="loc-phone">{{ stats().hashtags | locNumber }} / {{ limits.hashtags | locNumber }}</span>
+          </span>
+          <span class="cap-counter" [class]="'cap-counter cap-' + mentionsState()">
+            {{ 'captions.counter.mentions' | t }}: <span class="loc-phone">{{ stats().mentions | locNumber }} / {{ limits.mentions | locNumber }}</span>
+          </span>
+          <span class="cap-counter cap-ok">{{ 'captions.counter.links' | t }}: {{ stats().urls | locNumber }}</span>
+          <span class="cap-counter cap-ok">{{ 'captions.counter.lines' | t }}: {{ stats().lines | locNumber }}</span>
+        </div>
+        <div aria-live="polite" class="loc-stack">
+          @if (charsState() === 'over') { <div class="loc-error">{{ 'captions.warn.charsOver' | t }}</div> }
+          @else if (charsState() === 'near') { <div class="loc-warn">{{ 'captions.warn.charsNear' | t }}</div> }
+          @if (tagsState() === 'over') { <div class="loc-error">{{ 'captions.warn.tagsOver' | t }}</div> }
+          @if (mentionsState() === 'over') { <div class="loc-error">{{ 'captions.warn.mentionsOver' | t }}</div> }
+          @if (stats().urls > 0) { <div class="loc-hint">{{ 'captions.warn.links' | t }}</div> }
+        </div>
+
+        <div class="loc-row">
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="!hasText()" (click)="copy()">{{ 'common.copy' | t }}</button>
+          <button type="button" class="btn btn-outline btn-sm" [disabled]="!text()" (click)="clear()">{{ 'captions.clear' | t }}</button>
+          @if (previous() !== null) {
+            <button type="button" class="btn btn-outline btn-sm" (click)="undo()">{{ 'captions.undo' | t }}</button>
+          }
+          <a class="btn btn-outline btn-sm" routerLink="/instagram-promotions">{{ 'captions.openInstagram' | t }}</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">{{ 'captions.ai.title' | t }}</h2></div>
+      <div class="card-body">
+        <app-ai-assist [text]="text()" textLanguage="auto" context="caption" [maxLength]="limits.chars"
+          [actions]="['to_ar', 'to_en', 'saudi']" (applied)="applyDraft($event)" />
+      </div>
+    </div>
+  </div>
+
+  <div class="loc-stack">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{{ 'captions.preview.title' | t }}</h2>
+        @if (isBilingual()) { <span class="badge badge-info">{{ 'captions.preview.bilingual' | t }}</span> }
+      </div>
+      <div class="card-body loc-stack">
+        <div class="loc-row" role="group" [attr.aria-label]="'captions.preview.viewer' | t">
+          <span class="loc-muted">{{ 'captions.preview.viewer' | t }}</span>
+          <button type="button" class="btn btn-sm" [class.btn-primary]="viewer() === 'rtl'" [class.btn-outline]="viewer() !== 'rtl'"
+            [attr.aria-pressed]="viewer() === 'rtl'" (click)="viewer.set('rtl')">{{ 'captions.preview.viewerAr' | t }}</button>
+          <button type="button" class="btn btn-sm" [class.btn-primary]="viewer() === 'ltr'" [class.btn-outline]="viewer() !== 'ltr'"
+            [attr.aria-pressed]="viewer() === 'ltr'" (click)="viewer.set('ltr')">{{ 'captions.preview.viewerEn' | t }}</button>
+        </div>
+        @if (hasText()) {
+          <app-caption-preview [text]="text()" [viewerDir]="viewer()" [expanded]="expanded()" (toggled)="expanded.set(!expanded())" />
+        } @else {
+          <div class="empty-state">{{ 'captions.preview.empty' | t }}</div>
+        }
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">{{ 'captions.tips.title' | t }}</h2></div>
+      <div class="card-body">
+        <ul class="cap-tips">
+          <li>{{ 'captions.tips.hashtags' | t }}</li>
+          <li>{{ 'captions.tips.fold' | t }}</li>
+          <li>{{ 'captions.tips.images' | t }}</li>
+          <li>{{ 'captions.tips.emoji' | t }}</li>
+          <li>{{ 'captions.tips.mixing' | t }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

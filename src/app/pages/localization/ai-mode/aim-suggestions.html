@@ -1,0 +1,22 @@
+@if (insights().length) {
+  <div class="aim-sg-group">
+    <div class="aim-sg-title">💡 {{ 'aimode.suggestions.insights' | t }}</div>
+    @for (i of insights(); track i.insightKey) {
+      <app-aim-insight-card [insight]="i" [showFallbackMarker]="insightLang() === 'ar'" (pick)="pickInsight($event)" />
+    }
+  </div>
+}
+@for (g of groups; track g.title) {
+  <div class="aim-sg-group">
+    <div class="aim-sg-title">{{ g.icon }} {{ 'aimode.' + g.title | t }}</div>
+    @for (p of g.prompts; track p) {
+      <button type="button" class="aim-sg-item" appUserText (click)="pickText.emit(i18n.t('aimode.prompt.' + p))">{{ 'aimode.prompt.' + p | t }}</button>
+    }
+  </div>
+}
+<div class="aim-sg-group">
+  <div class="aim-sg-title">🗣️ {{ 'aimode.group.ownWords' | t }}</div>
+  @for (k of ownWords; track k) {
+    <button type="button" class="aim-sg-item" appUserText lang="ar" (click)="pickText.emit(i18n.t('aimode.' + k))">{{ 'aimode.' + k | t }}</button>
+  }
+</div>

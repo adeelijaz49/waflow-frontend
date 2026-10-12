@@ -1,0 +1,6 @@
+app-aim-suggestions { display: flex; flex-direction: column; gap: 16px; }
+.aim-sg-group { display: flex; flex-direction: column; gap: 6px; }
+.aim-sg-title { font-size: 12.5px; font-weight: 700; color: var(--text-muted, #64748b); }
+.aim-sg-item { text-align: start; font: inherit; font-size: 13px; color: inherit; background: #fff; border: 1px solid var(--border, #e2e8f0); border-radius: 10px; padding-block: 8px; padding-inline: 12px; cursor: pointer; overflow-wrap: anywhere; }
+.aim-sg-item:hover { background: #f1f5f9; border-color: var(--primary, #3b82f6); }
+.aim-sg-item:focus-visible { outline: 2px solid var(--primary, #3b82f6); outline-offset: 2px; }

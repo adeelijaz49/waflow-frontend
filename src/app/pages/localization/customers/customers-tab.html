@@ -1,0 +1,146 @@
+<div class="loc-stack">
+  <div class="loc-hint">
+    <div>{{ 'customers.hint.detect' | t }}</div>
+    <div>{{ 'customers.hint.fallback' | t }}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header cust-head">
+      <div>
+        <div class="card-title">{{ 'customers.title' | t }}</div>
+        <div class="loc-muted">{{ 'customers.subtitle' | t }}</div>
+      </div>
+      <div class="loc-row">
+        <button type="button" class="btn btn-primary btn-sm" (click)="showImport.set(true)">{{ 'customers.action.import' | t }}</button>
+        <button type="button" class="btn btn-outline btn-sm" (click)="exportCsv()">{{ 'customers.action.export' | t }}</button>
+        <button type="button" class="btn btn-outline btn-sm" (click)="downloadTemplate()">{{ 'customers.action.template' | t }}</button>
+      </div>
+    </div>
+
+    <div class="card-body loc-stack">
+      <div class="loc-row">
+        <div class="cust-chips" role="group" [attr.aria-label]="'customers.filter.aria' | t">
+          @for (f of filters; track f) {
+            <button type="button" class="cust-chip" [class.active]="filter() === f" [attr.aria-pressed]="filter() === f" (click)="setFilter(f)">
+              {{ ('customers.filter.' + f) | t }}
+              <span class="cust-chip-count">{{ count(f) | locNumber }}</span>
+            </button>
+          }
+        </div>
+        <input
+          type="search"
+          class="cust-search"
+          [value]="search()"
+          [placeholder]="'customers.search.placeholder' | t"
+          [attr.aria-label]="'customers.search.aria' | t"
+          (input)="onSearch($any($event.target).value)"
+        />
+      </div>
+
+      @if (error()) {
+        <div class="loc-error" role="alert">
+          {{ error() }}
+          <button type="button" class="btn btn-outline btn-sm" (click)="load()">{{ 'common.retry' | t }}</button>
+        </div>
+      }
+
+      @if (selected().size > 0) {
+        <div class="cust-bulk" role="region" aria-live="polite">
+          <span>{{ 'customers.bulk.count' | tp: selected().size }}</span>
+          <span class="loc-muted">{{ 'customers.bulk.setTo' | t }}</span>
+          @for (l of languages; track l) {
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="bulkBusy()" (click)="bulkSet(l)">{{ 'status.language.' + l | t }}</button>
+          }
+          <button type="button" class="btn btn-outline btn-sm" (click)="clearSelection()">{{ 'customers.bulk.clear' | t }}</button>
+        </div>
+      }
+
+      @if (loading()) {
+        <div class="loading">{{ 'common.loading' | t }}</div>
+      } @else if (!error() && rows().length === 0) {
+        <div class="empty-state">{{ (search() || filter() !== 'all' ? 'customers.emptyFilter' : 'customers.empty') | t }}</div>
+      } @else if (rows().length > 0) {
+        <div class="table-wrap">
+          <table class="cust-table">
+            <thead>
+              <tr>
+                <th class="cust-check">
+                  <input type="checkbox" [checked]="allSelected()" [attr.aria-label]="'customers.select.all' | t" (change)="toggleAll()" />
+                </th>
+                <th>{{ 'common.name' | t }}</th>
+                <th>{{ 'common.phone' | t }}</th>
+                <th>{{ 'common.language' | t }}</th>
+                <th>{{ 'common.source' | t }}</th>
+                <th>{{ 'customers.col.consent' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.id) {
+                <tr>
+                  <td class="cust-check">
+                    <input
+                      type="checkbox"
+                      [checked]="selected().has(row.id)"
+                      [attr.aria-label]="'customers.select.row' | t: { name: row.name }"
+                      (change)="toggleRow(row.id)"
+                    />
+                  </td>
+                  <td class="cust-c-name"><span class="cust-name" [title]="row.name"><bdi>{{ row.name }}</bdi></span></td>
+                  <td class="cust-c-phone"><span appPhone>{{ phoneText(row.phone) }}</span></td>
+                  <td class="cust-c-lang">
+                    <select
+                      class="cust-select"
+                      [value]="row.language"
+                      [disabled]="rowStates()[row.id] === 'saving'"
+                      [attr.aria-label]="'customers.row.language' | t: { name: row.name }"
+                      (change)="changeLanguage(row, $event)"
+                    >
+                      @for (l of languages; track l) {
+                        <option [value]="l" [selected]="row.language === l">{{ 'status.language.' + l | t }}</option>
+                      }
+                    </select>
+                    <span class="loc-muted cust-state" aria-live="polite">
+                      @switch (rowStates()[row.id]) {
+                        @case ('saving') { {{ 'customers.row.saving' | t }} }
+                        @case ('saved') { {{ 'customers.row.saved' | t }} }
+                      }
+                    </span>
+                    @if (row.language === 'unknown') {
+                      <div class="loc-muted">{{ 'customers.effective' | t: { language: langLabel(row.effectiveLanguage) } }}</div>
+                    }
+                  </td>
+                  <td class="loc-muted cust-c-src">{{ row.languageSource ? ('status.source.' + row.languageSource | t) : '' }}</td>
+                  <td class="cust-c-consent">
+                    @if (row.optedOut) {
+                      <span class="badge badge-danger">{{ 'status.consent.optedOut' | t }}</span>
+                    } @else if (row.marketingConsent) {
+                      <span class="badge badge-success">{{ 'status.consent.granted' | t }}</span>
+                    } @else {
+                      <span class="badge badge-neutral">{{ 'status.consent.none' | t }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="loc-row cust-pager">
+          <span class="loc-muted">{{ 'customers.range' | t: { from: (from() | locNumber), to: (to() | locNumber), total: (total() | locNumber) } }}</span>
+          <span class="cust-pager-btns">
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!hasPrev() || loading()" [attr.aria-label]="'customers.page.prev' | t" (click)="goTo(page() - 1)">
+              <span class="cust-arrow" aria-hidden="true">{{ "‹" }}</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!hasNext() || loading()" [attr.aria-label]="'customers.page.next' | t" (click)="goTo(page() + 1)">
+              <span class="cust-arrow" aria-hidden="true">{{ "›" }}</span>
+            </button>
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+@if (showImport()) {
+  <app-customers-import-dialog (closed)="showImport.set(false)" (applied)="onImported()" />
+}

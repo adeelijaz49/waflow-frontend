@@ -1,0 +1,87 @@
+<div class="cp loc-stack">
+  <div class="loc-row cp-bar">
+    <input
+      type="search"
+      class="cp-search"
+      dir="auto"
+      [value]="search()"
+      [placeholder]="'campaigns.picker.searchPlaceholder' | t"
+      [attr.aria-label]="'campaigns.picker.searchAria' | t"
+      (input)="onSearch($any($event.target).value)"
+    />
+    <span class="cp-count" aria-live="polite">{{ 'campaigns.picker.selected' | t: { count: (selected().length | locNumber), max: (max() | locNumber) } }}</span>
+    @if (selected().length > 0) {
+      <button type="button" class="btn btn-outline btn-sm" (click)="clear()">{{ 'campaigns.picker.clear' | t }}</button>
+    }
+  </div>
+
+  @if (atCap()) {
+    <div class="loc-warn" role="status">{{ 'campaigns.picker.cap' | t: { max: (max() | locNumber) } }}</div>
+  }
+  @if (error()) {
+    <div class="loc-error" role="alert">
+      {{ error() }}
+      <button type="button" class="btn btn-outline btn-sm" (click)="load()">{{ 'common.retry' | t }}</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="loading">{{ 'common.loading' | t }}</div>
+  } @else if (!error() && rows().length === 0) {
+    <div class="empty-state">{{ 'campaigns.picker.empty' | t }}</div>
+  } @else if (rows().length > 0) {
+    <div class="table-wrap">
+      <table class="cp-table">
+        <thead>
+          <tr>
+            <th class="cp-check">
+              <input type="checkbox" [checked]="allOnPage()" [attr.aria-label]="'campaigns.picker.selectAll' | t" (change)="togglePage()" />
+            </th>
+            <th>{{ 'common.name' | t }}</th>
+            <th>{{ 'common.phone' | t }}</th>
+            <th>{{ 'common.language' | t }}</th>
+            <th>{{ 'campaigns.picker.consent' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr>
+              <td class="cp-check">
+                <input
+                  type="checkbox"
+                  [checked]="selectedSet().has(row.id)"
+                  [disabled]="isDisabled(row.id)"
+                  [attr.aria-label]="'campaigns.picker.selectRow' | t: { name: row.name }"
+                  (change)="toggle(row.id)"
+                />
+              </td>
+              <td><span class="cp-name" appUserText [title]="row.name">{{ row.name }}</span></td>
+              <td><span appPhone>{{ row.phone }}</span></td>
+              <td><app-lang-pill [lang]="row.language === 'unknown' ? row.effectiveLanguage : row.language" /></td>
+              <td>
+                @if (row.optedOut) {
+                  <span class="badge badge-danger">{{ 'status.consent.optedOut' | t }}</span>
+                } @else if (row.marketingConsent) {
+                  <span class="badge badge-success">{{ 'status.consent.granted' | t }}</span>
+                } @else {
+                  <span class="badge badge-neutral">{{ 'status.consent.none' | t }}</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="loc-row cp-pager">
+      <span class="loc-muted">{{ 'campaigns.picker.range' | t: { from: (from() | locNumber), to: (to() | locNumber), total: (total() | locNumber) } }}</span>
+      <span class="cp-pager-btns">
+        <button type="button" class="btn btn-outline btn-sm" [disabled]="!hasPrev() || loading()" [attr.aria-label]="'campaigns.picker.prev' | t" (click)="goTo(page() - 1)">
+          <span class="cp-arrow" aria-hidden="true">{{ "‹" }}</span>
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" [disabled]="!hasNext() || loading()" [attr.aria-label]="'campaigns.picker.next' | t" (click)="goTo(page() + 1)">
+          <span class="cp-arrow" aria-hidden="true">{{ "›" }}</span>
+        </button>
+      </span>
+    </div>
+  }
+</div>

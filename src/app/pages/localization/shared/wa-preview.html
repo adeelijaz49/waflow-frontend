@@ -1,0 +1,35 @@
+<div class="wap-frame" [appLangDir]="frameLang()">
+  @if (senderName()) {
+    <div class="wap-sender" dir="auto">{{ senderName() }}</div>
+  }
+  @if (hasContent()) {
+    <div class="wap-bubble">
+      @if (header()) {
+        <div class="wap-header" dir="auto">{{ header() }}</div>
+      }
+      @for (p of paragraphs(); track $index) {
+        <p class="wap-text" dir="auto">{{ p }}</p>
+      }
+      @if (footer()) {
+        <div class="wap-footer" dir="auto">{{ footer() }}</div>
+      }
+      @if (time()) {
+        <div class="wap-time" dir="ltr">{{ time() }}</div>
+      }
+    </div>
+    @if (buttons().length) {
+      <div class="wap-buttons">
+        @for (b of buttons(); track $index) {
+          <div class="wap-btn" dir="auto">
+            @if (b.role === 'url') {
+              <span class="wap-btn-icon" aria-hidden="true">↗</span>
+            }
+            <span>{{ b.text }}</span>
+          </div>
+        }
+      </div>
+    }
+  } @else {
+    <div class="wap-empty">{{ 'preview.empty' | t }}</div>
+  }
+</div>

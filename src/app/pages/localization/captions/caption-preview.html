@@ -1,0 +1,23 @@
+<div class="cp-card" [attr.dir]="viewerDir()" data-testid="caption-card">
+  <div class="cp-head">
+    <span class="cp-avatar" aria-hidden="true"></span>
+    <span class="cp-name">WaFlow</span>
+  </div>
+  <div class="cp-image" role="img" [attr.aria-label]="'captions.preview.image' | t">
+    <span>{{ 'captions.preview.image' | t }}</span>
+  </div>
+  <div class="cp-caption">
+    @for (line of lines(); track $index) {
+      <p class="cp-line" dir="auto">
+        @for (seg of line; track $index) {
+          @if (seg.kind === 'plain') {<span>{{ seg.text }}</span>} @else {<bdi dir="ltr" class="cp-tok" [class]="'cp-tok cp-' + seg.kind">{{ seg.text }}</bdi>}
+        }
+      </p>
+    }
+    @if (canFold()) {
+      <button type="button" class="cp-more" [attr.aria-expanded]="expanded()" (click)="toggled.emit()">
+        {{ (expanded() ? 'captions.preview.less' : 'captions.preview.more') | t }}
+      </button>
+    }
+  </div>
+</div>

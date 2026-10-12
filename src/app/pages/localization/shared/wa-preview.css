@@ -1,0 +1,14 @@
+/* WhatsApp-style message preview. Logical properties only: the frame's dir
+   decides which side the bubble sits on and where the tail is. */
+.wap-frame { background: #e5ded5; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-block-size: 96px; }
+.wap-sender { font-size: 12px; font-weight: 600; color: #4b5563; padding-inline: 4px; }
+.wap-bubble { background: #fff; color: #111827; border-radius: 10px; border-start-start-radius: 2px; padding-block: 8px; padding-inline: 10px; max-inline-size: min(340px, 100%); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.13); font-size: 14px; line-height: 1.55; }
+.wap-header { font-weight: 700; margin-block-end: 4px; overflow-wrap: anywhere; }
+.wap-text { margin: 0 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; unicode-bidi: plaintext; text-align: start; }
+.wap-text:last-of-type { margin-block-end: 2px; }
+.wap-footer { font-size: 12px; color: #6b7280; margin-block-start: 4px; overflow-wrap: anywhere; }
+.wap-time { font-size: 11px; color: #9ca3af; text-align: end; margin-block-start: 2px; }
+.wap-buttons { display: flex; flex-direction: column; gap: 3px; inline-size: min(340px, 100%); }
+.wap-btn { background: #fff; color: #0a7cff; text-align: center; font-size: 13.5px; font-weight: 600; border-radius: 8px; padding-block: 8px; padding-inline: 10px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.13); overflow-wrap: anywhere; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.wap-btn-icon { font-size: 12px; }
+.wap-empty { color: #6b7280; font-size: 13px; align-self: center; margin: auto; }

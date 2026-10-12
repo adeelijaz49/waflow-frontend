@@ -1,0 +1,82 @@
+<a class="te-back" href="/arabic/templates" (click)="onBack($event)">
+  <span class="te-arrow" aria-hidden="true">←</span>
+  <span>{{ 'templates.editor.back' | t }}</span>
+</a>
+
+@if (loading()) {
+  <div class="loading" aria-busy="true">{{ 'common.loading' | t }}</div>
+} @else if (loadError(); as message) {
+  <div class="loc-error" role="alert">
+    {{ message }}
+    <button type="button" class="btn btn-outline btn-sm" (click)="load(true)">{{ 'common.retry' | t }}</button>
+  </div>
+} @else if (template(); as tpl) {
+  <div class="card te-top">
+    <div class="card-body te-top-grid">
+      <div class="te-field te-name">
+        <label for="te-name">{{ 'templates.editor.name' | t }}</label>
+        <input id="te-name" type="text" dir="auto" maxlength="80" [value]="nameDraft()" [disabled]="busy()"
+               (input)="nameDraft.set($any($event.target).value)" (blur)="commitName()" (keydown.enter)="$any($event.target).blur()" />
+      </div>
+      <div class="te-field">
+        <label for="te-usecase">{{ 'templates.editor.useCase' | t }}</label>
+        <select id="te-usecase" [value]="tpl.useCase" [disabled]="busy()" (change)="onUseCase($any($event.target).value)">
+          @for (u of useCases; track u) {
+            <option [value]="u" [selected]="u === tpl.useCase">{{ ('templates.usecase.' + u) | t }}</option>
+          }
+        </select>
+      </div>
+      <div class="te-field">
+        <label for="te-category">{{ 'templates.editor.category' | t }}</label>
+        <select id="te-category" [value]="shownCategory()" [disabled]="busy() || !utilityAllowed()"
+                [attr.aria-describedby]="utilityAllowed() ? null : 'te-category-note'" (change)="onCategory($any($event.target))">
+          <option value="MARKETING" [selected]="shownCategory() === 'MARKETING'">{{ 'templates.category.MARKETING' | t }}</option>
+          @if (utilityAllowed()) {
+            <option value="UTILITY" [selected]="shownCategory() === 'UTILITY'">{{ 'templates.category.UTILITY' | t }}</option>
+          }
+        </select>
+      </div>
+      <div class="te-archive">
+        <button type="button" class="btn btn-outline" [disabled]="busy()" (click)="toggleArchive()">
+          {{ (tpl.archived ? 'templates.unarchive' : 'templates.archive') | t }}
+        </button>
+      </div>
+    </div>
+    <div class="te-note loc-muted" id="te-category-note">
+      @if (utilityAllowed()) {
+        {{ 'templates.editor.categoryWarning' | t }} {{ (shownCategory() === 'MARKETING' ? 'templates.category.hintMarketing' : 'templates.category.hintUtility') | t }}
+      } @else {
+        {{ 'templates.category.alwaysMarketing' | t }}
+      }
+    </div>
+  </div>
+
+  @if (actionError(); as message) {
+    <div class="loc-error te-gap" role="alert">{{ message }}</div>
+  }
+  @if (tpl.archived) {
+    <div class="loc-warn te-gap">{{ 'templates.editor.archivedBanner' | t }}</div>
+  }
+
+  <div class="te-tabs" role="tablist" [attr.aria-label]="'templates.tabsLabel' | t">
+    @for (lang of languages; track lang) {
+      <button type="button" role="tab" class="te-tab" [id]="'te-tab-' + lang" [class.active]="activeLang() === lang"
+              [attr.aria-selected]="activeLang() === lang" aria-controls="te-panel" [attr.tabindex]="activeLang() === lang ? 0 : -1"
+              (click)="selectLanguage(lang)" (keydown)="onTabKey($event)">
+        <span>{{ ('templates.tab.' + lang) | t }}</span>
+        @if (variantOf(lang); as v) {
+          <app-approval-badge [status]="v.metaStatus" [flagged]="v.metaFlagged" />
+        } @else {
+          <span class="badge badge-neutral">{{ 'templates.notAdded' | t }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <div id="te-panel" role="tabpanel" [attr.aria-labelledby]="'te-tab-' + activeLang()">
+    @for (lang of activeList(); track lang) {
+      <app-loc-variant-editor [template]="tpl" [language]="lang" [usage]="usage()"
+                              (templateChange)="onTemplate($event)" (dirtyChange)="dirty.set($event)" />
+    }
+  </div>
+}

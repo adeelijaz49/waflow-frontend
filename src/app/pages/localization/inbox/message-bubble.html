@@ -1,0 +1,30 @@
+<div class="mb-row" [class.outbound]="!inbound()" [class.inbound]="inbound()">
+  <div class="mb-bubble">
+    @if (typeLabel()) { <div class="mb-type">{{ typeLabel() }}</div> }
+    <div class="mb-body" dir="auto">{{ body() }}</div>
+    <div class="mb-meta">
+      <span>{{ message().timestamp | locDateTime }}</span>
+      @if (status(); as st) {
+        @if (st.kind === 'tick') {
+          <span class="mb-tick" [class.read]="st.read" [class.failed]="st.failed" role="img" [attr.aria-label]="'inbox.msg.statusAria' | t: { status: st.label }" [title]="st.label">{{ st.icon }}</span>
+        } @else if (st.kind === 'label') {
+          <span class="mb-state" [class.failed]="st.failed">{{ st.label }}</span>
+        }
+      }
+    </div>
+    @if (inbound() && message().body) {
+      <button type="button" class="mb-link" [disabled]="busy()" [attr.aria-expanded]="translation() !== null ? open() : null" (click)="translate()">
+        {{ (busy() ? 'inbox.msg.translating' : translation() === null ? 'inbox.msg.translate' : open() ? 'inbox.msg.hide' : 'inbox.msg.show') | t }}
+      </button>
+    }
+    @if (error()) { <div class="loc-error mb-note" role="alert">{{ error() }}</div> }
+    @if (translation() !== null && open()) {
+      <div class="mb-translation">
+        <div class="mb-tr-title">{{ 'inbox.msg.translation' | t }}</div>
+        <div class="mb-tr-text" lang="en" dir="auto">{{ translation() }}</div>
+        @if (alreadyEnglish()) { <div class="loc-muted">{{ 'inbox.msg.alreadyEnglish' | t }}</div> }
+        <div class="loc-muted">{{ 'ai.notice' | t }}</div>
+      </div>
+    }
+  </div>
+</div>

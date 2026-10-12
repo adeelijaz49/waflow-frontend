@@ -1,0 +1,60 @@
+/* Shared styles for the Arabic localisation pages. Loaded ONCE by the hub shell
+   (ViewEncapsulation.None) and used by every page inside it. All class names are
+   prefixed "loc-" so nothing leaks into the existing app, and every rule uses
+   LOGICAL properties (inline-start/-end, block-start/-end, text-align: start) so
+   a right-to-left container mirrors correctly. No physical left/right. */
+
+.loc-hub { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, 'Noto Sans Arabic', 'Geeza Pro', sans-serif; }
+.loc-hub[dir='rtl'] { line-height: 1.65; letter-spacing: 0; }
+.loc-hub[dir='rtl'] * { letter-spacing: 0; }
+
+/* Form controls do not inherit the page font by default: without this, buttons fall back to Arial and Arabic glyphs to a different face. */
+.loc-hub button, .loc-hub input, .loc-hub select, .loc-hub textarea { font-family: inherit; }
+.loc-hub[dir='rtl'] .btn, .loc-hub[dir='rtl'] .btn-sm { font-size: 13px; }
+
+.loc-hub .loc-user-text { unicode-bidi: plaintext; text-align: start; }
+.loc-hub .loc-phone { direction: ltr; unicode-bidi: isolate; text-align: start; display: inline-block; }
+
+.loc-hub th, .loc-hub td { text-align: start; }
+.loc-hub .page-header { gap: 12px; }
+
+.loc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.loc-grow { flex: 1 1 auto; min-inline-size: 0; }
+.loc-stack { display: flex; flex-direction: column; gap: 12px; }
+.loc-muted { color: var(--text-muted, #64748b); font-size: 12.5px; }
+.loc-hint { background: #f8fafc; border: 1px solid var(--border, #e2e8f0); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--text-muted, #64748b); }
+.loc-warn { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #92400e; }
+.loc-error { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #991b1b; }
+.loc-ok { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #166534; }
+
+/* Narrow screens: the bar scrolls sideways; soft edge shadows (visible only while more tabs are hidden) and a thin scrollbar show that it does. */
+.loc-tabs { display: flex; gap: 4px; border-block-end: 1px solid var(--border, #e2e8f0); margin-block-end: 20px; overflow-x: auto; scrollbar-width: thin; scroll-snap-type: x proximity; overscroll-behavior-x: contain;
+  background:
+    linear-gradient(to right, var(--bg, #f1f5f9) 30%, transparent) left center / 28px 100% no-repeat local,
+    linear-gradient(to left, var(--bg, #f1f5f9) 30%, transparent) right center / 28px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(15, 23, 42, 0.22), transparent) left center / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(15, 23, 42, 0.22), transparent) right center / 12px 100% no-repeat scroll; }
+.loc-tab { scroll-snap-align: center; padding-block: 10px; padding-inline: 14px; font-size: 13.5px; font-weight: 600; color: var(--text-muted, #64748b); border-block-end: 2px solid transparent; text-decoration: none; white-space: nowrap; }
+.loc-tab:hover { color: var(--text, #1e293b); }
+.loc-tab:focus-visible { outline: 2px solid var(--primary, #3b82f6); outline-offset: -2px; border-radius: 6px; }
+.loc-tab.active { color: var(--primary, #3b82f6); border-block-end-color: var(--primary, #3b82f6); }
+
+.loc-hub .badge { white-space: nowrap; flex-shrink: 0; }
+.loc-nowrap { white-space: nowrap; }
+
+.loc-lang-pill { display: inline-flex; white-space: nowrap; align-items: center; gap: 6px; padding-block: 2px; padding-inline: 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #eef2ff; color: #3730a3; }
+.loc-lang-pill.ar { background: #ecfdf5; color: #065f46; }
+
+.loc-field { display: flex; flex-direction: column; gap: 6px; margin-block-end: 14px; }
+.loc-field > label { font-size: 12.5px; font-weight: 600; color: var(--text-muted, #64748b); }
+.loc-field input, .loc-field select, .loc-field textarea { inline-size: 100%; }
+
+.loc-chip { display: inline-flex; align-items: center; gap: 6px; padding-block: 3px; padding-inline: 10px; border-radius: 8px; background: #f1f5f9; font-size: 12px; }
+.loc-chip button { border: 0; background: transparent; cursor: pointer; padding: 0; font-size: 14px; line-height: 1; }
+
+.loc-locked { text-align: center; padding-block: 48px; padding-inline: 24px; }
+.loc-locked .loc-locked-icon { font-size: 34px; margin-block-end: 8px; }
+
+@media (max-width: 900px) {
+  .loc-hub .page { padding-inline: 16px; }
+}

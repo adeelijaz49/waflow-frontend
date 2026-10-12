@@ -1,0 +1,32 @@
+<div class="qa-bar" role="group" [attr.aria-label]="'inbox.qa.label' | t">
+  <button type="button" class="btn btn-outline btn-sm" [disabled]="optedOut()" [title]="optedOut() ? ('inbox.qa.optedOutHint' | t) : ''" (click)="useOffer()">{{ 'inbox.qa.offer' | t }}</button>
+  <button type="button" class="btn btn-outline btn-sm" (click)="openPayment()">{{ 'inbox.qa.payment' | t }}</button>
+  <button type="button" class="btn btn-outline btn-sm" [disabled]="loyaltyBusy() || optedOut()" [title]="optedOut() ? ('inbox.qa.optedOutHint' | t) : ''" (click)="sendLoyalty()">
+    {{ (loyaltyBusy() ? 'inbox.qa.loyaltySending' : 'inbox.qa.loyalty') | t }}
+  </button>
+  <a class="btn btn-outline btn-sm" [routerLink]="['/services']">{{ 'inbox.qa.booking' | t }}</a>
+  <a class="btn btn-outline btn-sm" [routerLink]="['/orders']">{{ 'inbox.qa.order' | t }}</a>
+</div>
+
+@if (modalOpen()) {
+  <div class="modal-overlay" (click)="closePayment()" (keydown.escape)="closePayment()" role="presentation">
+    <div class="modal" appModalFocus role="dialog" aria-modal="true" [attr.aria-label]="'inbox.pay.title' | t" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">{{ 'inbox.pay.title' | t }}</span>
+        <button type="button" class="close-btn" [attr.aria-label]="'common.close' | t" (click)="closePayment()">×</button>
+      </div>
+      <form class="modal-body" (submit)="$event.preventDefault(); sendPayment()">
+        <div class="form-group">
+          <label for="inbox-pay-amount" class="qa-label">{{ 'inbox.pay.amount' | t }}</label>
+          <input #amountEl id="inbox-pay-amount" type="text" inputmode="decimal" dir="ltr" placeholder="0.00" autocomplete="off" [value]="amountText()" (input)="onAmount($event)" />
+        </div>
+        <div class="loc-muted">{{ 'inbox.pay.hint' | t: { language: languageName() } }}</div>
+        @if (payError()) { <div class="loc-error qa-err" role="alert">{{ payError() }}</div> }
+        <div class="qa-actions">
+          <button type="button" class="btn btn-outline" [disabled]="paying()" (click)="closePayment()">{{ 'common.cancel' | t }}</button>
+          <button type="submit" class="btn btn-primary" [disabled]="paying() || !amountText().trim()">{{ (paying() ? 'inbox.pay.sending' : 'inbox.pay.send') | t }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

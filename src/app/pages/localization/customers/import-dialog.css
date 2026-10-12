@@ -1,0 +1,11 @@
+.cust-dialog { max-block-size: 90vh; overflow-y: auto; outline: none; inline-size: min(780px, 94vw); }
+.cust-file { position: relative; cursor: pointer; text-transform: none; letter-spacing: 0; margin: 0; }
+.cust-file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; inline-size: 100%; }
+.cust-file:focus-within { outline: 2px solid var(--primary, #3b82f6); outline-offset: 2px; }
+.cust-link { border: 0; background: transparent; color: var(--primary, #3b82f6); cursor: pointer; padding: 0; margin-block-start: 6px; font-size: 13px; text-decoration: underline; }
+.cust-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.cust-summary > div { background: #f8fafc; border: 1px solid var(--border, #e2e8f0); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; }
+.cust-summary b { font-size: 18px; }
+.cust-summary span { font-size: 12px; color: var(--text-muted, #64748b); }
+.cust-preview { max-block-size: 240px; overflow-y: auto; }
+.cust-preview th, .cust-preview td { text-transform: none; letter-spacing: 0; }

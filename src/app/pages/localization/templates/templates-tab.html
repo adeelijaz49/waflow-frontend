@@ -1,0 +1,179 @@
+<div class="page-header tl-head">
+  <div>
+    <div class="page-title">{{ 'templates.title' | t }}</div>
+    <div class="page-sub">{{ 'templates.subtitle' | t }}</div>
+  </div>
+  <div class="loc-row">
+    <button type="button" class="btn btn-outline" [disabled]="refreshing()" (click)="refreshStatuses()">
+      {{ (refreshing() ? 'templates.refreshing' : 'templates.refresh') | t }}
+    </button>
+    <button type="button" class="btn btn-outline" (click)="openLibrary()">{{ 'templates.fromLibrary' | t }}</button>
+    <button type="button" class="btn btn-primary" (click)="openNew()">{{ 'templates.new' | t }}</button>
+  </div>
+</div>
+
+<div class="card tl-usage">
+  <div class="card-body">
+    @if (usage(); as u) {
+      <div class="tl-usage-title">{{ 'templates.usage.title' | t }}</div>
+      @if (u.used !== null && u.limit) {
+        <div class="tl-meter" role="progressbar" [attr.aria-label]="'templates.usage.aria' | t" aria-valuemin="0"
+             [attr.aria-valuemax]="u.limit" [attr.aria-valuenow]="u.used">
+          <div class="tl-meter-fill" [class.full]="u.atCeiling" [style.inline-size.%]="usagePercent()"></div>
+          <div class="tl-meter-ceiling" [style.inset-inline-start.%]="ceilingPercent()"></div>
+        </div>
+        <div class="tl-usage-text">{{ 'templates.usage.summary' | t: { used: (u.used | locNumber), limit: (u.limit | locNumber), ceiling: (u.ceiling | locNumber) } }}</div>
+      } @else {
+        <div class="loc-muted">{{ 'templates.usage.unknown' | t }}</div>
+      }
+      <div class="loc-muted">{{ 'templates.usage.explain' | t }}</div>
+      @if (u.atCeiling) {
+        <div class="loc-warn tl-usage-warn" role="status">{{ 'templates.usage.atCeiling' | t }}</div>
+      }
+    } @else if (usageFailed()) {
+      <div class="loc-muted">{{ 'templates.usage.unknown' | t }}</div>
+      <div class="loc-muted">{{ 'templates.usage.explain' | t }}</div>
+    } @else {
+      <div class="loc-muted">{{ 'common.loading' | t }}</div>
+    }
+  </div>
+</div>
+
+<div class="tl-filters">
+  <div class="tl-filter tl-filter-search">
+    <label for="tl-search">{{ 'templates.searchLabel' | t }}</label>
+    <input id="tl-search" type="search" dir="auto" [value]="search()" [placeholder]="'templates.searchPlaceholder' | t"
+           (input)="onSearch($any($event.target).value)" />
+  </div>
+  <div class="tl-filter">
+    <label for="tl-usecase">{{ 'templates.useCaseFilter' | t }}</label>
+    <select id="tl-usecase" [value]="useCase()" (change)="onUseCase($any($event.target).value)">
+      <option value="">{{ 'templates.useCaseAll' | t }}</option>
+      @for (u of useCases; track u) {
+        <option [value]="u">{{ ('templates.usecase.' + u) | t }}</option>
+      }
+    </select>
+  </div>
+  <label class="tl-check">
+    <input type="checkbox" [checked]="showArchived()" (change)="onShowArchived($any($event.target).checked)" />
+    <span>{{ 'templates.showArchived' | t }}</span>
+  </label>
+</div>
+
+@if (actionError(); as message) {
+  <div class="loc-error tl-gap" role="alert">{{ message }}</div>
+}
+
+@if (loading()) {
+  <div class="tl-skeletons" aria-busy="true">
+    <div class="tl-skel"></div><div class="tl-skel"></div><div class="tl-skel"></div>
+    <span class="loc-muted">{{ 'common.loading' | t }}</span>
+  </div>
+} @else if (loadError(); as message) {
+  <div class="loc-error" role="alert">
+    {{ message }}
+    <button type="button" class="btn btn-outline btn-sm" (click)="reload()">{{ 'common.retry' | t }}</button>
+  </div>
+} @else if (!items().length) {
+  <div class="card">
+    <div class="card-body empty-state">
+      @if (filtersActive()) {
+        <p>{{ 'templates.noMatches' | t }}</p>
+      } @else {
+        <h3>{{ 'templates.empty.title' | t }}</h3>
+        <p>{{ 'templates.empty.body' | t }}</p>
+        <button type="button" class="btn btn-primary" (click)="openLibrary()">{{ 'templates.empty.cta' | t }}</button>
+      }
+    </div>
+  </div>
+} @else {
+  <ul class="tl-list" aria-live="polite">
+    @for (t of items(); track t.id) {
+      <li class="card tl-item" [class.tl-archived]="t.archived">
+        <div class="tl-main">
+          <a class="tl-name" dir="auto" [routerLink]="['/arabic/templates', t.id]">{{ t.name }}</a>
+          <div class="tl-chips">
+            <span class="loc-chip">{{ ('templates.usecase.' + t.useCase) | t }}</span>
+            <span class="badge" [class.badge-primary]="t.category === 'MARKETING'" [class.badge-neutral]="t.category !== 'MARKETING'">{{ ('templates.category.' + t.category) | t }}</span>
+            @if (t.archived) {
+              <span class="badge badge-neutral">{{ 'templates.archivedBadge' | t }}</span>
+            }
+            <span class="loc-muted">{{ 'templates.updated' | t: { date: (t.updatedAt | locDate) } }}</span>
+          </div>
+        </div>
+
+        <div class="tl-matrix" role="group" [attr.aria-label]="'templates.languages' | t">
+          @for (lang of languages; track lang) {
+            <div class="tl-cell">
+              <span class="tl-lang">{{ ('status.language.' + lang) | t }}</span>
+              @if (variantOf(t, lang); as v) {
+                <app-approval-badge [status]="v.metaStatus" [flagged]="v.metaFlagged" />
+              } @else {
+                <span class="loc-muted">{{ 'templates.notAdded' | t }}</span>
+                @if (!t.archived) {
+                  <button type="button" class="btn btn-outline btn-sm tl-add" (click)="open(t, lang)">+ {{ (lang === 'ar' ? 'templates.addArabic' : 'templates.add.blank') | t }}</button>
+                }
+              }
+            </div>
+          }
+        </div>
+
+        <div class="tl-actions">
+          <button type="button" class="btn btn-outline btn-sm" (click)="open(t)">{{ 'templates.open' | t }}</button>
+          <button type="button" class="btn btn-outline btn-sm" [disabled]="busyId() === t.id" (click)="toggleArchive(t)">
+            {{ (t.archived ? 'templates.unarchive' : 'templates.archive') | t }}
+          </button>
+        </div>
+      </li>
+    }
+  </ul>
+}
+
+@if (showLibrary()) {
+  <app-loc-library-picker (closed)="showLibrary.set(false)" (created)="onLibraryCreated($event)" />
+}
+
+@if (showNew()) {
+  <div class="modal-overlay" (click)="showNew.set(false)">
+    <div class="modal" appModalFocus role="dialog" aria-modal="true" aria-labelledby="tl-new-title" (click)="$event.stopPropagation()" (keydown.escape)="showNew.set(false)">
+      <div class="modal-header">
+        <div class="modal-title" id="tl-new-title">{{ 'templates.new.title' | t }}</div>
+        <button type="button" class="close-btn" [attr.aria-label]="'common.close' | t" (click)="showNew.set(false)">×</button>
+      </div>
+      <form class="modal-body" (submit)="$event.preventDefault(); createNew()">
+        <div class="form-group">
+          <label for="tl-new-name">{{ 'templates.new.name' | t }}</label>
+          <input id="tl-new-name" type="text" dir="auto" maxlength="80" [value]="newName()" (input)="newName.set($any($event.target).value)" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tl-new-usecase">{{ 'templates.new.useCase' | t }}</label>
+            <select id="tl-new-usecase" [value]="newUseCase()" (change)="onNewUseCase($any($event.target).value)">
+              @for (u of useCases; track u) {
+                <option [value]="u" [selected]="u === newUseCase()">{{ ('templates.usecase.' + u) | t }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="tl-new-category">{{ 'templates.new.category' | t }}</label>
+            <select id="tl-new-category" [value]="newCategory()" [disabled]="!newUtilityAllowed()" aria-describedby="tl-new-category-hint"
+                    (change)="newCategory.set($any($event.target).value)">
+              <option value="MARKETING">{{ 'templates.category.MARKETING' | t }}</option>
+              @if (newUtilityAllowed()) {
+                <option value="UTILITY">{{ 'templates.category.UTILITY' | t }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="loc-hint" id="tl-new-category-hint">{{ newCategoryHint() | t }}</div>
+        @if (newError(); as message) {
+          <div class="loc-error tl-gap" role="alert">{{ message }}</div>
+        }
+        <div class="tl-modal-actions">
+          <button type="button" class="btn btn-outline" (click)="showNew.set(false)">{{ 'common.cancel' | t }}</button>
+          <button type="submit" class="btn btn-primary" [disabled]="newBusy()">{{ (newBusy() ? 'templates.new.creating' : 'templates.new.create') | t }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

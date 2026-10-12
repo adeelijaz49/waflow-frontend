@@ -1,0 +1,17 @@
+{
+  "toArabic": "Translate to Arabic",
+  "toEnglish": "Translate to English",
+  "saudiFriendly": "Make this Saudi-friendly",
+  "working": "Working...",
+  "notice": "AI-suggested, human-approved: review this draft before you use it. Nothing is applied or sent automatically.",
+  "draftTitle": "AI draft — not applied yet",
+  "useDraft": "Use this draft",
+  "discard": "Discard",
+  "reviewReminder": "AI drafts are saved as Draft until a native Arabic reader marks them Reviewed.",
+  "failed": "The AI assistant couldn't help this time. Please try again.",
+  "warning.tokens_changed": "Some merge fields, numbers, links or dates in the draft differ from the original. Check them before using it.",
+  "warning.button_too_long": "A button label is longer than {max} characters ({length}). Shorten it before using it.",
+  "warning.length_exceeded": "The draft is longer than the allowed {max} characters ({length}).",
+  "warning.not_arabic": "The draft doesn't seem to contain Arabic text.",
+  "warning.unchanged": "The draft is identical to the original text."
+}

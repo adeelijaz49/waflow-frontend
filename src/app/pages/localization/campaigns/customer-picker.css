@@ -1,0 +1,11 @@
+.cp-bar { justify-content: space-between; }
+.cp-search { flex: 1 1 220px; min-inline-size: 0; max-inline-size: 360px; }
+.cp-count { font-size: 13px; font-weight: 600; }
+.cp-table { min-inline-size: 560px; }
+.cp-table th { text-transform: none; letter-spacing: 0; }
+.cp-check { inline-size: 36px; }
+.cp-name { display: block; max-inline-size: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-pager { justify-content: space-between; }
+.cp-pager-btns { display: inline-flex; gap: 6px; }
+.cp-arrow { display: inline-block; font-size: 16px; line-height: 1; }
+[dir='rtl'] .cp-arrow { transform: scaleX(-1); }

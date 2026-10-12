@@ -1,0 +1,14 @@
+:host { display: block; }
+.ib-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.ib-pane { display: flex; flex-direction: column; block-size: calc(100vh - 220px); min-block-size: 440px; min-inline-size: 0; overflow: hidden; }
+.ib-snapshot { overflow-y: auto; }
+/* Below 1100px: one column. Without a selection only the list shows; with one,
+   the thread and the snapshot stack under a back button. */
+@media (max-width: 1099px) {
+  .ib-layout { grid-template-columns: minmax(0, 1fr); }
+  .ib-layout:not(.has-selection) .ib-thread, .ib-layout:not(.has-selection) .ib-snapshot { display: none; }
+  .ib-layout.has-selection .ib-list { display: none; }
+  .ib-thread { block-size: 75vh; }
+  .ib-snapshot { block-size: auto; min-block-size: 0; overflow: visible; }
+  .ib-list { block-size: 80vh; }
+}

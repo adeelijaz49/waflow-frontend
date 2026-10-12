@@ -1,0 +1,29 @@
+.aim-page { display: flex; flex-direction: column; block-size: min(80vh, 820px); min-block-size: 480px; overflow: hidden; position: relative; }
+.aim-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-block: 12px; padding-inline: 16px; border-block-end: 1px solid var(--border, #e2e8f0); }
+.aim-title { margin: 0; font-size: 18px; }
+.aim-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.aim-lang { display: flex; align-items: center; gap: 6px; }
+.aim-lang label { font-size: 12.5px; text-transform: none; letter-spacing: 0; margin: 0; }
+.aim-lang select { padding-block: 5px; padding-inline: 8px; }
+.aim-how { padding-block: 6px; padding-inline: 16px; border-block-end: 1px solid var(--border, #e2e8f0); font-size: 13px; }
+.aim-how summary { cursor: pointer; font-weight: 600; color: var(--text-muted, #64748b); }
+.aim-how ul { margin-block: 6px 4px; margin-inline: 0; padding-inline-start: 20px; line-height: 1.7; }
+.aim-body { flex: 1 1 auto; min-block-size: 0; display: flex; }
+.aim-main { flex: 1 1 auto; min-inline-size: 0; display: flex; flex-direction: column; }
+.aim-scroll { flex: 1 1 auto; min-block-size: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
+.aim-center { text-align: center; padding-block: 24px; }
+.aim-empty { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-block: 24px; }
+.aim-greeting { font-size: 18px; font-weight: 600; text-align: center; }
+.aim-strip { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.aim-chip { font: inherit; font-size: 13px; background: #fff; border: 1px solid var(--border, #e2e8f0); border-radius: 999px; padding-block: 7px; padding-inline: 14px; cursor: pointer; }
+.aim-chip:hover { border-color: var(--primary, #3b82f6); background: #eff6ff; }
+.aim-chip:focus-visible, .aim-close:focus-visible { outline: 2px solid var(--primary, #3b82f6); outline-offset: 2px; }
+.aim-inputbar { padding-block: 10px; padding-inline: 16px; border-block-start: 1px solid var(--border, #e2e8f0); background: #fff; }
+.aim-blocked { margin-block-end: 6px; }
+.aim-inputrow { display: flex; align-items: flex-end; gap: 8px; }
+.aim-input { flex: 1 1 auto; min-inline-size: 0; resize: none; max-block-size: 140px; padding-block: 9px; padding-inline: 12px; border: 1px solid var(--border, #e2e8f0); border-radius: 10px; font: inherit; font-size: 14px; }
+.aim-input:disabled { background: #f1f5f9; }
+.aim-foot { display: flex; justify-content: space-between; gap: 10px; margin-block-start: 6px; }
+.aim-disclaimer { font-size: 12px; }
+.aim-sr { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 600px) { .aim-page { block-size: calc(100vh - 150px); } .aim-scroll { padding: 10px; } }

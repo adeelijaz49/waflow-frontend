@@ -1,0 +1,22 @@
+<div class="ib-layout" [class.has-selection]="selected()">
+  <div class="card ib-pane ib-list">
+    <app-loc-conversation-list
+      [conversations]="conversations()"
+      [loading]="loading()"
+      [error]="error()"
+      [selectedId]="selectedId()"
+      [filter]="filter()"
+      [search]="search()"
+      (picked)="open($event)"
+      (filterChange)="onFilter($event)"
+      (searchChange)="onSearch($event)"
+      (retry)="load(false)"
+    />
+  </div>
+  <div class="card ib-pane ib-thread">
+    <app-loc-thread-pane [conversation]="selected()" [language]="threadLanguage()" (back)="close()" (changed)="load(true)" (opened)="onThreadOpened($event)" />
+  </div>
+  <div class="card ib-pane ib-snapshot">
+    <app-loc-snapshot-pane [customerId]="selectedId()" [context]="context()" (languageChanged)="onLanguageChanged()" />
+  </div>
+</div>

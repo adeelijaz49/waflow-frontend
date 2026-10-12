@@ -1,0 +1,21 @@
+@if (ui.confirmState(); as c) {
+  <div class="lui-overlay" (click)="ui.respond(false)">
+    <div class="lui-modal" role="alertdialog" aria-modal="true" [attr.aria-label]="c.title" aria-describedby="lui-confirm-message" (click)="$event.stopPropagation()">
+      <div class="lui-title">{{ c.title }}</div>
+      <div class="lui-message" id="lui-confirm-message" dir="auto">{{ c.message }}</div>
+      <div class="lui-actions">
+        <button type="button" class="btn btn-outline" (click)="ui.respond(false)">{{ c.cancelLabel }}</button>
+        <button type="button" class="btn" [class.btn-danger]="c.danger" [class.btn-primary]="!c.danger" (click)="ui.respond(true)">{{ c.confirmLabel }}</button>
+      </div>
+    </div>
+  </div>
+}
+
+<div class="lui-toasts" aria-live="polite">
+  @for (t of ui.toasts(); track t.id) {
+    <div class="lui-toast" [class.err]="t.kind === 'error'" [class.ok]="t.kind === 'success'" role="status">
+      <span class="lui-toast-text" dir="auto">{{ t.message }}</span>
+      <button type="button" class="lui-toast-x" [attr.aria-label]="'common.close' | t" (click)="ui.dismissToast(t.id)">×</button>
+    </div>
+  }
+</div>

@@ -1,0 +1,99 @@
+<div class="modal-overlay" (click)="closed.emit()">
+  <div
+    #dialog
+    appModalFocus
+    class="modal modal-lg cat-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cat-import-title"
+    tabindex="-1"
+    (click)="$event.stopPropagation()"
+    (keydown.escape)="closed.emit()"
+  >
+    <div class="modal-header">
+      <span class="modal-title" id="cat-import-title">{{ 'catalog.import.title' | t }}</span>
+      <button type="button" class="btn btn-outline btn-sm" [attr.aria-label]="'common.close' | t" (click)="closed.emit()">&times;</button>
+    </div>
+    <div class="modal-body loc-stack">
+      <div class="loc-hint">
+        <strong>{{ 'catalog.import.formatTitle' | t }}</strong>
+        <div>{{ 'catalog.import.format' | t }}</div>
+        <div><code class="cat-code">{{ columns }}</code></div>
+        <div>{{ 'catalog.import.matchNote' | t }}</div>
+        <div>{{ 'catalog.import.exportHint' | t }}</div>
+      </div>
+
+      <div class="loc-row">
+        <label class="btn btn-outline btn-sm cat-file">
+          {{ 'catalog.import.chooseFile' | t }}
+          <input type="file" accept=".csv,.txt" class="cat-file-input" (change)="pick($event)" [disabled]="busy()" />
+        </label>
+        <span class="loc-muted" appUserText>{{ file()?.name ?? ('catalog.import.noFile' | t) }}</span>
+      </div>
+
+      @if (error()) {
+        <div class="loc-error" role="alert">{{ error() }}</div>
+      }
+
+      @if (result(); as res) {
+        <div [class]="res.dryRun ? 'loc-hint' : 'loc-ok'" aria-live="polite">
+          {{ (res.dryRun ? 'catalog.import.dryRunNote' : 'catalog.import.appliedNote') | t }}
+        </div>
+        <div class="cat-summary">
+          <div><b>{{ res.summary.rows | locNumber }}</b><span>{{ 'catalog.import.summary.rows' | t }}</span></div>
+          <div><b>{{ res.summary.updated | locNumber }}</b><span>{{ (res.dryRun ? 'catalog.import.summary.updated' : 'catalog.import.summary.updatedDone') | t }}</span></div>
+          <div><b>{{ res.summary.unchanged | locNumber }}</b><span>{{ 'catalog.import.summary.unchanged' | t }}</span></div>
+          <div><b>{{ res.summary.unmatched | locNumber }}</b><span>{{ 'catalog.import.summary.unmatched' | t }}</span></div>
+          @if (ambiguous() > 0) {
+            <div><b>{{ ambiguous() | locNumber }}</b><span>{{ 'catalog.import.summary.ambiguous' | t }}</span></div>
+          }
+          <div><b>{{ res.summary.invalid | locNumber }}</b><span>{{ 'catalog.import.summary.invalid' | t }}</span></div>
+        </div>
+        @if (res.rows.length) {
+          <div class="loc-muted">{{ 'catalog.import.preview' | t }}</div>
+          <div class="table-wrap cat-preview">
+            <table>
+              <thead>
+                <tr>
+                  <th>{{ 'catalog.import.col.line' | t }}</th>
+                  <th>{{ 'common.name' | t }}</th>
+                  <th>{{ 'catalog.import.col.outcome' | t }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of res.rows; track row.line) {
+                  <tr>
+                    <td>{{ row.line | locNumber }}</td>
+                    <td appUserText>{{ row.name }}</td>
+                    <td><span [class]="'badge ' + badge(row.outcome)">{{ outcomeLabel(row.outcome) }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        @if (res.truncated) {
+          <div class="loc-muted">{{ 'catalog.import.truncated' | t }}</div>
+        }
+        @if (res.dryRun && res.summary.updated === 0) {
+          <div class="loc-warn">{{ 'catalog.import.nothingToApply' | t }}</div>
+        }
+      }
+    </div>
+    <div class="modal-footer">
+      @if (result(); as res) {
+        <button type="button" class="btn btn-outline" (click)="reset()">{{ 'catalog.import.another' | t }}</button>
+        @if (res.dryRun) {
+          <button type="button" class="btn btn-primary" [disabled]="busy() || res.summary.updated === 0" (click)="apply()">
+            {{ (busy() ? 'catalog.import.applying' : 'catalog.import.apply') | t }}
+          </button>
+        }
+      } @else {
+        <button type="button" class="btn btn-primary" [disabled]="!file() || busy()" (click)="check()">
+          {{ (busy() ? 'catalog.import.checking' : 'catalog.import.check') | t }}
+        </button>
+      }
+      <button type="button" class="btn btn-outline" (click)="closed.emit()">{{ 'common.close' | t }}</button>
+    </div>
+  </div>
+</div>

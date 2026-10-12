@@ -1,0 +1,99 @@
+@if (!customerId()) {
+  <div class="empty-state">{{ 'inbox.snap.empty' | t }}</div>
+} @else if (error()) {
+  <div class="loc-error sp-note" role="alert">
+    {{ error() }}
+    <button type="button" class="btn btn-outline btn-sm" (click)="retry()">{{ 'common.retry' | t }}</button>
+  </div>
+} @else if (loading() || !snapshot()) {
+  <div class="loading">{{ 'inbox.snap.loading' | t }}</div>
+} @else {
+  @let s = snapshot()!;
+  <div class="card-header"><span class="card-title">{{ 'inbox.snap.title' | t }}</span></div>
+  <div class="sp-body">
+    <div class="sp-name" appUserText>{{ s.customer.name }}</div>
+    <div class="sp-phone" appPhone>{{ s.customer.phone | locPhone }}</div>
+
+    @if (s.tags.length) {
+      <div class="sp-tags">
+        @for (tag of s.tags; track tag) { <span class="badge" [class]="labels.tagClass(tag)">{{ labels.tag(tag) }}</span> }
+      </div>
+    }
+
+    @if (s.prompts.length) {
+      <section class="sp-prompts" [attr.aria-label]="'inbox.snap.prompts' | t">
+        <div class="sp-title">{{ 'inbox.snap.prompts' | t }}</div>
+        @for (p of s.prompts; track p) { <div class="sp-prompt">💡 {{ labels.prompt(p) }}</div> }
+      </section>
+    }
+
+    <div class="sp-item">
+      <span class="sp-label">{{ 'inbox.snap.consent' | t }}</span>
+      @if (s.customer.optedOut) {
+        <span class="badge badge-danger">{{ s.customer.optedOutAt ? ('inbox.snap.optedOutOn' | t: { date: (s.customer.optedOutAt | locDate) }) : ('status.consent.optedOut' | t) }}</span>
+      } @else if (s.customer.marketingConsent) {
+        <span class="badge badge-success">{{ 'status.consent.granted' | t }}</span>
+      } @else {
+        <span class="badge badge-neutral">{{ 'status.consent.none' | t }}</span>
+      }
+    </div>
+
+    <div class="sp-item"><span class="sp-label">{{ 'inbox.snap.loyalty' | t }}</span><span class="badge badge-info">{{ 'inbox.snap.points' | tp: s.customer.loyaltyPoints }}</span></div>
+    <div class="sp-item"><span class="sp-label">{{ 'inbox.snap.totalOrders' | t }}</span><span class="sp-strong">{{ s.totalOrders | locNumber }}</span></div>
+    <div class="sp-item"><span class="sp-label">{{ 'inbox.snap.totalSpend' | t }}</span><span class="sp-strong">{{ s.totalSpent | locCurrency: currency() }}</span></div>
+
+    <div class="sp-item">
+      <span class="sp-label">{{ 'inbox.snap.lastOrder' | t }}</span>
+      @if (s.lastOrder; as lo) {
+        <span>{{ lo.total | locCurrency: currency() }} · {{ lo.createdAt | locDate }}</span>
+      } @else { <span class="loc-muted">—</span> }
+    </div>
+
+    <div class="sp-item">
+      <span class="sp-label">{{ 'inbox.snap.lastPayment' | t }}</span>
+      @if (s.lastOrder?.paymentStatus; as ps) { <span class="badge badge-neutral">{{ labels.statusText('payment', ps) }}</span> } @else { <span class="loc-muted">—</span> }
+    </div>
+
+    <div class="sp-item">
+      <span class="sp-label">{{ 'inbox.snap.lastCampaign' | t }}</span>
+      @if (s.lastCampaign; as lc) {
+        <span dir="auto">{{ labels.campaignKind(lc.kind, lc.promotionName) }}</span>
+      } @else { <span class="loc-muted">—</span> }
+    </div>
+
+    <div class="sp-item"><span class="sp-label">{{ 'inbox.snap.firstInteraction' | t }}</span><span>{{ s.customer.createdAt | locDate }}</span></div>
+
+    <section class="sp-section">
+      <div class="sp-title">{{ 'inbox.snap.products' | t }} ({{ s.productsPurchased.length | locNumber }})</div>
+      @for (p of s.productsPurchased; track $index) {
+        <div class="sp-row"><span class="sp-strong" appUserText>{{ p.name }}</span><span class="loc-muted">{{ 'inbox.snap.units' | tp: p.quantity }}</span></div>
+      } @empty { <div class="loc-muted">{{ 'inbox.snap.none' | t }}</div> }
+    </section>
+
+    <section class="sp-section">
+      <div class="sp-title">{{ 'inbox.snap.services' | t }} ({{ s.servicesBooked.length | locNumber }})</div>
+      @for (b of s.servicesBooked; track $index) {
+        <div class="sp-row">
+          <span class="sp-strong" appUserText>{{ b.name }}</span>
+          <span class="loc-muted">
+            {{ labels.statusText('booking', b.status) }}
+            @if (b.date) { · {{ b.date | locDate }} }
+            @if (b.startTime) { <span dir="ltr">{{ b.startTime }}</span> }
+          </span>
+        </div>
+      } @empty { <div class="loc-muted">{{ 'inbox.snap.none' | t }}</div> }
+    </section>
+
+    <section class="sp-section">
+      <label class="sp-title" for="inbox-cust-lang">{{ 'inbox.snap.language' | t }}</label>
+      <select id="inbox-cust-lang" [disabled]="langSaving() || !context()" (change)="onLanguage($event)">
+        @for (l of languages; track l) {
+          <option [value]="l" [selected]="(context()?.language ?? 'unknown') === l">{{ 'status.language.' + l | t }}</option>
+        }
+      </select>
+      @if (context() && effectiveName()) { <div class="loc-muted">{{ 'inbox.snap.languageHint' | t: { language: effectiveName() } }}</div> }
+      @if (langSaved()) { <div class="loc-ok" role="status">{{ 'inbox.snap.languageSaved' | t }}</div> }
+      @if (langError()) { <div class="loc-error" role="alert">{{ langError() }}</div> }
+    </section>
+  </div>
+}

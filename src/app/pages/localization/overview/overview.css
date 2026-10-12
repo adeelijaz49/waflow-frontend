@@ -1,0 +1,40 @@
+.ov-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+@media (min-width: 900px) {
+  .ov-grid { grid-template-columns: 1fr 1fr; }
+  .ov-wide { grid-column: 1 / -1; }
+}
+.ov-h { font-size: 15px; font-weight: 700; margin: 0; color: var(--text); }
+.ov-status { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ov-help { font-size: 12.5px; }
+.ov-label { text-transform: none; letter-spacing: 0; }
+.ov-example { margin-block-end: 14px; }
+.ov-actions { margin-block-start: 8px; }
+.ov-saved { font-size: 13px; color: #166534; }
+.ov-saved:empty { display: none; }
+
+.ov-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.ov-tile { border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-inline-size: 0; }
+.ov-tile-label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.ov-tile-value { font-size: 28px; font-weight: 700; color: var(--text); }
+.ov-bar { display: flex; block-size: 10px; border-radius: 999px; overflow: hidden; background: var(--border); }
+.ov-seg { min-inline-size: 4px; }
+.ov-c-en { background: #3b82f6; }
+.ov-c-ar { background: #16a34a; }
+.ov-c-unknown { background: #94a3b8; }
+.ov-dot { display: inline-block; inline-size: 10px; block-size: 10px; border-radius: 50%; margin-inline-end: 6px; }
+.ov-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.ov-legend li { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ov-legend b { margin-inline-start: auto; }
+
+.ov-link { color: var(--primary); font-weight: 600; font-size: 13.5px; text-decoration: none; }
+.ov-link:hover { text-decoration: underline; }
+.ov-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+.ov-link-btn { background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; text-align: start; }
+
+.ov-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ov-step { display: flex; align-items: flex-start; gap: 10px; }
+.ov-step-mark { flex: none; inline-size: 24px; block-size: 24px; border-radius: 50%; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.ov-step-done .ov-step-mark { background: var(--success); border-color: var(--success); color: #fff; }
+.ov-note { display: block; }
+.ov-sr { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ov-how { margin: 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.6; }

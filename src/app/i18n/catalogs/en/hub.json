@@ -1,0 +1,21 @@
+{
+  "title": "Arabic & Languages",
+  "subtitle": "Message each customer in their own language, manage Arabic templates, and try the Arabic inbox and AI Mode.",
+  "tabsLabel": "Language tools",
+  "tab.overview": "Overview",
+  "tab.customers": "Customer languages",
+  "tab.templates": "Templates",
+  "tab.campaigns": "Campaigns",
+  "tab.catalog": "Products & services",
+  "tab.inbox": "Inbox",
+  "tab.aimode": "AI Mode",
+  "tab.flows": "Automated flows",
+  "tab.captions": "Instagram captions",
+  "tab.review": "Review",
+  "switch.toArabic": "Switch to Arabic",
+  "switch.toEnglish": "Switch to English",
+  "loadFailed": "We couldn't load your language settings.",
+  "locked.title": "Arabic isn't switched on for your workspace yet",
+  "locked.body": "Arabic is being rolled out to merchants one at a time. Contact WaFlow to have it enabled for you. Nothing changes in your English dashboard in the meantime.",
+  "stub": "This section is being built."
+}

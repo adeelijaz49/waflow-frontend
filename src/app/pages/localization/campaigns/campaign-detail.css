@@ -1,0 +1,24 @@
+.cd-arrow { display: inline-block; }
+[dir='rtl'] .cd-arrow { transform: scaleX(-1); }
+.cd-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-start; }
+.cd-name { font-size: 18px; font-weight: 700; margin-block-end: 6px; overflow-wrap: anywhere; }
+.cd-link { color: var(--primary, #3b82f6); font-weight: 600; }
+.cd-raw { display: block; margin-block-start: 4px; overflow-wrap: anywhere; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+.cd-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.cd-stat { border: 1px solid var(--border, #e2e8f0); border-radius: 10px; padding-block: 10px; padding-inline: 14px; }
+.cd-n { font-size: 22px; font-weight: 700; line-height: 1.2; }
+.cd-progress { block-size: 8px; border-radius: 999px; background: var(--border, #e2e8f0); overflow: hidden; }
+.cd-bar { block-size: 100%; background: var(--primary, #3b82f6); transition: inline-size 0.4s; }
+.cd-dates { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.cd-filters select { inline-size: auto; flex: 1 1 150px; min-inline-size: 0; }
+:host-context([dir='rtl']) .cd .loc-user-text { text-align: right; }
+:host-context([dir='ltr']) .cd .loc-user-text { text-align: left; }
+.cd-table { min-inline-size: 480px; }
+.cd-rec { min-inline-size: 640px; }
+.cd-table th { text-transform: none; letter-spacing: 0; }
+.cd-cell { display: block; max-inline-size: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cd-langs { gap: 6px; flex-wrap: nowrap; }
+.cd-ack { display: flex; align-items: flex-start; gap: 8px; text-transform: none; letter-spacing: 0; font-weight: normal; font-size: 14px; color: var(--text, #1e293b); }
+.cd-ack input { margin-block-start: 4px; flex: none; }
+.cd-pager { justify-content: space-between; }
+.cd-pager-btns { display: inline-flex; gap: 6px; }

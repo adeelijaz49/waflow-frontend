@@ -1,0 +1,19 @@
+@for (m of messages(); track $index) {
+  <div class="aim-bubble" [class.aim-user]="m.role === 'user'" [class.aim-bot]="m.role === 'assistant'">
+    <span class="aim-sr">{{ (m.role === 'user' ? 'aimode.you' : 'aimode.assistant') | t }}:</span>
+    <div class="aim-text" dir="auto">{{ m.text }}</div>
+  </div>
+}
+@if (sending()) {
+  <div class="aim-bubble aim-bot aim-typing" role="status" [attr.aria-label]="'aimode.typing' | t">
+    <span class="aim-dot"></span><span class="aim-dot"></span><span class="aim-dot"></span>
+  </div>
+}
+@if (error(); as err) {
+  <div class="aim-bubble aim-err loc-error" role="alert">
+    <div class="aim-text" dir="auto">{{ err }}</div>
+    @if (canRetry()) {
+      <button type="button" class="btn btn-outline btn-sm" (click)="retry.emit()">{{ 'common.retry' | t }}</button>
+    }
+  </div>
+}

@@ -8,7 +8,9 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "e2e:ai-mode": "node e2e/ai-mode.spec.js",
-    "e2e:login": "node e2e/login.spec.js"
+    "e2e:login": "node e2e/login.spec.js",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "prebuild": "node scripts/check-i18n.mjs"
   },
   "private": true,
   "packageManager": "npm@10.8.2",

@@ -1,0 +1,75 @@
+<div class="modal-overlay" (click)="closed.emit()">
+  <div #dialog appModalFocus class="modal modal-lg lp-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="lp-title"
+       (click)="$event.stopPropagation()" (keydown.escape)="closed.emit()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="lp-title">{{ 'templates.library.title' | t }}</div>
+        <div class="loc-muted">{{ 'templates.library.intro' | t }}</div>
+      </div>
+      <button type="button" class="close-btn" [attr.aria-label]="'common.close' | t" (click)="closed.emit()">×</button>
+    </div>
+
+    <div class="modal-body">
+      @if (loading()) {
+        <div class="loading">{{ 'common.loading' | t }}</div>
+      } @else if (loadError(); as message) {
+        <div class="loc-error" role="alert">
+          {{ message }}
+          <button type="button" class="btn btn-outline btn-sm" (click)="load()">{{ 'common.retry' | t }}</button>
+        </div>
+      } @else if (!items().length) {
+        <div class="empty-state">{{ 'templates.library.empty' | t }}</div>
+      } @else {
+        <div class="lp-grid">
+          <nav class="lp-list" [attr.aria-label]="'templates.library.listLabel' | t">
+            @for (g of groups(); track g.id) {
+              <div class="lp-group">{{ ('templates.group.' + g.id) | t }}</div>
+              @for (e of g.entries; track e.key) {
+                <button type="button" class="lp-item" [class.active]="e.key === selectedKey()"
+                        [attr.aria-current]="e.key === selectedKey() ? 'true' : null" (click)="select(e.key)">
+                  <span dir="auto">{{ entryName(e) }}</span>
+                  <span class="badge" [class.badge-primary]="e.category === 'MARKETING'" [class.badge-neutral]="e.category !== 'MARKETING'">{{ ('templates.category.' + e.category) | t }}</span>
+                </button>
+              }
+            }
+          </nav>
+
+          <section class="lp-detail" aria-live="polite">
+            @if (selected(); as entry) {
+              <div class="lp-detail-head">
+                <div class="lp-detail-title" dir="auto">{{ entryName(entry) }}</div>
+                <div class="loc-muted">{{ ('templates.usecase.' + entry.useCase) | t }}</div>
+              </div>
+              <div class="lp-previews">
+                <div class="lp-preview">
+                  <div class="lp-preview-title">{{ 'templates.library.english' | t }}</div>
+                  <app-wa-preview language="en" [header]="entry.variants.en.header ?? ''" [body]="entry.variants.en.body"
+                                  [footer]="entry.variants.en.footer ?? ''" [buttons]="entry.variants.en.buttons ?? []" />
+                </div>
+                <div class="lp-preview">
+                  <div class="lp-preview-title">{{ 'templates.library.arabic' | t }}</div>
+                  <app-wa-preview language="ar" [header]="entry.variants.ar.header ?? ''" [body]="entry.variants.ar.body"
+                                  [footer]="entry.variants.ar.footer ?? ''" [buttons]="entry.variants.ar.buttons ?? []" />
+                </div>
+              </div>
+              <div class="loc-warn">{{ 'templates.library.note' | t }}</div>
+              <div class="loc-muted">{{ 'templates.library.fieldsNote' | t }}</div>
+              @if (createError(); as message) {
+                <div class="loc-error" role="alert">{{ message }}</div>
+              }
+            } @else {
+              <div class="loc-muted">{{ 'templates.library.pick' | t }}</div>
+            }
+          </section>
+        </div>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" (click)="closed.emit()">{{ 'common.cancel' | t }}</button>
+      <button type="button" class="btn btn-primary" [disabled]="!selected() || busy()" (click)="use()">
+        {{ (busy() ? 'templates.library.using' : 'templates.library.use') | t }}
+      </button>
+    </div>
+  </div>
+</div>

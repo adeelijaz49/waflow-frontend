@@ -1,0 +1,12 @@
+:host { display: block; padding: 12px; border-block-start: 1px solid var(--border); }
+.rc-row { display: flex; gap: 8px; align-items: flex-end; }
+.rc-box { flex: 1; min-inline-size: 0; resize: vertical; min-block-size: 44px; max-block-size: 160px; }
+.rc-side { display: flex; flex-direction: column; gap: 6px; }
+.rc-sr { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.rc-hint { margin-block-start: 6px; }
+.rc-note { margin-block-end: 8px; }
+.rc-draft { display: flex; flex-direction: column; gap: 8px; margin-block-end: 10px; padding: 10px; border-radius: 10px; background: #f5f3ff; border: 1px solid #ddd6fe; }
+.rc-draft-title { font-size: 12.5px; font-weight: 700; color: #5b21b6; }
+.rc-draft-box { inline-size: 100%; resize: vertical; }
+.rc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 520px) { .rc-row { flex-direction: column; align-items: stretch; } .rc-side { flex-direction: row; } }

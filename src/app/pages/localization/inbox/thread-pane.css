@@ -1,0 +1,11 @@
+:host { display: flex; flex-direction: column; min-block-size: 0; block-size: 100%; }
+.tp-header { display: flex; align-items: center; gap: 10px; padding-block: 12px; padding-inline: 14px; border-block-end: 1px solid var(--border); flex-shrink: 0; }
+.tp-who { flex: 1; min-inline-size: 0; }
+.tp-name { font-size: 14.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-phone { font-size: 12px; color: var(--text-muted); }
+.tp-back { display: none; }
+:host-context([dir='rtl']) .tp-arrow { display: inline-block; transform: scaleX(-1); }
+.tp-body { flex: 1; min-block-size: 0; overflow-y: auto; padding: 14px; background: #f8fafc; }
+@media (max-width: 1099px) {
+  .tp-back { display: inline-flex; }
+}

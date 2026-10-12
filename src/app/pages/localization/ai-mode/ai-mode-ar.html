@@ -1,0 +1,94 @@
+<div class="aim-page card">
+  <div class="aim-head">
+    <div class="aim-head-text">
+      <div class="page-title aim-title">{{ 'aimode.title' | t }}</div>
+      <div class="loc-muted">{{ 'aimode.subtitle' | t }}</div>
+    </div>
+    <div class="aim-controls">
+      <div class="aim-lang">
+        <label for="aim-lang">{{ 'aimode.replyLanguage' | t }}</label>
+        <select id="aim-lang" [value]="replyLang()" (change)="setReplyLang($any($event.target).value)">
+          @for (o of languageOptions; track o) {
+            <option [value]="o" [selected]="o === replyLang()">{{ langLabel(o) }}</option>
+          }
+        </select>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" [title]="'aimode.newChatHint' | t" [disabled]="sending() || confirming()" (click)="newChat()">{{ 'aimode.newChat' | t }}</button>
+    </div>
+  </div>
+
+  <details class="aim-how">
+    <summary>{{ 'aimode.howTitle' | t }}</summary>
+    <ul>
+      <li>{{ 'aimode.how.1' | t }}</li>
+      <li>{{ 'aimode.how.2' | t }}</li>
+      <li>{{ 'aimode.how.3' | t }}</li>
+      <li>{{ 'aimode.how.4' | t }}</li>
+    </ul>
+  </details>
+
+  <div class="aim-body">
+    <div class="aim-main">
+      <div class="aim-scroll" #scrollEl role="log" aria-live="polite" [attr.aria-label]="'aimode.chatLog' | t">
+        @if (loadingSession()) {
+          <div class="loc-muted aim-center">{{ 'aimode.loading' | t }}</div>
+        } @else if (messages().length === 0 && !pendingAction()) {
+          <div class="aim-empty">
+            <div class="aim-greeting">
+              @if (merchantName()) {
+                {{ 'aimode.greetingName' | t: { name: merchantName() } }}
+              } @else {
+                {{ 'aimode.greeting' | t }}
+              }
+            </div>
+            <div class="aim-strip">
+              @for (p of stripPrompts; track p) {
+                <button type="button" class="aim-chip" appUserText (click)="fillInput(i18n.t('aimode.prompt.' + p))">{{ 'aimode.prompt.' + p | t }}</button>
+              }
+            </div>
+          </div>
+        }
+        <app-aim-thread [messages]="messages()" [sending]="sending()" [error]="error()" [canRetry]="!!failedText()" (retry)="retry()" />
+        @if (notice(); as n) {
+          <div class="loc-warn" role="status">{{ n }}</div>
+        }
+        @if (pendingAction(); as action) {
+          <app-aim-confirm-card [action]="action" [busy]="confirming()" (decide)="decide($event)" />
+        }
+      </div>
+
+      <div class="aim-inputbar">
+        @if (pendingAction()) {
+          <div class="loc-muted aim-blocked">{{ 'aimode.inputBlocked' | t }}</div>
+        }
+        <div class="aim-inputrow">
+          <label class="aim-sr" for="aim-input">{{ 'aimode.inputLabel' | t }}</label>
+          <textarea id="aim-input" #inputEl class="aim-input" rows="1" dir="auto" [maxLength]="maxLength"
+            [placeholder]="'aimode.inputPlaceholder' | t" [ngModel]="input()" (ngModelChange)="input.set($event)"
+            (input)="autoGrow(inputEl)" (keydown.enter)="onEnter($event)" [disabled]="locked()"></textarea>
+          <button type="button" class="btn btn-primary" [disabled]="!canSend()" (click)="send()">{{ 'common.send' | t }}</button>
+        </div>
+        <div class="aim-foot">
+          <span class="loc-muted aim-disclaimer">{{ 'aimode.disclaimer' | t }}</span>
+          @if (showCounter()) {
+            <span class="loc-muted" dir="ltr">{{ input().length | locNumber }} / {{ maxLength | locNumber }}</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <aside class="aim-side" [class.open]="suggestionsOpen()" [attr.aria-label]="'aimode.suggestions.title' | t">
+      <div class="aim-side-head">
+        <span>{{ 'aimode.suggestions.title' | t }}</span>
+        <button type="button" class="aim-close" [attr.aria-label]="'common.close' | t" (click)="suggestionsOpen.set(false)">×</button>
+      </div>
+      <div class="aim-side-body">
+        <app-aim-suggestions [insights]="insights()" [insightLang]="insightLang()" (pickText)="fillInput($event)" />
+      </div>
+    </aside>
+    @if (suggestionsOpen()) {
+      <div class="aim-backdrop" (click)="suggestionsOpen.set(false)"></div>
+    }
+  </div>
+  <button type="button" class="aim-toggle btn btn-outline btn-sm" [attr.aria-expanded]="suggestionsOpen()" (click)="suggestionsOpen.set(!suggestionsOpen())">💡 {{ 'aimode.suggestions.toggle' | t }}</button>
+</div>

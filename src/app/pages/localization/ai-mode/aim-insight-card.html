@@ -1,0 +1,17 @@
+<button type="button" class="aim-ic" (click)="pick.emit(insight())">
+  <span class="aim-ic-cat" appUserText>{{ insight().icon }} {{ insight().categoryLabel }}</span>
+  <span class="aim-ic-title" appUserText>{{ insight().title }}</span>
+  <span class="aim-ic-msg" appUserText>{{ insight().message }}</span>
+  @if (insight().metricLabel) {
+    <span class="aim-ic-metric"><span appUserText>{{ insight().metricLabel }}</span>: <bdi class="aim-ic-val">{{ insight().metricValue }}</bdi></span>
+  }
+  @if (insight().primaryCtaLabel || insight().secondaryCtaLabel) {
+    <span class="aim-ic-ctas">
+      @if (insight().primaryCtaLabel) { <span class="aim-ic-cta" appUserText>{{ insight().primaryCtaLabel }}</span> }
+      @if (insight().secondaryCtaLabel) { <span class="aim-ic-cta" appUserText>{{ insight().secondaryCtaLabel }}</span> }
+    </span>
+  }
+  @if (showFallbackMarker() && !insight().localized) {
+    <span class="aim-ic-fallback loc-muted">{{ 'aimode.insight.notLocalized' | t }}</span>
+  }
+</button>

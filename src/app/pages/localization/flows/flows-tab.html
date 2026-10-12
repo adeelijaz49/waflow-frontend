@@ -1,0 +1,126 @@
+<div class="page-header flex-between">
+  <div>
+    <h2 class="page-title">{{ 'flows.title' | t }}</h2>
+    <p class="page-sub">{{ 'flows.subtitle' | t }}</p>
+  </div>
+  <button type="button" class="btn btn-outline btn-sm" (click)="load()" [disabled]="loading()">{{ 'common.refresh' | t }}</button>
+</div>
+
+<div class="card fl-info"><div class="card-body">
+  <strong>{{ 'flows.info.title' | t }}</strong>
+  <p class="loc-muted">{{ 'flows.info.sending' | t }}</p>
+  <p class="loc-muted">{{ 'flows.info.approval' | t }}</p>
+</div></div>
+
+@if (actionError()) {
+  <div class="loc-error" role="alert">{{ actionError() }}</div>
+}
+
+<div aria-live="polite">
+@if (loading()) {
+  <div class="loading">{{ 'common.loading' | t }}</div>
+} @else if (error()) {
+  <div class="card"><div class="card-body">
+    <div class="loc-error" role="alert">{{ error() }}</div>
+    <button type="button" class="btn btn-outline btn-sm" (click)="load()">{{ 'common.retry' | t }}</button>
+  </div></div>
+} @else if (!hasFlows()) {
+  <div class="empty-state">
+    <p>{{ 'flows.empty' | t }}</p>
+    <a class="btn btn-primary" routerLink="/flows">{{ 'flows.openFlows' | t }}</a>
+  </div>
+} @else {
+  @for (flow of flows(); track flow.flowId) {
+    <div class="card fl-flow">
+      <div class="card-header flex-between">
+        <h3 class="card-title" dir="auto">{{ flow.flowName }}</h3>
+        <span class="badge" [ngClass]="flow.status === 'active' ? 'badge-success' : 'badge-neutral'">{{ ('flows.status.' + flow.status) | t }}</span>
+      </div>
+      <div class="card-body">
+        <div class="loc-muted">{{ 'flows.trigger.label' | t }}: {{ triggerKey(flow.triggerType) | t }}</div>
+        @for (node of flow.nodes; track node.messageNodeId) {
+          <div class="fl-node">
+            <div class="fl-label">{{ 'flows.entryMessage' | t }}</div>
+            <div class="fl-body" dir="auto">{{ node.bodyText }}</div>
+            @if (node.buttons.length) {
+              <div class="fl-label">{{ 'flows.buttons' | t }}</div>
+              <div class="fl-buttons">
+                @for (b of node.buttons; track b.position) {
+                  <span class="fl-btn" dir="auto">{{ b.label }}</span>
+                }
+              </div>
+            }
+            <div class="loc-muted">
+              {{ 'flows.englishStatus' | t }}:
+              <span class="badge" [ngClass]="tplClass(node.templateStatus)">{{ ('flows.tpl.' + node.templateStatus) | t }}</span>
+            </div>
+            <div class="fl-matrix">
+              @for (lang of langs; track lang) {
+                <div class="fl-cell">
+                  <app-lang-pill [lang]="lang" />
+                  @if (variantOf(node, lang); as v) {
+                    <app-approval-badge [status]="v.metaStatus" [review]="v.reviewStatus" />
+                  } @else {
+                    <span class="loc-muted">{{ 'flows.notAdded' | t }}</span>
+                  }
+                </div>
+              }
+            </div>
+            <div class="fl-actions">
+              @if (node.localizedTemplateId) {
+                <a class="btn btn-outline btn-sm" [routerLink]="editLink(node)">{{ 'flows.editVersions' | t }}</a>
+              } @else {
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="busyNode() !== null" (click)="localize(node)">
+                  {{ (busyNode() === node.messageNodeId ? 'flows.adding' : 'flows.addArabic') | t }}
+                </button>
+              }
+              <button type="button" class="btn btn-outline btn-sm" [attr.aria-expanded]="openNode() === node.messageNodeId" (click)="togglePreview(node)">
+                {{ (openNode() === node.messageNodeId ? 'flows.hidePreview' : 'flows.showPreview') | t }}
+              </button>
+            </div>
+            @if (!node.localizedTemplateId) {
+              <p class="loc-hint">{{ 'flows.sameButtons' | t }}</p>
+            }
+
+            @if (openNode() === node.messageNodeId) {
+              <div class="fl-preview">
+                <div class="fl-toggle" role="group" [attr.aria-label]="'preview.asCustomer' | t">
+                  <button type="button" class="btn btn-outline btn-sm" [attr.aria-pressed]="mode() === 'ar'" (click)="mode.set('ar')">{{ 'preview.arabicCustomer' | t }}</button>
+                  <button type="button" class="btn btn-outline btn-sm" [attr.aria-pressed]="mode() === 'en'" (click)="mode.set('en')">{{ 'preview.englishCustomer' | t }}</button>
+                  <button type="button" class="btn btn-outline btn-sm" [attr.aria-pressed]="mode() === 'both'" (click)="mode.set('both')">{{ 'flows.both' | t }}</button>
+                </div>
+                @if (tplState(node); as st) {
+                  @if (st.state === 'loading') {
+                    <div class="loading">{{ 'common.loading' | t }}</div>
+                  } @else if (st.state === 'error') {
+                    <div class="loc-error" role="alert">{{ st.message }}</div>
+                    <button type="button" class="btn btn-outline btn-sm" (click)="retryTemplate(node)">{{ 'common.retry' | t }}</button>
+                  }
+                }
+                @if (!node.localizedTemplateId || tplState(node)?.state === 'ready') {
+                  <div class="fl-panes">
+                    @for (pane of panes(node); track pane.lang) {
+                      <div>
+                        @if (pane.missing) {
+                          <p class="loc-warn">{{ 'flows.noArabicYet' | t }}</p>
+                        }
+                        <app-wa-preview
+                          [language]="pane.messageLanguage"
+                          [phoneLanguage]="pane.lang"
+                          [header]="pane.header"
+                          [body]="pane.body"
+                          [footer]="pane.footer"
+                          [buttons]="pane.buttons" />
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+}
+</div>

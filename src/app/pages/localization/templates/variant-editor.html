@@ -1,0 +1,236 @@
+@if (!visible()) {
+  <div class="card">
+    <div class="card-body ve-missing">
+      <h3>{{ ('templates.missing.title.' + language()) | t }}</h3>
+      <p class="loc-muted">{{ 'templates.missing.body' | t }}</p>
+      <div class="loc-row">
+        <button type="button" class="btn btn-primary" (click)="startBlank()">{{ 'templates.add.blank' | t }}</button>
+        @if (sourceVariant()) {
+          <button type="button" class="btn btn-outline" (click)="startFromOther()">
+            {{ (language() === 'ar' ? 'templates.add.copyEnglish' : 'templates.add.copyArabic') | t }}
+          </button>
+        }
+        @if (canCombine()) {
+          <button type="button" class="btn btn-outline" (click)="startCombined()">{{ 'templates.add.combine' | t }}</button>
+        }
+      </div>
+      @if (language() !== 'bilingual') {
+        <div class="ve-translate">
+          <div class="ve-sub">{{ 'templates.add.translateTitle' | t }}</div>
+          @if (sourceVariant(); as src) {
+            <div class="ve-source" dir="auto" [attr.lang]="language() === 'ar' ? 'en' : 'ar'">{{ src.body }}</div>
+            <app-ai-assist [text]="src.body" [textLanguage]="language() === 'ar' ? 'en' : 'ar'"
+                           [actions]="language() === 'ar' ? toArabicOnly : toEnglishOnly" [maxLength]="limits.body" (applied)="startFromAi($event)" />
+          } @else {
+            <div class="loc-muted">{{ 'templates.add.translateNeedsText' | t }}</div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="ve-grid">
+    <div class="card ve-edit">
+      <div class="card-body">
+        @if (showAiNote()) {
+          <div class="loc-hint ve-ai" role="note">{{ aiTouched() ? ('templates.aiDraftNote' | t) : ('templates.aiSourceNote' | t) }}</div>
+        }
+
+        <div class="ve-field">
+          <div class="ve-label-row">
+            <label for="ve-header">{{ 'templates.field.header' | t }}</label>
+            <span class="ve-count" dir="ltr" [class.near]="countClass(form().header, limits.header) === 'near'" [class.over]="countClass(form().header, limits.header) === 'over'">{{ count(form().header) }} / {{ limits.header }}</span>
+          </div>
+          <input #headerField id="ve-header" type="text" dir="auto" [attr.lang]="textLang()" [value]="form().header"
+                 (input)="onText('header', $any($event.target).value)" (focus)="lastFocus.set('header')" />
+          <div class="loc-muted">{{ 'templates.field.headerHint' | t }}</div>
+        </div>
+
+        <div class="ve-field">
+          <div class="ve-label-row">
+            <label for="ve-body">{{ 'templates.field.body' | t }}</label>
+            <span class="ve-count" dir="ltr" [class.near]="countClass(form().body, limits.body) === 'near'" [class.over]="countClass(form().body, limits.body) === 'over'">{{ count(form().body) }} / {{ limits.body }}</span>
+          </div>
+          <div class="ve-chips" role="group" [attr.aria-label]="'templates.mergeFields.title' | t">
+            <span class="ve-sub">{{ 'templates.mergeFields.title' | t }}</span>
+            @for (f of mergeFields; track f.key) {
+              <button type="button" class="ve-chip" [class.used]="usedFields().has(f.key)" (mousedown)="$event.preventDefault()" (click)="insertField(f.key)">
+                <span>{{ ('templates.field.' + f.key) | t }}</span>
+                @if (f.autoFilled) {
+                  <span class="ve-chip-auto">{{ 'templates.mergeFields.auto' | t }}</span>
+                }
+                @if (usedFields().has(f.key)) {
+                  <span class="ve-sr">{{ 'templates.mergeFields.used' | t }}</span>
+                }
+              </button>
+            }
+          </div>
+          <div class="loc-muted">{{ 'templates.mergeFields.hint' | t }}</div>
+          <textarea #bodyField id="ve-body" rows="8" dir="auto" [attr.lang]="textLang()" [value]="form().body"
+                    (input)="onText('body', $any($event.target).value)" (focus)="lastFocus.set('body')"></textarea>
+          <div class="loc-muted">{{ 'templates.field.bodyHint' | t }}</div>
+          <app-ai-assist [text]="form().body" [textLanguage]="textLang() ?? 'auto'" context="template_body"
+                         [buttons]="buttonLabels()" [maxLength]="limits.body" (applied)="onAiApplied($event)" />
+        </div>
+
+        @if (isBilingual()) {
+          <div class="ve-field">
+            <label for="ve-order">{{ 'templates.order.label' | t }}</label>
+            <select id="ve-order" [value]="form().bilingualOrder" (change)="onOrder($any($event.target).value)">
+              <option value="ar_first" [selected]="form().bilingualOrder === 'ar_first'">{{ 'templates.order.ar_first' | t }}</option>
+              <option value="en_first" [selected]="form().bilingualOrder === 'en_first'">{{ 'templates.order.en_first' | t }}</option>
+            </select>
+            <div class="loc-muted">{{ 'templates.order.hint' | t }}</div>
+          </div>
+        }
+
+        <div class="ve-field">
+          <div class="ve-label-row">
+            <label for="ve-footer">{{ 'templates.field.footer' | t }}</label>
+            <span class="ve-count" dir="ltr" [class.near]="countClass(form().footer, limits.footer) === 'near'" [class.over]="countClass(form().footer, limits.footer) === 'over'">{{ count(form().footer) }} / {{ limits.footer }}</span>
+          </div>
+          <input id="ve-footer" type="text" dir="auto" [attr.lang]="textLang()" [value]="form().footer"
+                 (input)="onText('footer', $any($event.target).value)" />
+          <div class="loc-muted">{{ 'templates.field.footerHint' | t }}</div>
+        </div>
+
+        <div class="ve-field">
+          <div class="ve-label-row">
+            <span class="ve-title">{{ 'templates.buttons.title' | t }}</span>
+          </div>
+          <div class="loc-muted">{{ 'templates.buttons.hint' | t }}</div>
+          @if (flowLocked()) {
+            <div class="loc-hint">{{ 'templates.editor.flowLinked' | t }}</div>
+          }
+          @if (needsOptOut()) {
+            <div class="loc-warn ve-optout">
+              <span>{{ 'templates.buttons.needOptOut' | t }}</span>
+              <button type="button" class="btn btn-outline btn-sm" (click)="addOptOut()">{{ 'templates.buttons.addOptOut' | t }}</button>
+            </div>
+          }
+          @for (b of form().buttons; track $index; let i = $index) {
+            <div class="ve-btn">
+              <select [attr.aria-label]="'templates.button.role' | t" [disabled]="isFlowButton(b)" [value]="b.role"
+                      (change)="setButtonRole(i, $any($event.target).value)">
+                @for (r of rolesFor(b); track r) {
+                  <option [value]="r" [selected]="r === b.role">{{ ('templates.role.' + r) | t }}</option>
+                }
+              </select>
+              <div class="ve-btn-label">
+                <input type="text" dir="auto" [attr.lang]="textLang()" [value]="b.text" [disabled]="isFlowButton(b)"
+                       [attr.aria-label]="'templates.button.label' | t" (input)="setButton(i, { text: $any($event.target).value })" />
+                <span class="ve-count" dir="ltr" [class.near]="countClass(b.text, limits.buttonLabel) === 'near'" [class.over]="countClass(b.text, limits.buttonLabel) === 'over'">{{ count(b.text) }} / {{ limits.buttonLabel }}</span>
+              </div>
+              @if (b.role === 'url') {
+                <input class="ve-btn-url" type="url" dir="ltr" inputmode="url" [value]="b.url ?? ''"
+                       [attr.aria-label]="'templates.button.url' | t" [placeholder]="'templates.button.urlPlaceholder' | t"
+                       (input)="setButton(i, { url: $any($event.target).value })" />
+              }
+              @if (!isFlowButton(b)) {
+                <button type="button" class="ve-x" [attr.aria-label]="'templates.buttons.remove' | t" (click)="removeButton(i)">×</button>
+              } @else {
+                <span class="loc-muted" [attr.title]="'templates.buttons.flowLocked' | t">🔒</span>
+              }
+            </div>
+          } @empty {
+            <div class="loc-muted">{{ 'templates.buttons.none' | t }}</div>
+          }
+          @if (form().buttons.length < limits.buttons) {
+            <div><button type="button" class="btn btn-outline btn-sm" (click)="addButton()">{{ 'templates.buttons.add' | t }}</button></div>
+          } @else {
+            <div class="loc-muted">{{ 'templates.buttons.max' | t: { max: limits.buttons } }}</div>
+          }
+        </div>
+
+        <div class="ve-checks" aria-live="polite">
+          <div class="ve-title">{{ 'templates.validation.title' | t }}</div>
+          @if (checking()) {
+            <div class="loc-muted">{{ 'templates.validation.checking' | t }}</div>
+          }
+          @if (validationFailed()) {
+            <div class="loc-warn">{{ 'templates.validation.failed' | t }}</div>
+          }
+          @if (issues().errors.length) {
+            <div class="loc-error">
+              <strong>{{ 'templates.validation.errors' | t }}</strong>
+              <ul class="ve-issues">
+                @for (i of issues().errors; track $index) {
+                  <li>{{ i.text }} @if (i.hint) { <em>{{ i.hint }}</em> }</li>
+                }
+              </ul>
+            </div>
+          }
+          @if (issues().warnings.length) {
+            <div class="loc-warn">
+              <strong>{{ 'templates.validation.warnings' | t }}</strong>
+              <ul class="ve-issues">
+                @for (i of issues().warnings; track $index) {
+                  <li>{{ i.text }}</li>
+                }
+              </ul>
+            </div>
+          }
+          @if (validation() && !checking() && !issues().errors.length && !issues().warnings.length) {
+            <div class="loc-ok">{{ 'templates.validation.ok' | t }}</div>
+          }
+        </div>
+
+        @if (warnsResetApproval()) {
+          <div class="loc-hint ve-gap">{{ 'templates.resetsApproval' | t }}</div>
+        }
+        @if (saveError(); as message) {
+          <div class="loc-error ve-gap" role="alert">{{ message }}</div>
+        }
+        <div class="ve-savebar">
+          <span class="ve-state" aria-live="polite" [class.dirty]="dirty()">
+            @if (dirty()) {
+              {{ 'templates.unsaved' | t }}
+            } @else if (variant()) {
+              {{ 'templates.saved' | t }}
+            }
+          </span>
+          @if (dirty()) {
+            <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="discard()">{{ 'templates.discard' | t }}</button>
+          }
+          <button type="button" class="btn btn-primary" [disabled]="!canSave()" (click)="save()">
+            {{ (saving() ? 'templates.saving' : 'templates.save') | t }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card ve-side">
+      <div class="card-header"><div class="card-title">{{ 'preview.title' | t }}</div></div>
+      <div class="card-body">
+        <div class="ve-toggle" role="group" [attr.aria-label]="'templates.preview.tabsLabel' | t">
+          @for (m of previewModes; track m) {
+            <button type="button" class="ve-seg" [class.active]="previewMode() === m" [attr.aria-pressed]="previewMode() === m" (click)="previewMode.set(m)">
+              {{ modeKey(m) | t }}
+            </button>
+          }
+        </div>
+        <div class="ve-previews" aria-live="polite">
+          @for (p of previewViews(); track p.language) {
+            <div class="ve-preview">
+              @if (previewViews().length > 1) {
+                <app-lang-pill [lang]="p.language" />
+              }
+              <app-wa-preview [language]="p.language" [header]="p.header" [body]="p.body" [footer]="p.footer" [buttons]="p.buttons"
+                              [bilingualOrder]="p.language === 'bilingual' ? form().bilingualOrder : null" [phoneLanguage]="phoneLanguage()" />
+            </div>
+          }
+        </div>
+        @if (previewBusy()) {
+          <div class="loc-muted">{{ 'preview.updating' | t }}</div>
+        }
+        <div class="loc-muted">{{ 'templates.preview.sample' | t }}</div>
+        @if (isBilingual() && previewMode() === 'auto') {
+          <div class="loc-muted">{{ 'templates.preview.bilingualHint' | t }}</div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <app-loc-approval-panel [template]="template()" [variant]="variant()" [language]="language()" [dirty]="dirty()"
+                          [errorCount]="issues().errors.length" [usage]="usage()" (templateChange)="templateChange.emit($event)" />
+}

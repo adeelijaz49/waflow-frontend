@@ -1,0 +1,92 @@
+<div class="card">
+  <div class="card-header ct-head">
+    <div>
+      <div class="card-title">{{ 'campaigns.title' | t }}</div>
+      <div class="loc-muted">{{ 'campaigns.subtitle' | t }}</div>
+    </div>
+    <a class="btn btn-primary btn-sm" routerLink="/arabic/campaigns/new">{{ 'campaigns.new' | t }}</a>
+  </div>
+
+  <div class="card-body loc-stack">
+    <div class="ct-chips" role="group" [attr.aria-label]="'campaigns.filter.aria' | t">
+      <button type="button" class="ct-chip" [class.active]="filter() === 'all'" [attr.aria-pressed]="filter() === 'all'" (click)="setFilter('all')">{{ 'common.all' | t }}</button>
+      @for (s of statuses; track s) {
+        <button type="button" class="ct-chip" [class.active]="filter() === s" [attr.aria-pressed]="filter() === s" (click)="setFilter(s)">{{ ('status.campaign.' + s) | t }}</button>
+      }
+    </div>
+
+    @if (error()) {
+      <div class="loc-error" role="alert">
+        {{ error() }}
+        <button type="button" class="btn btn-outline btn-sm" (click)="load()">{{ 'common.retry' | t }}</button>
+      </div>
+    }
+
+    @if (loading()) {
+      <div class="loading">{{ 'common.loading' | t }}</div>
+    } @else if (!error() && rows().length === 0) {
+      <div class="empty-state">
+        {{ (filter() === 'all' ? 'campaigns.empty' : 'campaigns.emptyFilter') | t }}
+        @if (filter() === 'all') {
+          <div><a class="btn btn-primary btn-sm" routerLink="/arabic/campaigns/new">{{ 'campaigns.new' | t }}</a></div>
+        }
+      </div>
+    } @else if (rows().length > 0) {
+      <div class="table-wrap" aria-live="polite">
+        <table class="ct-table">
+          <thead>
+            <tr>
+              <th>{{ 'common.name' | t }}</th>
+              <th>{{ 'campaigns.col.template' | t }}</th>
+              <th>{{ 'campaigns.col.mode' | t }}</th>
+              <th>{{ 'common.status' | t }}</th>
+              <th>{{ 'campaigns.col.progress' | t }}</th>
+              <th>{{ 'campaigns.col.languages' | t }}</th>
+              <th>{{ 'campaigns.col.started' | t }}</th>
+              <th>{{ 'campaigns.col.finished' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of rows(); track c.id) {
+              <tr>
+                <td><a class="ct-name" appUserText [title]="c.name" [routerLink]="['/arabic/campaigns', c.id]">{{ c.name }}</a></td>
+                <td><span class="ct-name" appUserText [title]="c.templateName">{{ c.templateName }}</span></td>
+                <td>{{ mode(c) }}</td>
+                <td><span [class]="'badge ' + badge(c.status)">{{ ('status.campaign.' + c.status) | t }}</span></td>
+                <td>
+                  <div class="ct-prog">
+                    <div class="ct-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="percent(c)" [attr.aria-label]="'campaigns.detail.progress' | t">
+                      <div class="ct-bar" [style.inline-size.%]="percent(c)"></div>
+                    </div>
+                    <span class="loc-muted">{{ 'campaigns.col.sentOfTotal' | t: { sent: (c.stats.sent | locNumber), total: (c.stats.total | locNumber) } }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="ct-langs">
+                    @if (c.stats.byLanguage.ar > 0) { <app-lang-pill lang="ar" [count]="c.stats.byLanguage.ar" /> }
+                    @if (c.stats.byLanguage.en > 0) { <app-lang-pill lang="en" [count]="c.stats.byLanguage.en" /> }
+                    @if (c.stats.byLanguage.bilingual > 0) { <app-lang-pill lang="bilingual" [count]="c.stats.byLanguage.bilingual" /> }
+                  </span>
+                </td>
+                <td class="loc-muted loc-nowrap">{{ c.startedAt ? (c.startedAt | locDate) : '' }}</td>
+                <td class="loc-muted loc-nowrap">{{ c.finishedAt ? (c.finishedAt | locDate) : '' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="loc-row ct-pager">
+        <span class="loc-muted">{{ 'campaigns.picker.range' | t: { from: (from() | locNumber), to: (to() | locNumber), total: (total() | locNumber) } }}</span>
+        <span class="ct-pager-btns">
+          <button type="button" class="btn btn-outline btn-sm" [disabled]="!hasPrev() || loading()" [attr.aria-label]="'campaigns.picker.prev' | t" (click)="goTo(page() - 1)">
+            <span class="ct-arrow" aria-hidden="true">{{ "‹" }}</span>
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" [disabled]="!hasNext() || loading()" [attr.aria-label]="'campaigns.picker.next' | t" (click)="goTo(page() + 1)">
+            <span class="ct-arrow" aria-hidden="true">{{ "›" }}</span>
+          </button>
+        </span>
+      </div>
+    }
+  </div>
+</div>

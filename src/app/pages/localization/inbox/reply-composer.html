@@ -1,0 +1,38 @@
+@if (draft() !== null) {
+  <section class="rc-draft" [attr.aria-label]="'inbox.composer.draftLabel' | t">
+    <div class="rc-draft-title">{{ 'inbox.composer.draftTitle' | t }}</div>
+    <textarea rows="3" dir="auto" lang="ar" class="rc-draft-box" [value]="draft() ?? ''" [attr.aria-label]="'inbox.composer.draftLabel' | t" (input)="onDraftInput($event)"></textarea>
+    @for (w of warnings(); track $index) { <div class="loc-warn">{{ warningText(w) }}</div> }
+    <div class="loc-muted">{{ 'ai.notice' | t }}</div>
+    <div class="loc-muted">{{ 'inbox.composer.draftHint' | t }}</div>
+    <div class="rc-actions">
+      <button type="button" class="btn btn-primary btn-sm" (click)="useDraft()">{{ 'inbox.composer.useDraft' | t }}</button>
+      <button type="button" class="btn btn-outline btn-sm" (click)="discardDraft()">{{ 'inbox.composer.discard' | t }}</button>
+    </div>
+  </section>
+}
+@if (aiError()) { <div class="loc-error rc-note" role="alert">{{ aiError() }}</div> }
+@if (error()) { <div class="loc-error rc-note" role="alert">{{ error() }}</div> }
+<div class="rc-row">
+  <label class="rc-sr" for="inbox-composer-box">{{ 'inbox.composer.label' | t }}</label>
+  <textarea
+    #box
+    id="inbox-composer-box"
+    rows="2"
+    dir="auto"
+    class="rc-box"
+    [value]="text()"
+    [placeholder]="'inbox.composer.placeholder' | t"
+    (input)="onInput($event)"
+    (keydown.enter)="onEnter($event)"
+  ></textarea>
+  <div class="rc-side">
+    <button type="button" class="btn btn-primary" [disabled]="!text().trim() || sending()" (click)="send()">
+      {{ (sending() ? 'inbox.composer.sending' : 'inbox.composer.send') | t }}
+    </button>
+    <button type="button" class="btn btn-outline btn-sm" [disabled]="!text().trim() || aiBusy()" [title]="'inbox.composer.needText' | t" (click)="replyInArabic()">
+      {{ (aiBusy() ? 'inbox.composer.replying' : 'inbox.composer.replyAr') | t }}
+    </button>
+  </div>
+</div>
+<div class="loc-muted rc-hint">{{ 'inbox.composer.hint' | t }}</div>

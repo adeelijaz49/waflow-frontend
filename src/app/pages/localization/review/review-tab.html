@@ -1,0 +1,184 @@
+<div class="loc-stack rv">
+  <div class="loc-row">
+    <div class="loc-grow">
+      <h2 class="rv-h">{{ 'review.title' | t }}</h2>
+      <div class="loc-muted">{{ 'review.subtitle' | t }}</div>
+    </div>
+    <button type="button" class="btn btn-outline btn-sm" [disabled]="loading()" (click)="load()">{{ 'common.refresh' | t }}</button>
+  </div>
+
+  @if (error(); as msg) {
+    <div class="loc-error" role="alert">
+      {{ msg }}
+      <button type="button" class="btn btn-outline btn-sm rv-retry" (click)="load()">{{ 'common.retry' | t }}</button>
+    </div>
+  }
+
+  @if (loading() && !summary()) {
+    <div class="loading" role="status">{{ 'common.loading' | t }}</div>
+  }
+
+  @if (summary(); as s) {
+    <div class="card">
+      <div class="card-body" aria-live="polite">
+        <div class="rv-big-label">{{ 'review.waitingTitle' | t }}</div>
+        <div class="rv-big" data-testid="waiting">{{ waiting() | locNumber }}</div>
+        <div class="loc-muted">{{ 'review.waitingHint' | t }}</div>
+        @if (grandTotal() > 0) {
+          <div class="rv-bar" role="progressbar" [attr.aria-label]="'review.progressLabel' | t"
+               aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="percent()">
+            <div class="rv-bar-fill" [style.inline-size.%]="percent()"></div>
+          </div>
+          <div class="loc-muted" data-testid="progress">{{ 'review.progress' | t: { reviewed: (reviewedTotal() | locNumber), total: (grandTotal() | locNumber) } }}</div>
+          @if (waiting() === 0) { <div class="loc-ok rv-gap">{{ 'review.allDone' | t }}</div> }
+        } @else {
+          <div class="loc-hint rv-gap">{{ 'review.nothing' | t }}</div>
+        }
+      </div>
+    </div>
+
+    <div class="rv-grid">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">{{ 'review.area.templates' | t }}</div>
+          <div class="loc-muted">{{ 'review.area.templatesHint' | t }}</div>
+          <dl class="rv-stats">
+            <div><dt>{{ 'review.stat.draft' | t }}</dt><dd data-testid="tpl-draft">{{ s.templates.draft | locNumber }}</dd></div>
+            <div><dt>{{ 'review.stat.reviewed' | t }}</dt><dd>{{ s.templates.reviewed | locNumber }}</dd></div>
+          </dl>
+          <a class="btn btn-outline btn-sm" routerLink="../templates">{{ 'review.link.templates' | t }}</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">{{ 'review.area.catalog' | t }}</div>
+          <div class="loc-muted">{{ 'review.area.catalogHint' | t }}</div>
+          <dl class="rv-stats">
+            <div><dt>{{ 'review.stat.draft' | t }}</dt><dd data-testid="cat-draft">{{ s.catalog.draft | locNumber }}</dd></div>
+            <div><dt>{{ 'review.stat.reviewed' | t }}</dt><dd>{{ s.catalog.reviewed | locNumber }}</dd></div>
+            <div><dt>{{ 'review.stat.missing' | t }}</dt><dd>{{ s.catalog.missing | locNumber }}</dd></div>
+          </dl>
+          <a class="btn btn-outline btn-sm" routerLink="../catalog">{{ 'review.link.catalog' | t }}</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">{{ 'review.area.backend' | t }}</div>
+          <div class="loc-muted">{{ 'review.area.backendHint' | t }}</div>
+          <dl class="rv-stats">
+            <div><dt>{{ 'review.stat.total' | t }}</dt><dd>{{ s.backendStrings.total | locNumber }}</dd></div>
+            <div><dt>{{ 'review.stat.draft' | t }}</dt><dd data-testid="be-draft">{{ s.backendStrings.draft | locNumber }}</dd></div>
+            <div><dt>{{ 'review.stat.reviewed' | t }}</dt><dd>{{ s.backendStrings.reviewed | locNumber }}</dd></div>
+            <div><dt>{{ 'review.stat.needsLegal' | t }}</dt><dd>{{ s.backendStrings.needsLegalApproval | locNumber }}</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      @if (screens(); as sc) {
+        <div class="card">
+          <div class="card-body">
+            <div class="card-title">{{ 'review.area.screens' | t }}</div>
+            <div class="loc-muted">{{ 'review.area.screensHint' | t }}</div>
+            <dl class="rv-stats">
+              <div><dt>{{ 'review.stat.draft' | t }}</dt><dd data-testid="scr-draft">{{ sc.totals.draft | locNumber }}</dd></div>
+              <div><dt>{{ 'review.stat.reviewed' | t }}</dt><dd>{{ sc.totals.reviewed | locNumber }}</dd></div>
+              <div><dt>{{ 'review.stat.needsLegal' | t }}</dt><dd>{{ sc.totals.needsLegal | locNumber }}</dd></div>
+            </dl>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (namespaceRows().length) {
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <caption class="rv-cap">{{ 'review.namespacesCaption' | t }}</caption>
+            <thead>
+              <tr>
+                <th>{{ 'review.namespace' | t }}</th>
+                <th>{{ 'review.stat.draft' | t }}</th>
+                <th>{{ 'review.stat.reviewed' | t }}</th>
+                <th>{{ 'review.stat.total' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of namespaceRows(); track r.name) {
+                <tr>
+                  <td><code dir="ltr" class="rv-ltr">{{ r.name }}</code></td>
+                  <td>{{ r.draft | locNumber }}</td>
+                  <td>{{ r.reviewed | locNumber }}</td>
+                  <td>{{ r.total | locNumber }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  }
+
+  <div class="loc-warn">
+    <strong>{{ 'review.rulesTitle' | t }}</strong>
+    <ul class="rv-list">
+      <li>{{ 'review.rule.draft' | t }}</li>
+      <li>{{ 'review.rule.machine' | t }}</li>
+      <li>{{ 'review.rule.send' | t }}</li>
+      <li>{{ 'review.rule.legal' | t }}</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-body loc-stack">
+      <div class="card-title">{{ 'review.howTitle' | t }}</div>
+
+      <section>
+        <h3 class="rv-step">{{ 'review.step.export' | t }}</h3>
+        <p class="loc-muted">{{ 'review.step.exportBody' | t }}</p>
+      </section>
+
+      <section>
+        <h3 class="rv-step">{{ 'review.step.review' | t }}</h3>
+        <p class="loc-muted">{{ 'review.step.reviewBody' | t }}</p>
+        <div class="rv-cmd-label">{{ 'review.columnsTitle' | t }}</div>
+        <ul class="rv-list">
+          @for (k of columnKeys; track k) { <li>{{ k | t }}</li> }
+        </ul>
+        <p class="loc-hint">{{ 'review.inTabsNote' | t }}</p>
+      </section>
+
+      <section>
+        <h3 class="rv-step">{{ 'review.step.import' | t }}</h3>
+        <p class="loc-muted">{{ 'review.step.importBody' | t }}</p>
+      </section>
+      <details class="rv-tech">
+        <summary>{{ 'review.tech.title' | t }}</summary>
+        <div class="loc-stack rv-tech-body">
+          <p class="loc-muted">{{ 'review.tech.intro' | t }}</p>
+          <div>
+            <h4 class="rv-step">{{ 'review.tech.exportTitle' | t }}</h4>
+            @for (c of exportCommands; track c.key) {
+              <div class="rv-cmd-label">{{ c.labelKey | t }}</div>
+              <div class="rv-cmd">
+                <code dir="ltr" class="rv-ltr">{{ c.key | t }}</code>
+                <button type="button" class="btn btn-outline btn-sm" [attr.aria-label]="'review.copyCommand' | t" (click)="copy(c.key)">{{ 'common.copy' | t }}</button>
+              </div>
+            }
+          </div>
+          <div>
+            <h4 class="rv-step">{{ 'review.tech.importTitle' | t }}</h4>
+            @for (c of importCommands; track c.key) {
+              <div class="rv-cmd-label">{{ c.labelKey | t }}</div>
+              <div class="rv-cmd">
+                <code dir="ltr" class="rv-ltr">{{ c.key | t }}</code>
+                <button type="button" class="btn btn-outline btn-sm" [attr.aria-label]="'review.copyCommand' | t" (click)="copy(c.key)">{{ 'common.copy' | t }}</button>
+              </div>
+            }
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,115 @@
+<div class="pv loc-stack">
+  <div class="pv-numbers">
+    <div class="pv-num">
+      <div class="pv-n">{{ plan().byLanguage.ar | locNumber }}</div>
+      <div class="pv-l">{{ 'campaigns.plan.arabic' | t }}</div>
+    </div>
+    <div class="pv-num">
+      <div class="pv-n">{{ plan().byLanguage.en | locNumber }}</div>
+      <div class="pv-l">{{ 'campaigns.plan.english' | t }}</div>
+    </div>
+    @if (showBilingual()) {
+      <div class="pv-num">
+        <div class="pv-n">{{ plan().byLanguage.bilingual | locNumber }}</div>
+        <div class="pv-l">{{ 'campaigns.plan.bilingual' | t }}</div>
+      </div>
+    }
+    <div class="pv-num pv-skip">
+      <div class="pv-n">{{ skippedTotal() | locNumber }}</div>
+      <div class="pv-l">{{ 'campaigns.plan.skipped' | t }}</div>
+    </div>
+  </div>
+
+  <div class="loc-muted">
+    {{ 'campaigns.plan.audienceLine' | t: { selected: (plan().audience.selected | locNumber), eligible: (plan().audience.eligible | locNumber) } }}
+  </div>
+
+  @if (skippedTotal() > 0) {
+    <div class="pv-chips" role="list" [attr.aria-label]="'campaigns.plan.skippedAria' | t">
+      @for (k of skipKeys; track k) {
+        @if (plan().skipped[k] > 0) {
+          <span class="loc-chip" role="listitem">{{ ('campaigns.skip.' + k) | t }} <strong>{{ plan().skipped[k] | locNumber }}</strong></span>
+        }
+      }
+    </div>
+  }
+
+  <ul class="pv-vars">
+    @for (v of plan().variants; track v.language) {
+      <li class="pv-var">
+        <div class="loc-row">
+          <app-lang-pill [lang]="v.language" />
+          @if (v.present) {
+            <app-approval-badge [status]="v.metaStatus" [review]="v.language === 'en' ? null : v.reviewStatus" />
+          } @else {
+            <span class="loc-muted">{{ 'campaigns.plan.noVersion' | t }}</span>
+          }
+        </div>
+        <div class="pv-kvs">
+          <span class="pv-kv"><span class="loc-muted">{{ 'campaigns.plan.recipients' | t }}</span> <strong>{{ v.recipients | locNumber }}</strong></span>
+          <span class="pv-kv">
+            <span class="loc-muted">{{ 'campaigns.plan.sendable' | t }}</span>
+            @if (v.sendable) {
+              <span class="badge badge-success">{{ 'common.yes' | t }}</span>
+            } @else {
+              <span class="badge badge-danger">{{ 'common.no' | t }}</span>
+            }
+          </span>
+        </div>
+        @if (!v.sendable) {
+          <div class="loc-muted">{{ 'campaigns.plan.why' | t: { reason: reason(v.notSendableReason, v.language) } }}</div>
+        }
+      </li>
+    }
+  </ul>
+
+  @if (fallbackLines().length) {
+    <div class="loc-warn" role="status">
+      <strong>{{ 'campaigns.plan.fallbackTitle' | t }}</strong>
+      <ul class="pv-list">
+        @for (line of fallbackLines(); track $index) {
+          <li>{{ line }}</li>
+        }
+      </ul>
+    </div>
+  }
+  @if (blockedLines().length) {
+    <div class="loc-error" role="alert">
+      <strong>{{ 'campaigns.plan.blockedTitle' | t }}</strong>
+      <ul class="pv-list">
+        @for (line of blockedLines(); track $index) {
+          <li>{{ line }}</li>
+        }
+      </ul>
+    </div>
+  }
+  @if (warningLines().length) {
+    <div class="loc-warn" role="status">
+      <ul class="pv-list">
+        @for (line of warningLines(); track $index) {
+          <li>{{ line }}</li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (showSamples() && samples().length) {
+    <div>
+      <div class="pv-sub">{{ 'campaigns.plan.samples' | t }}</div>
+      <div class="pv-samples">
+        @for (s of samples(); track s.customerId) {
+          <div class="pv-sample">
+            <div class="loc-row">
+              <span appUserText class="pv-name">{{ s.name }}</span>
+              <app-lang-pill [lang]="s.language" />
+              @if (s.fallback) {
+                <span class="badge badge-warning">{{ 'campaigns.plan.fallbackMark' | t }}</span>
+              }
+            </div>
+            <app-wa-preview [language]="s.language" [body]="s.preview" />
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

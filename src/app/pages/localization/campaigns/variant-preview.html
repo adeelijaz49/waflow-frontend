@@ -1,0 +1,42 @@
+<div class="vp loc-stack">
+  @if (mode() === 'per_customer') {
+    <div class="loc-row" role="group" [attr.aria-label]="'preview.asCustomer' | t">
+      <span class="loc-muted">{{ 'preview.asCustomer' | t }}</span>
+      @for (o of options; track o) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="viewAs() === o"
+          [class.btn-outline]="viewAs() !== o"
+          [attr.aria-pressed]="viewAs() === o"
+          (click)="viewAs.set(o)"
+        >
+          {{ ('campaigns.previewAs.' + o) | t }}
+        </button>
+      }
+    </div>
+  }
+
+  @if (error()) {
+    <div class="loc-error" role="alert">{{ error() }}</div>
+  }
+
+  <div class="vp-cards">
+    @for (c of cards(); track c.language) {
+      <div class="vp-card">
+        <div class="vp-title">{{ ('campaigns.previewTitle.' + c.language) | t }}</div>
+        @if (c.absent) {
+          <div class="loc-muted">{{ 'campaigns.preview.noVersion' | t }}</div>
+        } @else if (c.rendered; as r) {
+          <app-wa-preview [language]="c.language" [header]="r.header" [body]="r.body" [footer]="r.footer" [buttons]="r.buttons" />
+          @if (r.missingFields.length) {
+            <div class="loc-muted">{{ 'campaigns.preview.missing' | t }}</div>
+          }
+        } @else {
+          <div class="loc-muted">{{ 'common.loading' | t }}</div>
+        }
+      </div>
+    }
+  </div>
+  <div class="loc-muted">{{ 'preview.sampleNote' | t }}</div>
+</div>

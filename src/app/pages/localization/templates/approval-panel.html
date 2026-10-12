@@ -1,0 +1,115 @@
+<div class="card ap">
+  <div class="card-header"><div class="card-title">{{ 'templates.approval.title' | t }}</div></div>
+  <div class="card-body">
+    @if (variant(); as v) {
+      <div class="ap-grid">
+        <section class="ap-col" [attr.aria-label]="'templates.approval.status' | t">
+          <div class="ap-label">{{ 'templates.approval.status' | t }}</div>
+          <div class="ap-status" aria-live="polite">
+            <app-approval-badge [status]="v.metaStatus" [flagged]="v.metaFlagged" />
+          </div>
+          @if (statusHelpKey(); as key) {
+            <div class="loc-muted">{{ key | t }}</div>
+          }
+          <div class="loc-muted">
+            @if (lastChecked(); as when) {
+              {{ 'templates.approval.lastChecked' | t: { date: when } }}
+            } @else {
+              {{ 'templates.approval.neverChecked' | t }}
+            }
+          </div>
+          <div class="loc-muted">{{ 'templates.approval.submissions' | t: { count: (v.submissionCount | locNumber) } }}</div>
+          <div class="ap-cats">
+            <span class="loc-muted">{{ 'templates.approval.requestedCategory' | t }}:</span>
+            <span class="badge" [class.badge-primary]="template().category === 'MARKETING'" [class.badge-neutral]="template().category !== 'MARKETING'">{{ ('templates.category.' + template().category) | t }}</span>
+          </div>
+          @if (categoryChanged(); as cat) {
+            <div class="loc-warn" role="status">
+              @if (cat === 'MARKETING') {
+                {{ 'templates.categoryChanged' | t }}
+              } @else {
+                {{ 'templates.categoryChangedOther' | t: { category: (('templates.category.' + cat) | t) } }}
+              }
+            </div>
+          }
+          @if (rejectionReason(); as reason) {
+            <div class="loc-error">
+              <strong>{{ 'templates.approval.rejectedReason' | t }}:</strong> <span dir="auto">{{ reason }}</span>
+            </div>
+          }
+          @if (v.lastError) {
+            <div class="loc-error">
+              <strong>{{ 'templates.approval.lastError' | t }}:</strong> <span dir="auto">{{ v.lastError }}</span>
+            </div>
+          }
+          <div class="ap-actions">
+            <button type="button" class="btn btn-primary" [disabled]="submitBlock() !== null || busy() !== null" (click)="submit()">
+              {{ (busy() === 'submit' ? 'templates.submitting' : 'templates.submit') | t }}
+            </button>
+            <button type="button" class="btn btn-outline" [disabled]="busy() !== null" (click)="refresh()">
+              {{ (busy() === 'refresh' ? 'templates.refreshing' : 'templates.refreshStatus') | t }}
+            </button>
+          </div>
+          @if (submitBlock(); as block) {
+            <div class="loc-muted" role="status">{{ ('templates.submit.reason.' + block) | t }}</div>
+          }
+          <div class="sendable" [class.ok]="v.sendable">
+            <strong>{{ 'templates.sendable.title' | t }}</strong>
+            <span>{{ sendableKey() | t }}</span>
+          </div>
+        </section>
+
+        <section class="ap-col" [attr.aria-label]="'templates.review.title' | t">
+          <div class="ap-label">{{ 'templates.review.title' | t }}</div>
+          <div class="ap-status">
+            <span class="badge" [class.badge-info]="v.reviewStatus === 'reviewed'" [class.badge-neutral]="v.reviewStatus !== 'reviewed'">{{ ('status.review.' + v.reviewStatus) | t }}</span>
+          </div>
+          @if (v.reviewStatus === 'reviewed') {
+            <div class="loc-muted">
+              @if (v.reviewedBy && reviewedOn()) {
+                <span dir="auto">{{ 'templates.review.reviewedBy' | t: { name: v.reviewedBy, date: reviewedOn() } }}</span>
+              } @else if (reviewedOn()) {
+                {{ 'templates.review.reviewedOn' | t: { date: reviewedOn() } }}
+              }
+            </div>
+          }
+          @if (language() !== 'en') {
+            <div class="loc-warn">{{ 'templates.review.arabicRule' | t }}</div>
+          } @else {
+            <div class="loc-muted">{{ 'templates.review.englishOptional' | t }}</div>
+          }
+          @if (v.reviewStatus === 'draft') {
+            <button type="button" class="btn btn-outline" [disabled]="dirty() || busy() !== null" (click)="review('reviewed')">{{ 'templates.review.markReviewed' | t }}</button>
+            @if (dirty()) {
+              <div class="loc-muted">{{ 'templates.review.saveFirst' | t }}</div>
+            }
+          } @else {
+            <button type="button" class="btn btn-outline" [disabled]="busy() !== null" (click)="review('draft')">{{ 'templates.review.backToDraft' | t }}</button>
+          }
+        </section>
+
+        <section class="ap-col" [attr.aria-label]="'templates.test.title' | t">
+          <div class="ap-label">{{ 'templates.test.title' | t }}</div>
+          <div class="ap-field">
+            <label [attr.for]="'ap-phone-' + language()">{{ 'templates.test.phone' | t }}</label>
+            <input [id]="'ap-phone-' + language()" appPhone type="tel" autocomplete="tel" [value]="phone()"
+                   [placeholder]="'templates.test.phonePlaceholder' | t" [disabled]="!canTest()"
+                   (input)="phone.set($any($event.target).value)" />
+          </div>
+          <div class="loc-muted">{{ 'templates.test.phoneHint' | t }}</div>
+          <button type="button" class="btn btn-outline" [disabled]="!canTest() || busy() !== null" (click)="testSend()">
+            {{ (busy() === 'test' ? 'templates.test.sending' : 'templates.test.send') | t }}
+          </button>
+          @if (!canTest()) {
+            <div class="loc-muted">{{ 'templates.test.onlyApproved' | t }}</div>
+          }
+        </section>
+      </div>
+      @if (error(); as message) {
+        <div class="loc-error ap-err" role="alert">{{ message }}</div>
+      }
+    } @else {
+      <div class="loc-muted">{{ 'templates.approval.empty' | t }}</div>
+    }
+  </div>
+</div>

@@ -1,0 +1,285 @@
+<div class="cmp loc-stack">
+  <div class="loc-row cmp-top">
+    <a class="btn btn-outline btn-sm" routerLink="/arabic/campaigns">
+      <span class="cmp-arrow" aria-hidden="true">{{ "‹" }}</span> {{ 'campaigns.back' | t }}
+    </a>
+    <div class="loc-grow">
+      <div class="cmp-h">{{ 'campaigns.composer.title' | t }}</div>
+      <div class="loc-muted">{{ 'campaigns.composer.subtitle' | t }}</div>
+    </div>
+  </div>
+
+  <!-- 1. Template -->
+  <section class="card" aria-labelledby="cmp-s1">
+    <div class="card-header">
+      <div class="card-title cmp-title" id="cmp-s1"><span class="cmp-num">{{ 1 }}</span> {{ 'campaigns.section.template' | t }}</div>
+    </div>
+    <div class="card-body loc-stack">
+      @if (templatesLoading()) {
+        <div class="loading">{{ 'common.loading' | t }}</div>
+      } @else if (templatesError()) {
+        <div class="loc-error" role="alert">{{ templatesError() }}</div>
+      } @else if (templates().length === 0) {
+        <div class="empty-state">
+          {{ 'campaigns.template.empty' | t }}
+          <div><a class="btn btn-primary btn-sm" routerLink="/arabic/templates">{{ 'campaigns.template.goTemplates' | t }}</a></div>
+        </div>
+      } @else {
+        <div class="cmp-grid" role="radiogroup" [attr.aria-label]="'campaigns.section.template' | t">
+          @for (t of templates(); track t.id) {
+            <label class="cmp-opt" [class.sel]="t.id === templateId()">
+              <input type="radio" name="cmp-template" [value]="t.id" [checked]="t.id === templateId()" (change)="selectTemplate(t.id)" />
+              <span class="cmp-opt-body">
+                <span class="cmp-opt-name" appUserText>{{ t.name }}</span>
+                <span class="cmp-vars">
+                  @for (l of cardLanguages(t); track l) {
+                    <span class="cmp-var">
+                      <app-lang-pill [lang]="l" />
+                      @if (variantOf(t, l); as v) {
+                        <app-approval-badge [status]="v.metaStatus" [review]="l === 'en' ? null : v.reviewStatus" [flagged]="v.metaFlagged" />
+                      } @else {
+                        <span class="loc-muted">{{ 'campaigns.plan.noVersion' | t }}</span>
+                      }
+                    </span>
+                  }
+                </span>
+              </span>
+            </label>
+          }
+        </div>
+        @if (template(); as t) {
+          <div class="loc-row cmp-selected">
+            <span class="badge badge-neutral">{{ ('campaigns.category.' + t.category) | t }}</span>
+            <span class="loc-muted">{{ 'campaigns.template.selected' | t }}</span>
+            <strong appUserText>{{ t.name }}</strong>
+            <a class="cmp-link" [routerLink]="['/arabic/templates', t.id]">{{ 'campaigns.template.edit' | t }}</a>
+          </div>
+        }
+      }
+    </div>
+  </section>
+
+  <!-- 2. Language -->
+  <section class="card" aria-labelledby="cmp-s2">
+    <div class="card-header">
+      <div class="card-title cmp-title" id="cmp-s2"><span class="cmp-num">{{ 2 }}</span> {{ 'campaigns.section.language' | t }}</div>
+    </div>
+    <div class="card-body">
+      @if (unlocked().options) {
+        <div class="cmp-grid" role="radiogroup" [attr.aria-label]="'campaigns.section.language' | t">
+          @for (m of modes; track m) {
+            <label class="cmp-opt" [class.sel]="m === mode()" [class.off]="!modeAvailable(m)">
+              <input type="radio" name="cmp-mode" [value]="m" [checked]="m === mode()" [disabled]="!modeAvailable(m)" (change)="setMode(m)" />
+              <span class="cmp-opt-body">
+                <span class="cmp-opt-name">
+                  {{ ('campaigns.mode.' + m) | t }}
+                  @if (m === 'per_customer') {
+                    <span class="badge badge-primary">{{ 'campaigns.mode.recommended' | t }}</span>
+                  }
+                </span>
+                <span class="loc-muted">{{ ('campaigns.mode.' + m + '.desc') | t: { default: defaultLanguageLabel() } }}</span>
+                @if (modeNote(m); as note) {
+                  <span class="loc-warn cmp-note">{{ note | t }}</span>
+                }
+              </span>
+            </label>
+          }
+        </div>
+      } @else {
+        <div class="loc-muted">{{ 'campaigns.locked' | t }}</div>
+      }
+    </div>
+  </section>
+
+  <!-- 3. Audience -->
+  <section class="card" aria-labelledby="cmp-s3">
+    <div class="card-header">
+      <div class="card-title cmp-title" id="cmp-s3"><span class="cmp-num">{{ 3 }}</span> {{ 'campaigns.section.audience' | t }}</div>
+    </div>
+    <div class="card-body loc-stack">
+      @if (unlocked().options) {
+        <div class="cmp-grid" role="radiogroup" [attr.aria-label]="'campaigns.section.audience' | t">
+          @for (k of audienceKinds; track k) {
+            <label class="cmp-opt" [class.sel]="k === audienceKind()">
+              <input type="radio" name="cmp-audience" [value]="k" [checked]="k === audienceKind()" (change)="setAudienceKind(k)" />
+              <span class="cmp-opt-body">
+                <span class="cmp-opt-name">{{ ('campaigns.audience.' + k) | t }}</span>
+                <span class="loc-muted">{{ ('campaigns.audience.' + k + '.desc') | t }}</span>
+              </span>
+            </label>
+          }
+        </div>
+
+        @if (audienceKind() === 'segment') {
+          <div class="cmp-seg">
+            <div class="loc-field">
+              <label for="cmp-seg-key">{{ 'campaigns.segment.label' | t }}</label>
+              <select id="cmp-seg-key" [value]="segmentKey()" (change)="segmentKey.set($any($event.target).value)">
+                @for (s of segments(); track s.key) {
+                  <option [value]="s.key" [selected]="s.key === segmentKey()">{{ ('campaigns.segment.' + s.key) | t }}</option>
+                }
+              </select>
+            </div>
+            @for (p of segmentParams(); track p) {
+              @switch (p) {
+                @case ('language') {
+                  <div class="loc-field">
+                    <label for="cmp-seg-lang">{{ 'common.language' | t }}</label>
+                    <select id="cmp-seg-lang" [value]="segLanguage()" (change)="segLanguage.set($any($event.target).value)">
+                      @for (l of ['ar', 'en', 'unknown']; track l) {
+                        <option [value]="l" [selected]="l === segLanguage()">{{ 'status.language.' + l | t }}</option>
+                      }
+                    </select>
+                  </div>
+                }
+                @case ('days') {
+                  <div class="loc-field">
+                    <label for="cmp-seg-days">{{ 'campaigns.segment.days' | t }}</label>
+                    <input id="cmp-seg-days" type="number" min="1" inputmode="numeric" [value]="segDays() ?? ''" (input)="setNumber('days', $any($event.target).value)" />
+                  </div>
+                }
+                @case ('minPoints') {
+                  <div class="loc-field">
+                    <label for="cmp-seg-points">{{ 'campaigns.segment.points' | t }}</label>
+                    <input id="cmp-seg-points" type="number" min="1" inputmode="numeric" [value]="segPoints() ?? ''" (input)="setNumber('points', $any($event.target).value)" />
+                  </div>
+                }
+              }
+            }
+          </div>
+        }
+        @if (audienceKind() === 'customer_ids') {
+          <app-campaign-customer-picker [(selected)]="customerIds" [max]="maxIds" />
+        }
+
+        <div class="loc-hint">{{ 'campaigns.audience.eligibility' | t }}</div>
+      } @else {
+        <div class="loc-muted">{{ 'campaigns.locked' | t }}</div>
+      }
+    </div>
+  </section>
+
+  <!-- 4. Message fields -->
+  <section class="card" aria-labelledby="cmp-s4">
+    <div class="card-header">
+      <div class="card-title cmp-title" id="cmp-s4"><span class="cmp-num">{{ 4 }}</span> {{ 'campaigns.section.fields' | t }}</div>
+    </div>
+    <div class="card-body loc-stack">
+      @if (unlocked().options) {
+        @if (neededFields().length === 0) {
+          <div class="loc-muted">{{ 'campaigns.fields.none' | t }}</div>
+        }
+        @for (f of neededFields(); track f) {
+          <div class="loc-field">
+            <label [for]="'cmp-f-' + f">{{ fieldLabel(f) }}</label>
+            @if (f === 'date') {
+              <input [id]="'cmp-f-' + f" type="date" [value]="dateRaw()" [attr.aria-invalid]="fieldProblems()[f] ? 'true' : null" (input)="setDate($any($event.target).value)" />
+            } @else {
+              <input
+                [id]="'cmp-f-' + f"
+                [type]="fieldType(f)"
+                dir="auto"
+                [value]="fieldValue(f)"
+                [placeholder]="f === 'link' ? linkPlaceholder : ''"
+                [attr.aria-invalid]="fieldProblems()[f] && fieldValues()[f] ? 'true' : null"
+                (input)="setField(f, $any($event.target).value)"
+              />
+            }
+            @if (fieldProblems()[f] === 'https' && fieldValues()[f]) {
+              <span class="loc-error cmp-note" role="alert">{{ 'campaigns.fields.httpsOnly' | t }}</span>
+            } @else if (fieldProblems()[f] === 'required') {
+              <span class="loc-muted">{{ 'campaigns.fields.required' | t }}</span>
+            }
+          </div>
+        }
+        @if (autoFields().length) {
+          <div class="loc-row">
+            <span class="loc-muted">{{ 'campaigns.fields.auto' | t }}</span>
+            @for (f of autoFields(); track f) {
+              <span class="loc-chip">{{ fieldLabel(f) }}</span>
+            }
+          </div>
+        }
+      } @else {
+        <div class="loc-muted">{{ 'campaigns.locked' | t }}</div>
+      }
+    </div>
+  </section>
+
+  <!-- 5. Review the plan -->
+  <section class="card" aria-labelledby="cmp-s5">
+    <div class="card-header">
+      <div class="card-title cmp-title" id="cmp-s5"><span class="cmp-num">{{ 5 }}</span> {{ 'campaigns.section.plan' | t }}</div>
+    </div>
+    <div class="card-body loc-stack">
+      @if (!unlocked().plan) {
+        <div class="loc-muted">{{ 'campaigns.plan.waiting' | t }}</div>
+      } @else {
+        <div class="loc-muted" aria-live="polite">
+          @if (planState() === 'pending' || planState() === 'loading') {
+            {{ 'campaigns.plan.updating' | t }}
+          }
+        </div>
+        @if (planState() === 'error') {
+          <div class="loc-error" role="alert">
+            {{ planError() }}
+            <button type="button" class="btn btn-outline btn-sm" (click)="retryPlan()">{{ 'common.retry' | t }}</button>
+          </div>
+        }
+        @if (plan(); as p) {
+          <div [class.cmp-stale]="planState() !== 'ready'">
+            <app-campaign-plan [plan]="p" />
+          </div>
+        }
+        @if (template(); as t) {
+          <div class="cmp-previews">
+            <div class="cmp-sub">{{ 'preview.title' | t }}</div>
+            <app-campaign-variant-preview [template]="t" [mode]="mode()" [fieldValues]="planFieldValues()" />
+          </div>
+        }
+      }
+    </div>
+  </section>
+
+  <!-- 6. Send -->
+  <section class="card" aria-labelledby="cmp-s6">
+    <div class="card-header">
+      <div class="card-title cmp-title" id="cmp-s6"><span class="cmp-num">{{ 6 }}</span> {{ 'campaigns.section.send' | t }}</div>
+    </div>
+    <div class="card-body loc-stack">
+      @if (!unlocked().send) {
+        <div class="loc-muted">{{ 'campaigns.locked' | t }}</div>
+      } @else {
+        <div class="loc-field">
+          <label for="cmp-name">{{ 'campaigns.send.name' | t }}</label>
+          <input id="cmp-name" type="text" dir="auto" maxlength="120" [value]="name()" (input)="onName($any($event.target).value)" />
+        </div>
+
+        @if (ackFallbacksRequired()) {
+          <label class="cmp-ack">
+            <input type="checkbox" [checked]="ackFallbacks()" (change)="ackFallbacks.set($any($event.target).checked)" />
+            <span>{{ 'campaigns.ack.fallbacks' | t }}</span>
+          </label>
+        }
+        @if (ackBlockedRequired()) {
+          <label class="cmp-ack">
+            <input type="checkbox" [checked]="ackBlocked()" (change)="ackBlocked.set($any($event.target).checked)" />
+            <span>{{ 'campaigns.ack.blocked' | t }}</span>
+          </label>
+        }
+
+        @if (submitError()) {
+          <div class="loc-error" role="alert">{{ submitError() }}</div>
+        }
+
+        <div class="loc-row">
+          <button type="button" class="btn btn-primary" data-test="send" [disabled]="!canSend()" (click)="send()">{{ 'campaigns.send.action' | t }}</button>
+          <button type="button" class="btn btn-outline" data-test="draft" [disabled]="!canSaveDraft()" (click)="saveDraft()">{{ 'campaigns.send.saveDraft' | t }}</button>
+        </div>
+        @if (blocker(); as b) {
+          <div class="loc-muted" aria-live="polite">{{ b | t }}</div>
+        }
+      }
+    </div>
+  </section>
+</div>

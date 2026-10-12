@@ -45,6 +45,7 @@ export class App {
     { path: '/services',   label: 'Services',     icon: '✂' },
     { path: '/settings',   label: 'Settings',     icon: '⚙' },
     { path: '/usage-limits', label: 'Usage & Limits', icon: '📊' },
+    { path: '/arabic',    label: 'Arabic',      icon: '🌐' },
     { path: '/support',    label: 'Support',      icon: '❓' },
   ];
 }

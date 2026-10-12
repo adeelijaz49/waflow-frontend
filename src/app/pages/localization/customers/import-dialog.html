@@ -1,0 +1,98 @@
+<div class="modal-overlay" (click)="closed.emit()">
+  <div
+    #dialog
+    appModalFocus
+    class="modal modal-lg cust-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cust-import-title"
+    tabindex="-1"
+    (click)="$event.stopPropagation()"
+    (keydown.escape)="closed.emit()"
+  >
+    <div class="modal-header">
+      <span class="modal-title" id="cust-import-title">{{ 'customers.import.title' | t }}</span>
+      <button type="button" class="btn btn-outline btn-sm" [attr.aria-label]="'common.close' | t" (click)="closed.emit()">&times;</button>
+    </div>
+    <div class="modal-body loc-stack">
+      <div class="loc-hint">
+        <strong>{{ 'customers.import.formatTitle' | t }}</strong>
+        <div>{{ 'customers.import.format' | t }}</div>
+        <button type="button" class="cust-link" (click)="template()">{{ 'customers.import.template' | t }}</button>
+      </div>
+
+      <div class="loc-row">
+        <label class="btn btn-outline btn-sm cust-file">
+          {{ 'customers.import.chooseFile' | t }}
+          <input type="file" accept=".csv,.txt" class="cust-file-input" (change)="pick($event)" [disabled]="busy()" />
+        </label>
+        <span class="loc-muted" appUserText>{{ file()?.name ?? ('customers.import.noFile' | t) }}</span>
+      </div>
+
+      @if (error()) {
+        <div class="loc-error" role="alert">{{ error() }}</div>
+      }
+
+      @if (result(); as res) {
+        <div [class]="res.dryRun ? 'loc-hint' : 'loc-ok'" aria-live="polite">
+          {{ (res.dryRun ? 'customers.import.dryRunNote' : 'customers.import.appliedNote') | t }}
+        </div>
+        <div class="cust-summary">
+          <div><b>{{ res.summary.rows | locNumber }}</b><span>{{ 'customers.import.summary.rows' | t }}</span></div>
+          <div><b>{{ res.summary.updated | locNumber }}</b><span>{{ (res.dryRun ? 'customers.import.summary.updated' : 'customers.import.summary.updatedDone') | t }}</span></div>
+          <div><b>{{ res.summary.unchanged | locNumber }}</b><span>{{ 'customers.import.summary.unchanged' | t }}</span></div>
+          <div><b>{{ res.summary.unmatched | locNumber }}</b><span>{{ 'customers.import.summary.unmatched' | t }}</span></div>
+          <div><b>{{ res.summary.invalid | locNumber }}</b><span>{{ 'customers.import.summary.invalid' | t }}</span></div>
+          <div><b>{{ res.summary.duplicate | locNumber }}</b><span>{{ 'customers.import.summary.duplicate' | t }}</span></div>
+          <div><b>{{ res.summary.protected | locNumber }}</b><span>{{ 'customers.import.summary.protected' | t }}</span></div>
+        </div>
+        @if (res.rows.length) {
+          <div class="loc-muted">{{ 'customers.import.preview' | t }}</div>
+          <div class="table-wrap cust-preview">
+            <table>
+              <thead>
+                <tr>
+                  <th>{{ 'customers.import.col.line' | t }}</th>
+                  <th>{{ 'common.phone' | t }}</th>
+                  <th>{{ 'common.language' | t }}</th>
+                  <th>{{ 'customers.import.col.outcome' | t }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of res.rows; track row.line) {
+                  <tr>
+                    <td>{{ row.line | locNumber }}</td>
+                    <td><span appPhone>{{ row.phone }}</span></td>
+                    <td appUserText>{{ row.language }}</td>
+                    <td><span [class]="'badge ' + badge(row.outcome)">{{ ('customers.import.outcome.' + row.outcome) | t }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        @if (res.truncated) {
+          <div class="loc-muted">{{ 'customers.import.truncated' | t }}</div>
+        }
+        @if (res.dryRun && res.summary.updated === 0) {
+          <div class="loc-warn">{{ 'customers.import.nothingToApply' | t }}</div>
+        }
+      }
+    </div>
+    <div class="modal-footer">
+      @if (result(); as res) {
+        <button type="button" class="btn btn-outline" (click)="reset()">{{ 'customers.import.another' | t }}</button>
+        @if (res.dryRun) {
+          <button type="button" class="btn btn-primary" [disabled]="busy() || res.summary.updated === 0" (click)="apply()">
+            {{ (busy() ? 'customers.import.applying' : 'customers.import.apply') | t }}
+          </button>
+        }
+      } @else {
+        <button type="button" class="btn btn-primary" [disabled]="!file() || busy()" (click)="check()">
+          {{ (busy() ? 'customers.import.checking' : 'customers.import.check') | t }}
+        </button>
+      }
+      <button type="button" class="btn btn-outline" (click)="closed.emit()">{{ 'common.close' | t }}</button>
+    </div>
+  </div>
+</div>

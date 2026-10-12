@@ -1,0 +1,113 @@
+<div class="modal-overlay" (click)="closed.emit()">
+  <div
+    #dialog
+    appModalFocus
+    class="modal modal-lg cat-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cat-edit-title"
+    tabindex="-1"
+    (click)="$event.stopPropagation()"
+    (keydown.escape)="closed.emit()"
+  >
+    <div class="modal-header">
+      <span class="modal-title" id="cat-edit-title">{{ 'catalog.editor.title' | t }}</span>
+      <button type="button" class="btn btn-outline btn-sm" [attr.aria-label]="'common.close' | t" (click)="closed.emit()">&times;</button>
+    </div>
+
+    <div class="modal-body loc-stack">
+      <div class="cat-cols">
+        <section class="cat-col" [attr.aria-label]="'catalog.editor.english' | t">
+          <h3 class="cat-h">{{ 'catalog.editor.english' | t }}</h3>
+          <div class="cat-ro-label">{{ 'catalog.editor.name' | t }}</div>
+          <div class="cat-ro" dir="auto">{{ item().name }}</div>
+          <div class="cat-ro-label">{{ 'catalog.editor.description' | t }}</div>
+          <div class="cat-ro cat-ro-long" dir="auto">{{ item().description || '—' }}</div>
+        </section>
+
+        <section class="cat-col" [attr.aria-label]="'catalog.editor.arabic' | t">
+          <h3 class="cat-h">{{ 'catalog.editor.arabic' | t }}</h3>
+          <div class="form-group">
+            <label for="cat-name-ar">{{ 'catalog.editor.nameAr' | t }}</label>
+            <input id="cat-name-ar" type="text" dir="rtl" lang="ar" [attr.maxlength]="nameMax" [value]="nameAr()" (input)="onName($any($event.target).value)" />
+            <div class="loc-muted cat-count">{{ nameAr().length | locNumber }} / {{ nameMax | locNumber }}</div>
+          </div>
+          <div class="form-group">
+            <label for="cat-desc-ar">{{ 'catalog.editor.descriptionAr' | t }}</label>
+            <textarea id="cat-desc-ar" rows="5" dir="rtl" lang="ar" [attr.maxlength]="descriptionMax" [value]="descriptionAr()" (input)="onDescription($any($event.target).value)"></textarea>
+            <div class="loc-muted cat-count">{{ descriptionAr().length | locNumber }} / {{ descriptionMax | locNumber }}</div>
+          </div>
+        </section>
+      </div>
+
+      <div class="loc-row">
+        <button type="button" class="btn btn-outline btn-sm" [disabled]="suggesting()" (click)="suggest()">
+          {{ (suggesting() ? 'ai.working' : 'catalog.editor.suggest') | t }}
+        </button>
+        <span class="loc-muted">{{ 'ai.notice' | t }}</span>
+      </div>
+
+      @if (aiError()) {
+        <div class="loc-error" role="alert">{{ aiError() }}</div>
+      }
+
+      @if (draft(); as d) {
+        <div class="cat-draft" role="region" [attr.aria-label]="'ai.draftTitle' | t">
+          <div class="cat-draft-title">{{ 'ai.draftTitle' | t }}</div>
+          <div class="cat-ro-label">{{ 'catalog.editor.nameAr' | t }}</div>
+          <div class="cat-ro" dir="rtl" lang="ar">{{ d.name }}</div>
+          @if (d.description) {
+            <div class="cat-ro-label">{{ 'catalog.editor.descriptionAr' | t }}</div>
+            <div class="cat-ro cat-ro-long" dir="rtl" lang="ar">{{ d.description }}</div>
+          }
+          @for (w of d.warnings; track $index) {
+            <div class="loc-warn">{{ warningText(w) }}</div>
+          }
+          <div class="loc-row">
+            <button type="button" class="btn btn-primary btn-sm" (click)="useDraft()">{{ 'ai.useDraft' | t }}</button>
+            <button type="button" class="btn btn-outline btn-sm" (click)="discardDraft()">{{ 'ai.discard' | t }}</button>
+          </div>
+        </div>
+      }
+
+      <div class="loc-hint">{{ 'catalog.editor.draftNote' | t }}</div>
+
+      @if (saved(); as s) {
+        <div class="cat-status" aria-live="polite">
+          @if (s.status === 'reviewed') {
+            <span class="badge badge-success">{{ 'status.review.reviewed' | t }}</span>
+            @if (s.reviewedBy || s.reviewedAt) {
+              <span class="loc-muted">
+                {{ 'catalog.editor.reviewedBy' | t }}
+                @if (s.reviewedBy) { <span appUserText>{{ s.reviewedBy }}</span> }
+                @if (s.reviewedAt) { {{ s.reviewedAt | locDate }} }
+              </span>
+            }
+          } @else {
+            <span class="badge badge-warning">{{ 'status.review.draft' | t }}</span>
+            <span class="loc-muted">{{ 'catalog.editor.notShown' | t }}</span>
+          }
+        </div>
+        @if (dirty()) {
+          <div class="loc-muted">{{ 'catalog.editor.saveFirst' | t }}</div>
+        }
+      }
+
+      @if (error()) {
+        <div class="loc-error" role="alert">{{ error() }}</div>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-primary" [disabled]="!canSave()" (click)="save()">
+        {{ (saving() ? 'common.saving' : 'catalog.editor.saveDraft') | t }}
+      </button>
+      @if (saved()) {
+        <button type="button" class="btn btn-outline" [disabled]="!canReview()" (click)="toggleReview()">
+          {{ (isReviewed() ? 'catalog.review.unmark' : 'catalog.review.mark') | t }}
+        </button>
+      }
+      <button type="button" class="btn btn-outline" (click)="closed.emit()">{{ 'common.close' | t }}</button>
+    </div>
+  </div>
+</div>

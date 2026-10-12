@@ -1,0 +1,23 @@
+<section class="aim-cc" [class.aim-cc-danger]="danger()" role="group" [attr.aria-label]="'aimode.confirm.title' | t">
+  <div class="aim-cc-head">
+    <span class="aim-cc-title">{{ 'aimode.confirm.title' | t }}</span>
+    @if (danger()) {
+      <span class="badge badge-danger">{{ 'aimode.confirm.irreversible' | t }}</span>
+    }
+  </div>
+  <div class="aim-cc-summary" appUserText>{{ action().summary }}</div>
+  <details class="aim-cc-details">
+    <summary>{{ 'aimode.confirm.details' | t }}</summary>
+    <dl class="aim-cc-list">
+      @for (r of rows(); track $index) {
+        <dt>{{ r.label }}</dt>
+        <dd><bdi [attr.dir]="r.ltr ? 'ltr' : null">{{ r.value }}</bdi></dd>
+      }
+    </dl>
+  </details>
+  <div class="aim-cc-hint loc-muted">{{ (busy() ? 'aimode.confirm.working' : 'aimode.confirm.hint') | t }}</div>
+  <div class="aim-cc-actions">
+    <button type="button" class="btn btn-sm" [class.btn-danger]="danger()" [class.btn-success]="!danger()" [disabled]="busy()" (click)="confirm()">{{ 'common.confirm' | t }}</button>
+    <button type="button" class="btn btn-outline btn-sm" [disabled]="busy()" (click)="cancel()">{{ 'common.cancel' | t }}</button>
+  </div>
+</section>

@@ -1,0 +1,56 @@
+<div class="cl-head">
+  <div class="cl-count loc-muted" aria-live="polite">{{ 'inbox.list.count' | tp: conversations().length }}</div>
+  <input
+    type="search"
+    dir="auto"
+    class="cl-search"
+    [value]="search()"
+    [attr.aria-label]="'inbox.search.label' | t"
+    [placeholder]="'inbox.search.placeholder' | t"
+    (input)="onSearch($event)"
+  />
+  <div class="cl-filters" role="group" [attr.aria-label]="'inbox.filter.label' | t">
+    @for (f of filters; track f.value) {
+      <button type="button" class="cl-chip" [class.active]="filter() === f.value" [attr.aria-pressed]="filter() === f.value" (click)="filterChange.emit(f.value)">
+        {{ f.key | t }}
+      </button>
+    }
+  </div>
+</div>
+
+<div class="cl-rows" role="list" [attr.aria-label]="'inbox.list.region' | t">
+  @if (error()) {
+    <div class="loc-error cl-note" role="alert">
+      {{ error() }}
+      <button type="button" class="btn btn-outline btn-sm" (click)="retry.emit()">{{ 'common.retry' | t }}</button>
+    </div>
+  }
+  @if (loading() && conversations().length === 0) {
+    <div class="loading">{{ 'inbox.list.loading' | t }}</div>
+  } @else {
+    @for (c of conversations(); track c.customerId) {
+      <button type="button" role="listitem" class="cl-row" [class.active]="c.customerId === selectedId()" (click)="picked.emit(c)">
+        <span class="cl-top">
+          <span class="cl-name" appUserText>{{ c.name }}</span>
+          <span class="cl-time">{{ c.lastMessageAt | locDateTime }}</span>
+        </span>
+        <span class="cl-phone" appPhone>{{ c.phone | locPhone }}</span>
+        <span class="cl-bottom">
+          <span class="cl-preview" dir="auto">{{ labels.line(c.lastMessagePreview) || ('inbox.list.noMessages' | t) }}</span>
+          @if (c.unreadCount > 0) {
+            <span class="cl-unread" [attr.aria-label]="'inbox.list.unreadAria' | tp: c.unreadCount">{{ c.unreadCount | locNumber }}</span>
+          }
+        </span>
+        <span class="cl-badges">
+          @if (c.language !== 'unknown') { <app-lang-pill [lang]="c.language" /> }
+          @if (c.optedOut) { <span class="badge badge-danger">{{ 'inbox.list.optedOut' | t }}</span> }
+          @for (tag of c.tags; track tag) { <span class="badge" [class]="labels.tagClass(tag)">{{ labels.tag(tag) }}</span> }
+        </span>
+      </button>
+    } @empty {
+      @if (!loading() && !error()) {
+        <div class="empty-state">{{ (search() || filter() !== 'all' ? 'inbox.list.emptySearch' : 'inbox.list.empty') | t }}</div>
+      }
+    }
+  }
+</div>

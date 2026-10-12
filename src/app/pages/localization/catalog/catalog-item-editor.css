@@ -1,0 +1,13 @@
+.cat-dialog { max-block-size: 92vh; overflow-y: auto; outline: none; inline-size: min(840px, 94vw); }
+.cat-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .cat-cols { grid-template-columns: 1fr; } }
+.cat-col { min-inline-size: 0; }
+.cat-h { margin: 0 0 8px; font-size: 14px; }
+.cat-col label { text-transform: none; letter-spacing: 0; }
+.cat-ro-label { font-size: 12px; color: var(--text-muted, #64748b); margin-block: 8px 2px; }
+.cat-ro { padding: 8px 10px; background: #f8fafc; border: 1px solid var(--border, #e2e8f0); border-radius: 8px; overflow-wrap: anywhere; }
+.cat-ro-long { white-space: pre-wrap; max-block-size: 160px; overflow-y: auto; }
+.cat-count { font-size: 12px; text-align: end; }
+.cat-draft { border: 1px dashed var(--primary, #3b82f6); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.cat-draft-title { font-weight: 600; }
+.cat-status { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

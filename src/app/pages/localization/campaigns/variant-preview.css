@@ -1,0 +1,3 @@
+.vp-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vp-card { display: flex; flex-direction: column; gap: 6px; min-inline-size: 0; }
+.vp-title { font-weight: 600; font-size: 13px; }

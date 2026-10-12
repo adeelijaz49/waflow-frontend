@@ -1,0 +1,11 @@
+.cp-card { max-width: 360px; margin-inline: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface, #fff); overflow: hidden; }
+.cp-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.cp-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+.cp-name { font-weight: 600; font-size: 14px; }
+.cp-image { aspect-ratio: 1 / 1; background: linear-gradient(135deg, #e5e7eb, #cbd5e1); display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 14px; }
+.cp-caption { padding: 10px 12px 14px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.cp-line { margin: 0; white-space: pre-wrap; text-align: start; min-height: 1.5em; }
+.cp-tok { color: #00376b; unicode-bidi: isolate; }
+.cp-url { text-decoration: underline; }
+.cp-more { background: none; border: 0; padding: 0; margin-top: 2px; color: var(--text-muted); cursor: pointer; font: inherit; }
+.cp-more:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

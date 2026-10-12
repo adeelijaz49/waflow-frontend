@@ -1,0 +1,142 @@
+<div class="loc-stack">
+  <div class="loc-hint cat-explain">
+    <strong>{{ 'catalog.explain.title' | t }}</strong>
+    <ul>
+      <li>{{ 'catalog.explain.used' | t }}</li>
+      <li>{{ 'catalog.explain.fallback' | t }}</li>
+      <li>{{ 'catalog.explain.draft' | t }}</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header cat-head">
+      <div>
+        <div class="card-title">{{ 'catalog.title' | t }}</div>
+        <div class="loc-muted">{{ 'catalog.subtitle' | t }}</div>
+      </div>
+      <div class="loc-row">
+        <button type="button" class="btn btn-primary btn-sm" (click)="showImport.set(true)">{{ 'catalog.action.import' | t }}</button>
+        <button type="button" class="btn btn-outline btn-sm" (click)="exportCsv()">{{ 'catalog.action.export' | t }}</button>
+      </div>
+    </div>
+
+    <div class="card-body loc-stack">
+      <div class="cat-filters">
+        <div class="cat-seg" role="group" [attr.aria-label]="'catalog.filter.kindAria' | t">
+          @for (k of kinds; track k) {
+            <button type="button" [class.active]="kind() === k" [attr.aria-pressed]="kind() === k" (click)="setKind(k)">{{ 'catalog.kind.' + k | t }}</button>
+          }
+        </div>
+        <div class="cat-chips" role="group" [attr.aria-label]="'catalog.filter.statusAria' | t">
+          @for (s of statuses; track s) {
+            <button type="button" class="cat-chip" [class.active]="status() === s" [attr.aria-pressed]="status() === s" (click)="setStatus(s)">
+              {{ 'catalog.status.' + s | t }}
+              <span class="cat-chip-count">{{ count(s) | locNumber }}</span>
+            </button>
+          }
+        </div>
+        <input
+          type="search"
+          class="cat-search"
+          dir="auto"
+          [value]="search()"
+          [placeholder]="'catalog.search.placeholder' | t"
+          [attr.aria-label]="'catalog.search.aria' | t"
+          (input)="onSearch($any($event.target).value)"
+        />
+      </div>
+
+      @if (error()) {
+        <div class="loc-error" role="alert">
+          {{ error() }}
+          <button type="button" class="btn btn-outline btn-sm" (click)="load()">{{ 'common.retry' | t }}</button>
+        </div>
+      }
+
+      @if (loading()) {
+        <div class="loading">{{ 'common.loading' | t }}</div>
+      } @else if (!error() && rows().length === 0) {
+        <div class="empty-state">{{ (search() || kind() !== 'all' || status() !== 'all' ? 'catalog.emptyFilter' : 'catalog.empty') | t }}</div>
+      } @else if (rows().length > 0) {
+        <div class="table-wrap">
+          <table class="cat-table">
+            <thead>
+              <tr>
+                <th>{{ 'catalog.col.english' | t }}</th>
+                <th>{{ 'catalog.col.arabic' | t }}</th>
+                <th>{{ 'common.status' | t }}</th>
+                <th><span class="cat-sr">{{ 'common.actions' | t }}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.kind + row.refId) {
+                <tr>
+                  <td class="cat-c-en">
+                    <span class="cat-name"><span appUserText>{{ row.name }}</span></span>
+                    @if (row.description) {
+                      <span class="cat-desc"><span appUserText>{{ row.description }}</span></span>
+                    }
+                    <span class="cat-meta">
+                      {{ 'catalog.kind.' + row.kind | t }}
+                      @if (row.category) {
+                        <span class="cat-sep" aria-hidden="true">&middot;</span><bdi>{{ row.category }}</bdi>
+                      }
+                      @if (!row.active) {
+                        <span class="cat-sep" aria-hidden="true">&middot;</span><span>{{ 'catalog.inactive' | t }}</span>
+                      }
+                    </span>
+                  </td>
+                  <td class="cat-c-ar">
+                    @if (row.translation; as tr) {
+                      <span class="cat-name" dir="rtl" lang="ar">{{ tr.name }}</span>
+                      @if (tr.description) {
+                        <span class="cat-desc" dir="rtl" lang="ar">{{ tr.description }}</span>
+                      }
+                    } @else {
+                      <span class="loc-muted">{{ 'catalog.missing' | t }}</span>
+                    }
+                  </td>
+                  <td>
+                    @switch (stateOf(row)) {
+                      @case ('reviewed') {
+                        <span class="badge badge-success">{{ 'status.review.reviewed' | t }}</span>
+                      }
+                      @case ('draft') {
+                        <span class="badge badge-warning">{{ 'status.review.draft' | t }}</span>
+                      }
+                      @default {
+                        <span class="badge badge-neutral">{{ 'catalog.status.missing' | t }}</span>
+                      }
+                    }
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-outline btn-sm" [attr.aria-label]="'catalog.edit.aria' | t: { name: row.name }" (click)="editing.set(row)">{{ 'common.edit' | t }}</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="loc-row cat-pager">
+          <span class="loc-muted">{{ 'catalog.range' | t: { from: (from() | locNumber), to: (to() | locNumber), total: (total() | locNumber) } }}</span>
+          <span class="cat-pager-btns">
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!hasPrev() || loading()" [attr.aria-label]="'catalog.page.prev' | t" (click)="goTo(page() - 1)">
+              <span class="cat-arrow" aria-hidden="true">{{ "‹" }}</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!hasNext() || loading()" [attr.aria-label]="'catalog.page.next' | t" (click)="goTo(page() + 1)">
+              <span class="cat-arrow" aria-hidden="true">{{ "›" }}</span>
+            </button>
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+@if (showImport()) {
+  <app-catalog-import-dialog (closed)="showImport.set(false)" (applied)="onChanged()" />
+}
+@if (editing(); as item) {
+  <app-catalog-item-editor [item]="item" (closed)="closeEditor()" (changed)="onChanged()" />
+}

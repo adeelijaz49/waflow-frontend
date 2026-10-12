@@ -1,0 +1,17 @@
+/* Logical properties only — mirrors under dir="rtl". z-index 2100 sits above the app-wide dialog (2000). */
+.lui-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 2100; }
+.lui-modal { background: var(--surface, #fff); border-radius: 12px; inline-size: min(440px, 100%); padding: 22px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3); }
+.lui-title { font-size: 16px; font-weight: 700; margin-block-end: 8px; color: var(--text, #1e293b); }
+.lui-message { font-size: 14px; line-height: 1.6; color: var(--text, #1e293b); white-space: pre-line; margin-block-end: 18px; }
+.lui-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+.lui-toasts { position: fixed; inset-block-end: 20px; inset-inline-end: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 2100; max-inline-size: min(380px, calc(100vw - 40px)); }
+.lui-toast { display: flex; align-items: flex-start; gap: 10px; background: #1e293b; color: #fff; border-radius: 10px; padding-block: 10px; padding-inline: 14px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25); }
+.lui-toast.ok { background: #065f46; }
+.lui-toast.err { background: #991b1b; }
+.lui-toast-text { flex: 1 1 auto; min-inline-size: 0; overflow-wrap: anywhere; }
+.lui-toast-x { background: transparent; border: 0; color: inherit; cursor: pointer; font-size: 18px; line-height: 1; padding: 0; }
+
+@media (max-width: 900px) {
+  .lui-toasts { inset-inline: 16px; inset-block-end: 16px; max-inline-size: none; }
+}

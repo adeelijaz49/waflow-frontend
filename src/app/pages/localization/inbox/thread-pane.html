@@ -1,0 +1,37 @@
+@if (conversation(); as conv) {
+  <div class="tp-header">
+    <button type="button" class="tp-back btn btn-outline btn-sm" [attr.aria-label]="'inbox.thread.back' | t" (click)="back.emit()">
+      <span class="tp-arrow" aria-hidden="true">←</span>
+    </button>
+    <div class="tp-who">
+      <div class="tp-name" appUserText>{{ name() }}</div>
+      <div class="tp-phone" appPhone>{{ phone() | locPhone }}</div>
+    </div>
+    @if (optedOut()) {
+      <span class="badge badge-danger" [title]="'inbox.thread.optedOutHint' | t">{{ 'inbox.thread.optedOut' | t }}</span>
+    }
+  </div>
+
+  <app-loc-quick-actions [customerId]="conv.customerId" [optedOut]="optedOut()" [language]="offerLang()" (offer)="onOffer($event)" (done)="onSent()" />
+
+  <div class="tp-body" #scroller role="log" aria-live="polite" [attr.aria-label]="'inbox.thread.messages' | t">
+    @if (loading() && messages().length === 0) {
+      <div class="loading">{{ 'inbox.thread.loading' | t }}</div>
+    } @else if (error()) {
+      <div class="loc-error" role="alert">
+        {{ error() }}
+        <button type="button" class="btn btn-outline btn-sm" (click)="load(false)">{{ 'common.retry' | t }}</button>
+      </div>
+    } @else {
+      @for (m of messages(); track m.id) {
+        <app-loc-message-bubble [message]="m" />
+      } @empty {
+        <div class="empty-state">{{ 'inbox.thread.empty' | t }}</div>
+      }
+    }
+  </div>
+
+  <app-loc-reply-composer [customerId]="conv.customerId" [customerName]="name()" [lastInbound]="lastInbound()" (sent)="onSent()" />
+} @else {
+  <div class="empty-state">{{ 'inbox.thread.select' | t }}</div>
+}

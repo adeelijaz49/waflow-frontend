@@ -1,0 +1,13 @@
+app-aim-thread { display: contents; }
+.aim-bubble { position: relative; max-inline-size: 85%; padding-block: 8px; padding-inline: 12px; border-radius: 14px; font-size: 14px; line-height: 1.55; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06); }
+.aim-text { white-space: pre-wrap; overflow-wrap: anywhere; unicode-bidi: plaintext; text-align: start; }
+.aim-user { align-self: flex-end; background: #dcf8c6; color: #111b21; border-end-end-radius: 4px; }
+.aim-bot { align-self: flex-start; background: #fff; color: #111b21; border: 1px solid var(--border, #e2e8f0); border-end-start-radius: 4px; }
+.aim-err { align-self: flex-start; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.aim-sr { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.aim-typing { display: flex; gap: 4px; padding-block: 12px; }
+.aim-dot { inline-size: 7px; block-size: 7px; border-radius: 50%; background: #94a3b8; animation: aim-blink 1.2s infinite ease-in-out; }
+.aim-dot:nth-child(2) { animation-delay: 0.2s; }
+.aim-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes aim-blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .aim-dot { animation: none; opacity: 0.6; } }

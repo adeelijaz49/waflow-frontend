@@ -23,6 +23,7 @@ export const routes: Routes = [
   { path: 'support',    canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/support/support').then(m => m.Support) },
   { path: 'onboarding', canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/onboarding/onboarding').then(m => m.Onboarding) },
   { path: 'imports',    canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/imports/imports').then(m => m.Imports) },
+  { path: 'arabic',     canActivate: [authGuard, legalAcceptanceGuard], loadChildren: () => import('./pages/localization/localization.routes').then(m => m.LOCALIZATION_ROUTES) },
   // Not gated by legalAcceptanceGuard — a user must be able to read the very
   // documents they're being asked to accept, and reach the acceptance flow
   // itself without an infinite redirect loop.

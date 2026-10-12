@@ -1,0 +1,249 @@
+<div class="cd loc-stack">
+  <div class="loc-row">
+    <a class="btn btn-outline btn-sm" routerLink="/arabic/campaigns">
+      <span class="cd-arrow" aria-hidden="true">{{ "‹" }}</span> {{ 'campaigns.back' | t }}
+    </a>
+  </div>
+
+  @if (loading()) {
+    <div class="loading">{{ 'common.loading' | t }}</div>
+  } @else if (error()) {
+    <div class="loc-error" role="alert">
+      {{ error() }}
+      <button type="button" class="btn btn-outline btn-sm" (click)="load()">{{ 'common.retry' | t }}</button>
+    </div>
+  } @else if (campaign(); as c) {
+    <div class="card">
+      <div class="card-header cd-head">
+        <div class="loc-grow">
+          <div class="cd-name" appUserText>{{ c.name }}</div>
+          <div class="loc-row loc-muted">
+            <span [class]="'badge ' + badge(c.status)">{{ ('status.campaign.' + c.status) | t }}</span>
+            <span>{{ 'campaigns.detail.template' | t }}
+              <a class="cd-link" appUserText [routerLink]="['/arabic/templates', c.templateId]">{{ c.templateName }}</a>
+            </span>
+            <span>{{ modeText() }}</span>
+            <span>{{ audienceText() }}</span>
+          </div>
+        </div>
+        @if (canCancel()) {
+          <button type="button" class="btn btn-danger btn-sm" data-test="cancel" [disabled]="busy()" (click)="cancel()">{{ 'campaigns.cancel.action' | t }}</button>
+        }
+      </div>
+      <div class="card-body loc-stack">
+        @if (actionError()) {
+          <div class="loc-error" role="alert">{{ actionError() }}</div>
+        }
+        @if (c.lastError) {
+          <div class="loc-warn" data-test="last-error">
+            @if (lastErrorLine(); as line) {
+              {{ line }}
+            } @else {
+              {{ 'campaigns.detail.lastError' | t }}
+              <span dir="auto" class="cd-raw">{{ c.lastError }}</span>
+            }
+          </div>
+        }
+
+        <div class="cd-stats" aria-live="polite">
+          <div class="cd-stat"><div class="cd-n">{{ c.stats.total | locNumber }}</div><div class="loc-muted">{{ 'campaigns.stats.total' | t }}</div></div>
+          <div class="cd-stat"><div class="cd-n">{{ c.stats.sent | locNumber }}</div><div class="loc-muted">{{ 'campaigns.stats.sent' | t }}</div></div>
+          <div class="cd-stat"><div class="cd-n">{{ c.stats.failed | locNumber }}</div><div class="loc-muted">{{ 'campaigns.stats.failed' | t }}</div></div>
+          <div class="cd-stat"><div class="cd-n">{{ c.stats.skipped | locNumber }}</div><div class="loc-muted">{{ 'campaigns.stats.skipped' | t }}</div></div>
+        </div>
+
+        <div class="cd-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="percent()" [attr.aria-label]="'campaigns.detail.progress' | t">
+          <div class="cd-bar" [style.inline-size.%]="percent()"></div>
+        </div>
+        <div class="loc-row loc-muted">
+          <span>{{ 'campaigns.detail.progressText' | t: { done: (processed() | locNumber), total: (c.stats.total | locNumber), percent: percentText() } }}</span>
+          @if (isSending()) {
+            <span>{{ 'campaigns.detail.autoRefresh' | t }}</span>
+          }
+          @for (l of languages; track l) {
+            @if (c.stats.byLanguage[l] > 0) {
+              <app-lang-pill [lang]="l" [count]="c.stats.byLanguage[l]" />
+            }
+          }
+        </div>
+        <div class="cd-dates loc-muted">
+          @if (c.startedAt) { <span>{{ 'campaigns.col.started' | t }}: <span class="loc-nowrap">{{ c.startedAt | locDateTime }}</span></span> }
+          @if (c.finishedAt) { <span>{{ 'campaigns.col.finished' | t }}: <span class="loc-nowrap">{{ c.finishedAt | locDateTime }}</span></span> }
+        </div>
+      </div>
+    </div>
+
+    <!-- Plan: fresh for drafts (with the send controls), stored for the rest -->
+    @if (isDraft()) {
+      <div class="card">
+        <div class="card-header"><div class="card-title">{{ 'campaigns.detail.draftPlan' | t }}</div></div>
+        <div class="card-body loc-stack">
+          @if (planLoading()) {
+            <div class="loading">{{ 'campaigns.plan.updating' | t }}</div>
+          }
+          @if (planError()) {
+            <div class="loc-error" role="alert">
+              {{ planError() }}
+              <button type="button" class="btn btn-outline btn-sm" (click)="loadPlan()">{{ 'common.retry' | t }}</button>
+            </div>
+          }
+          @if (livePlan(); as p) {
+            <app-campaign-plan [plan]="p" />
+            @if (ackFallbacksRequired()) {
+              <label class="cd-ack">
+                <input type="checkbox" [checked]="ackFallbacks()" (change)="ackFallbacks.set($any($event.target).checked)" />
+                <span>{{ 'campaigns.ack.fallbacks' | t }}</span>
+              </label>
+            }
+            @if (ackBlockedRequired()) {
+              <label class="cd-ack">
+                <input type="checkbox" [checked]="ackBlocked()" (change)="ackBlocked.set($any($event.target).checked)" />
+                <span>{{ 'campaigns.ack.blocked' | t }}</span>
+              </label>
+            }
+            <div class="loc-row">
+              <button type="button" class="btn btn-primary" data-test="send" [disabled]="!canSend()" (click)="sendDraft()">{{ 'campaigns.send.action' | t }}</button>
+              <button type="button" class="btn btn-outline" [disabled]="planLoading()" (click)="loadPlan()">{{ 'campaigns.detail.replan' | t }}</button>
+            </div>
+          }
+        </div>
+      </div>
+    } @else {
+      @if (shownPlan(); as p) {
+        <div class="card">
+          <div class="card-header"><div class="card-title">{{ 'campaigns.detail.storedPlan' | t }}</div></div>
+          <div class="card-body"><app-campaign-plan [plan]="p" [showSamples]="false" /></div>
+        </div>
+      }
+
+      @if (report(); as r) {
+        <div class="card">
+          <div class="card-header"><div class="card-title">{{ 'campaigns.report.title' | t }}</div></div>
+          <div class="card-body loc-stack">
+            <div class="table-wrap">
+              <table class="cd-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'common.language' | t }}</th>
+                    <th>{{ 'status.delivery.sent' | t }}</th>
+                    <th>{{ 'status.delivery.delivered' | t }}</th>
+                    <th>{{ 'status.delivery.read' | t }}</th>
+                    <th>{{ 'status.delivery.failed' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (l of reportLanguages; track l) {
+                    <tr>
+                      <td><app-lang-pill [lang]="l" /></td>
+                      <td>{{ r.byLanguage[l].sent | locNumber }}</td>
+                      <td>{{ r.byLanguage[l].delivered | locNumber }}</td>
+                      <td>{{ r.byLanguage[l].read | locNumber }}</td>
+                      <td>{{ r.byLanguage[l].failed | locNumber }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="loc-row">
+              @for (s of sendStatuses; track s) {
+                @if (r.byStatus[s]) {
+                  <span class="loc-chip">{{ ('status.send.' + s) | t }} <strong>{{ r.byStatus[s] | locNumber }}</strong></span>
+                }
+              }
+            </div>
+            <div class="loc-muted">{{ 'campaigns.report.fallbacks' | t: { customers: ('campaigns.n.customer' | tp: r.fallbackCount) } }}</div>
+          </div>
+        </div>
+      }
+
+      <div class="card">
+        <div class="card-header cd-head">
+          <div class="card-title">{{ 'campaigns.recipients.title' | t }}</div>
+          <div class="loc-row cd-filters">
+            <select [value]="statusFilter()" [attr.aria-label]="'campaigns.recipients.filterStatus' | t" (change)="setStatusFilter($any($event.target).value)">
+              <option value="all" [selected]="statusFilter() === 'all'">{{ 'campaigns.recipients.allStatuses' | t }}</option>
+              @for (s of sendStatuses; track s) {
+                <option [value]="s" [selected]="statusFilter() === s">{{ ('status.send.' + s) | t }}</option>
+              }
+            </select>
+            <select [value]="langFilter()" [attr.aria-label]="'campaigns.recipients.filterLanguage' | t" (change)="setLangFilter($any($event.target).value)">
+              <option value="all" [selected]="langFilter() === 'all'">{{ 'campaigns.recipients.allLanguages' | t }}</option>
+              @for (l of languages; track l) {
+                <option [value]="l" [selected]="langFilter() === l">{{ ('status.language.' + l) | t }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="card-body loc-stack">
+          @if (recipientsError()) {
+            <div class="loc-error" role="alert">
+              {{ recipientsError() }}
+              <button type="button" class="btn btn-outline btn-sm" (click)="loadRecipients()">{{ 'common.retry' | t }}</button>
+            </div>
+          }
+          @if (recipientsLoading()) {
+            <div class="loading">{{ 'common.loading' | t }}</div>
+          } @else if (!recipientsError() && recipients().length === 0) {
+            <div class="empty-state">{{ 'campaigns.recipients.empty' | t }}</div>
+          } @else if (recipients().length > 0) {
+            <div class="table-wrap">
+              <table class="cd-table cd-rec">
+                <thead>
+                  <tr>
+                    <th>{{ 'common.name' | t }}</th>
+                    <th>{{ 'common.phone' | t }}</th>
+                    <th>{{ 'common.language' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                    <th>{{ 'campaigns.recipients.delivery' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of recipients(); track r.customerId) {
+                    <tr>
+                      <td><span class="cd-cell" appUserText [title]="r.name">{{ r.name }}</span></td>
+                      <td><span appPhone>{{ r.phone }}</span></td>
+                      <td>
+                        <span class="loc-row cd-langs">
+                          @if (r.requestedLanguage) { <app-lang-pill [lang]="r.requestedLanguage" /> }
+                          @if (r.fallback && r.usedLanguage) {
+                            <span class="cd-arrow" aria-hidden="true">{{ "→" }}</span>
+                            <app-lang-pill [lang]="r.usedLanguage" />
+                            <span class="badge badge-warning" [title]="fallbackReason(r.fallbackReason)">{{ 'campaigns.recipients.fallback' | t }}</span>
+                          } @else if (!r.requestedLanguage && r.usedLanguage) {
+                            <app-lang-pill [lang]="r.usedLanguage" />
+                          }
+                        </span>
+                      </td>
+                      <td>
+                        <span [class]="'badge ' + sendBadge(r.status)">{{ ('status.send.' + r.status) | t }}</span>
+                        @if (r.status === 'failed' || r.errorCode) {
+                          <div class="loc-muted" [title]="errorTitle(r)">{{ sendError(r.errorCode) }}</div>
+                        }
+                      </td>
+                      <td>
+                        @if (r.deliveryStatus; as d) {
+                          <span [class]="'badge ' + deliveryBadge(d)">{{ ('status.delivery.' + d) | t }}</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="loc-row cd-pager">
+              <span class="loc-muted">{{ 'campaigns.picker.range' | t: { from: (from() | locNumber), to: (to() | locNumber), total: (recipientsTotal() | locNumber) } }}</span>
+              <span class="cd-pager-btns">
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="!hasPrev() || recipientsLoading()" [attr.aria-label]="'campaigns.picker.prev' | t" (click)="goTo(page() - 1)">
+                  <span class="cd-arrow" aria-hidden="true">{{ "‹" }}</span>
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="!hasNext() || recipientsLoading()" [attr.aria-label]="'campaigns.picker.next' | t" (click)="goTo(page() + 1)">
+                  <span class="cd-arrow" aria-hidden="true">{{ "›" }}</span>
+                </button>
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

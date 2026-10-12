@@ -1,0 +1,214 @@
+<div class="ov-grid">
+  <!-- 1. Status -->
+  <section class="card ov-wide" aria-labelledby="ov-status-title">
+    <div class="card-body ov-status">
+      <div class="loc-grow">
+        <h2 class="ov-h" id="ov-status-title">{{ 'settings.status.title' | t }}</h2>
+        @if (hub.settings()?.arabicEnabledAt; as since) {
+          <div class="loc-muted">{{ 'settings.status.since' | t: { date: (since | locDate) } }}</div>
+        }
+      </div>
+      <span class="badge badge-success">{{ 'settings.status.on' | t }}</span>
+    </div>
+  </section>
+
+  <!-- 2. Workspace language settings -->
+  <section class="card" aria-labelledby="ov-lang-title">
+    <div class="card-header"><h2 class="ov-h" id="ov-lang-title">{{ 'settings.lang.title' | t }}</h2></div>
+    <div class="card-body">
+      <div class="loc-field">
+        <label class="ov-label" for="ov-default">{{ 'settings.lang.defaultLabel' | t }}</label>
+        <select id="ov-default" #defaultSelect [value]="defaultLang()" (change)="onDefaultLang($any($event.target).value)">
+          <option value="en" [selected]="defaultLang() === 'en'">{{ 'common.langName.en' | t }}</option>
+          <option value="ar" [selected]="defaultLang() === 'ar'">{{ 'common.langName.ar' | t }}</option>
+        </select>
+        <span class="loc-muted ov-help">{{ 'settings.lang.defaultHelp' | t }}</span>
+      </div>
+
+      <div class="loc-field">
+        <label class="ov-label" for="ov-order">{{ 'settings.lang.orderLabel' | t }}</label>
+        <select id="ov-order" [value]="order()" (change)="onOrder($any($event.target).value)">
+          <option value="ar_first" [selected]="order() === 'ar_first'">{{ 'settings.lang.order.ar_first' | t }}</option>
+          <option value="en_first" [selected]="order() === 'en_first'">{{ 'settings.lang.order.en_first' | t }}</option>
+        </select>
+        <span class="loc-muted ov-help">{{ 'settings.lang.orderHelp' | t }}</span>
+      </div>
+
+      <div class="ov-example">
+        <div class="loc-muted ov-help">{{ 'settings.lang.exampleLabel' | t }}</div>
+        <app-wa-preview language="bilingual" [bilingualOrder]="order()" [body]="sampleBody()" />
+      </div>
+
+      @if (saveError(); as msg) {
+        <div class="loc-error" role="alert">{{ msg }}</div>
+      }
+      <div class="loc-row ov-actions">
+        <button type="button" class="btn btn-primary" [disabled]="saving() || !dirty()" (click)="saveSettings()">
+          {{ (saving() ? 'common.saving' : 'common.save') | t }}
+        </button>
+        <span class="ov-saved" aria-live="polite">
+          @if (savedOnce() && !dirty() && !saving()) { {{ 'common.saved' | t }} }
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. My preferences -->
+  <section class="card" aria-labelledby="ov-prefs-title">
+    <div class="card-header"><h2 class="ov-h" id="ov-prefs-title">{{ 'settings.prefs.title' | t }}</h2></div>
+    <div class="card-body">
+      <div class="loc-field">
+        <label class="ov-label" for="ov-screen">{{ 'settings.prefs.screenLabel' | t }}</label>
+        <select id="ov-screen" [value]="i18n.lang()" [disabled]="prefsSaving()" (change)="onScreenLang($any($event.target).value)">
+          <option value="en" [selected]="i18n.lang() === 'en'">{{ 'common.langName.en' | t }}</option>
+          <option value="ar" [selected]="i18n.lang() === 'ar'">{{ 'common.langName.ar' | t }}</option>
+        </select>
+        <span class="loc-muted ov-help">{{ 'settings.prefs.screenHelp' | t }}</span>
+      </div>
+
+      <div class="loc-field">
+        <label class="ov-label" for="ov-ai">{{ 'settings.prefs.aiLabel' | t }}</label>
+        <select id="ov-ai" [value]="prefs()?.aiLanguage ?? 'auto'" [disabled]="prefsSaving() || !prefs()" (change)="onAiLang($any($event.target).value)">
+          <option value="auto" [selected]="(prefs()?.aiLanguage ?? 'auto') === 'auto'">{{ 'settings.prefs.ai.auto' | t }}</option>
+          <option value="en" [selected]="prefs()?.aiLanguage === 'en'">{{ 'settings.prefs.ai.en' | t }}</option>
+          <option value="ar" [selected]="prefs()?.aiLanguage === 'ar'">{{ 'settings.prefs.ai.ar' | t }}</option>
+        </select>
+      </div>
+
+      @if (prefsError(); as msg) {
+        <div class="loc-error" role="alert">
+          {{ msg }}
+          @if (!prefs()) {
+            <button type="button" class="btn btn-outline btn-sm" (click)="loadPrefs()">{{ 'common.retry' | t }}</button>
+          }
+        </div>
+      }
+      <div class="ov-saved" aria-live="polite">
+        @if (prefsSaved() && !prefsSaving() && !prefsError()) { {{ 'settings.prefs.saved' | t }} }
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Numbers at a glance -->
+  <section class="card ov-wide" aria-labelledby="ov-glance-title">
+    <div class="card-header"><h2 class="ov-h" id="ov-glance-title">{{ 'settings.glance.title' | t }}</h2></div>
+    <div class="card-body">
+      @if (overviewLoading()) {
+        <div class="loading">{{ 'common.loading' | t }}</div>
+      } @else if (overviewError(); as msg) {
+        <div class="loc-error" role="alert">
+          {{ msg }}
+          <button type="button" class="btn btn-outline btn-sm" (click)="loadOverview()">{{ 'common.retry' | t }}</button>
+        </div>
+      } @else if (overview(); as o) {
+        <div class="ov-tiles">
+          <!-- customers -->
+          <div class="ov-tile">
+            <div class="ov-tile-label">{{ 'settings.glance.customers' | t }}</div>
+            <div class="ov-tile-value">{{ o.customers.total | locNumber }}</div>
+            <div class="ov-bar" aria-hidden="true">
+              @for (seg of customerBar(); track seg.key) {
+                @if (seg.n > 0) {
+                  <span class="ov-seg" [class]="'ov-seg ov-c-' + seg.key" [style.flex-grow]="seg.n"></span>
+                }
+              }
+            </div>
+            <ul class="ov-legend">
+              <li><span class="ov-dot ov-c-en"></span>{{ 'common.english' | t }} <b>{{ o.customers.en | locNumber }}</b></li>
+              <li><span class="ov-dot ov-c-ar"></span>{{ 'common.arabic' | t }} <b>{{ o.customers.ar | locNumber }}</b></li>
+              <li><span class="ov-dot ov-c-unknown"></span>{{ 'settings.glance.noLanguage' | t }} <b>{{ o.customers.unknown | locNumber }}</b></li>
+            </ul>
+            @if (o.customers.unknown > 0) {
+              <div class="loc-hint">
+                {{ 'settings.customersNoLanguage' | tp: o.customers.unknown }}
+                <a class="ov-link" routerLink="/arabic/customers">{{ 'settings.glance.setLanguages' | t }}</a>
+              </div>
+            }
+          </div>
+
+          <!-- templates -->
+          <div class="ov-tile">
+            <div class="ov-tile-label">{{ 'settings.glance.templates' | t }}</div>
+            <div class="ov-tile-value">{{ o.templates.withArabic | locNumber }}</div>
+            <ul class="ov-legend">
+              <li><span class="badge badge-success">{{ 'status.meta.APPROVED' | t }}</span> <b>{{ o.templates.arabicApproved | locNumber }}</b></li>
+              <li><span class="badge badge-warning">{{ 'status.meta.PENDING' | t }}</span> <b>{{ o.templates.arabicPending | locNumber }}</b></li>
+              <li><span class="badge badge-danger">{{ 'status.meta.REJECTED' | t }}</span> <b>{{ o.templates.arabicRejected | locNumber }}</b></li>
+              <li><span class="badge badge-neutral">{{ 'settings.glance.notSubmitted' | t }}</span> <b>{{ o.templates.arabicNotSubmitted | locNumber }}</b></li>
+              @if (o.templates.arabicOther > 0) {
+                <li><span class="badge badge-neutral">{{ 'settings.glance.tplOther' | t }}</span> <b>{{ o.templates.arabicOther | locNumber }}</b></li>
+              }
+            </ul>
+            <a class="ov-link" routerLink="/arabic/templates">{{ 'settings.glance.openTemplates' | t }}</a>
+          </div>
+
+          <!-- campaigns -->
+          <div class="ov-tile">
+            <div class="ov-tile-label">{{ 'settings.glance.campaigns' | t }}</div>
+            <div class="ov-tile-value">{{ o.campaigns.total | locNumber }}</div>
+            <div class="loc-muted">
+              @if (o.campaigns.lastSentAt; as last) {
+                {{ 'settings.glance.lastSent' | t: { date: (last | locDate) } }}
+              } @else {
+                {{ 'settings.glance.neverSent' | t }}
+              }
+            </div>
+            <a class="ov-link" routerLink="/arabic/campaigns">{{ 'settings.glance.openCampaigns' | t }}</a>
+          </div>
+
+          <!-- review -->
+          <div class="ov-tile">
+            <div class="ov-tile-label">{{ 'settings.glance.review' | t }}</div>
+            <div class="ov-tile-value">{{ reviewTotal() | locNumber }}</div>
+            <ul class="ov-legend">
+              <li>{{ 'settings.glance.templateDrafts' | t }} <b>{{ o.review.templatesDraft | locNumber }}</b></li>
+              <li>{{ 'settings.glance.catalogDrafts' | t }} <b>{{ o.review.catalogDraft | locNumber }}</b></li>
+              <li>{{ 'settings.glance.systemDrafts' | t }} <b>{{ o.review.backendStringsDraft | locNumber }}</b></li>
+            </ul>
+            <a class="ov-link" routerLink="/arabic/review">{{ 'settings.glance.openReview' | t }}</a>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- 5. Get started -->
+  @if (steps().length) {
+    <section class="card" aria-labelledby="ov-steps-title">
+      <div class="card-header"><h2 class="ov-h" id="ov-steps-title">{{ 'settings.steps.title' | t }}</h2></div>
+      <div class="card-body">
+        <ol class="ov-steps">
+          @for (step of steps(); track step.n) {
+            <li class="ov-step" [class.ov-step-done]="step.done">
+              <span class="ov-step-mark" aria-hidden="true">{{ step.done ? '✓' : step.n }}</span>
+              <span class="loc-grow">
+                @if (step.link; as link) {
+                  <a class="ov-link" [routerLink]="['/arabic', link]">{{ step.titleKey | t }}</a>
+                } @else {
+                  <button type="button" class="ov-link ov-link-btn" (click)="focusAndScroll(defaultSelect)">{{ step.titleKey | t }}</button>
+                }
+                @if (step.noteKey; as note) {
+                  <span class="loc-muted ov-help ov-note">{{ note | t }}</span>
+                }
+                <span class="ov-sr">{{ (step.done ? 'settings.steps.done' : 'settings.steps.todo') | t }}</span>
+              </span>
+            </li>
+          }
+        </ol>
+      </div>
+    </section>
+  }
+
+  <!-- 6. How sending works -->
+  <section class="card" aria-labelledby="ov-how-title">
+    <div class="card-header"><h2 class="ov-h" id="ov-how-title">{{ 'settings.how.title' | t }}</h2></div>
+    <div class="card-body">
+      <ul class="ov-how">
+        <li>{{ 'settings.how.1' | t }}</li>
+        <li>{{ 'settings.how.2' | t }}</li>
+        <li>{{ 'settings.how.3' | t }}</li>
+        <li>{{ 'settings.how.4' | t }}</li>
+      </ul>
+    </div>
+  </section>
+</div>

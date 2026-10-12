@@ -1,0 +1,13 @@
+.aim-toggle { display: none; position: absolute; inset-block-end: 84px; inset-inline-end: 12px; z-index: 5; background: #fff; }
+.aim-side { flex: 0 0 300px; display: flex; flex-direction: column; border-inline-start: 1px solid var(--border, #e2e8f0); background: #fff; }
+.aim-side-head { display: flex; justify-content: space-between; align-items: center; padding-block: 10px; padding-inline: 14px; font-weight: 700; font-size: 13.5px; border-block-end: 1px solid var(--border, #e2e8f0); }
+.aim-close { display: none; border: 0; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; }
+.aim-side-body { flex: 1 1 auto; overflow-y: auto; padding: 12px; }
+.aim-backdrop { display: none; }
+@media (max-width: 1023px) {
+  .aim-toggle { display: inline-flex; }
+  .aim-side { position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 1001; max-block-size: 70vh; flex-basis: auto; border-inline-start: 0; border-block-start: 1px solid var(--border, #e2e8f0); border-start-start-radius: 16px; border-start-end-radius: 16px; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15); transform: translateY(100%); visibility: hidden; transition: transform 0.2s, visibility 0.2s; }
+  .aim-side.open { transform: none; visibility: visible; }
+  .aim-close { display: inline-block; }
+  .aim-backdrop { display: block; position: fixed; inset: 0; z-index: 1000; background: rgba(15, 23, 42, 0.4); }
+}

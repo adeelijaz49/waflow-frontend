@@ -1,0 +1,14 @@
+app-aim-confirm-card { display: block; align-self: stretch; }
+.aim-cc { border: 2px solid var(--warning, #f59e0b); background: #fffbeb; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.aim-cc-danger { border-color: var(--danger, #ef4444); background: #fef2f2; }
+.aim-cc-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.aim-cc-title { font-weight: 700; font-size: 14px; color: #92400e; }
+.aim-cc-danger .aim-cc-title { color: #991b1b; }
+.aim-cc-summary { font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.aim-cc-details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-muted, #64748b); }
+.aim-cc-details summary:focus-visible { outline: 2px solid var(--primary, #3b82f6); outline-offset: 2px; }
+.aim-cc-list { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin-block: 8px 0; margin-inline: 0; font-size: 13px; }
+.aim-cc-list dt { color: var(--text-muted, #64748b); }
+.aim-cc-list dd { margin: 0; overflow-wrap: anywhere; text-align: start; }
+.aim-cc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 480px) { .aim-cc-actions .btn { flex: 1 1 0; } }

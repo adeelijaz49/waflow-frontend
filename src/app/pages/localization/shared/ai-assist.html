@@ -1,0 +1,46 @@
+<div class="aia">
+  <div class="aia-actions">
+    @if (has('to_ar')) {
+      <button type="button" class="btn btn-outline btn-sm" [disabled]="!canRun()" (click)="run('to_ar')">
+        {{ (busy() === 'to_ar' ? 'ai.working' : 'ai.toArabic') | t }}
+      </button>
+    }
+    @if (has('to_en')) {
+      <button type="button" class="btn btn-outline btn-sm" [disabled]="!canRun()" (click)="run('to_en')">
+        {{ (busy() === 'to_en' ? 'ai.working' : 'ai.toEnglish') | t }}
+      </button>
+    }
+    @if (has('saudi')) {
+      <button type="button" class="btn btn-outline btn-sm" [disabled]="!canRun()" (click)="run('saudi')">
+        {{ (busy() === 'saudi' ? 'ai.working' : 'ai.saudiFriendly') | t }}
+      </button>
+    }
+  </div>
+  <div class="aia-notice">{{ 'ai.notice' | t }}</div>
+
+  @if (error(); as message) {
+    <div class="loc-error" role="alert">{{ message }}</div>
+  }
+
+  @if (draft(); as d) {
+    <div class="aia-draft">
+      <div class="aia-draft-title">{{ 'ai.draftTitle' | t }}</div>
+      <div class="aia-draft-text" [appLangDir]="d.language" dir="auto">{{ d.text }}</div>
+      @if (d.buttons?.length) {
+        <div class="aia-draft-buttons">
+          @for (b of d.buttons; track $index) {
+            <span class="loc-chip" dir="auto">{{ b }}</span>
+          }
+        </div>
+      }
+      @for (w of d.warnings; track $index) {
+        <div class="loc-warn">{{ warningText(w) }}</div>
+      }
+      <div class="aia-draft-actions">
+        <button type="button" class="btn btn-primary btn-sm" (click)="use()">{{ 'ai.useDraft' | t }}</button>
+        <button type="button" class="btn btn-outline btn-sm" (click)="discard()">{{ 'ai.discard' | t }}</button>
+      </div>
+      <div class="loc-muted">{{ 'ai.reviewReminder' | t }}</div>
+    </div>
+  }
+</div>

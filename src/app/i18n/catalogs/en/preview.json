@@ -1,0 +1,15 @@
+{
+  "empty": "Nothing to preview yet.",
+  "title": "Preview",
+  "asCustomer": "Preview as",
+  "arabicCustomer": "Arabic customer",
+  "englishCustomer": "English customer",
+  "bilingual": "Bilingual (both languages)",
+  "arabicVersion": "Arabic version",
+  "englishVersion": "English version",
+  "sampleNote": "Sample values are used for the merge fields.",
+  "asSent": "As sent",
+  "sideBySide": "Side by side",
+  "updating": "Updating preview...",
+  "failed": "The preview couldn't be refreshed, so the text you typed is shown."
+}
