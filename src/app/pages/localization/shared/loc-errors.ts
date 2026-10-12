@@ -1,4 +1,4 @@
-import { I18nService } from '../../../i18n';
+import { I18nService, Lang } from '../../../i18n';
 
 // Turns a failed API call into a localised sentence for the user. Server error
 // messages are English, so they are never shown when the error carries a `code`
@@ -19,15 +19,16 @@ export function isNotEnabled(err: unknown): boolean {
   return errorStatus(err) === 402 && errorCode(err) === 'ARABIC_NOT_ENABLED';
 }
 
-export function errorText(i18n: I18nService, err: unknown, fallbackKey = 'errors.generic'): string {
+// `lang` (optional) forces the language of the sentence; the default is the active UI language.
+export function errorText(i18n: I18nService, err: unknown, fallbackKey = 'errors.generic', lang?: Lang): string {
   const code = errorCode(err);
-  if (code && i18n.has(`errors.${code}`)) return i18n.t(`errors.${code}`);
+  if (code && i18n.has(`errors.${code}`, lang)) return i18n.t(`errors.${code}`, undefined, lang);
   const status = errorStatus(err);
-  if (status === 0) return i18n.t('errors.network');
-  if (status === 403) return i18n.t('errors.forbidden');
-  if (status === 404) return i18n.t('errors.notFound');
-  if (status === 413) return i18n.t('errors.tooLarge');
-  if (status === 429) return i18n.t('errors.rateLimited');
+  if (status === 0) return i18n.t('errors.network', undefined, lang);
+  if (status === 403) return i18n.t('errors.forbidden', undefined, lang);
+  if (status === 404) return i18n.t('errors.notFound', undefined, lang);
+  if (status === 413) return i18n.t('errors.tooLarge', undefined, lang);
+  if (status === 429) return i18n.t('errors.rateLimited', undefined, lang);
   console.warn('[localization] request failed', err);
-  return i18n.t(fallbackKey);
+  return i18n.t(fallbackKey, undefined, lang);
 }

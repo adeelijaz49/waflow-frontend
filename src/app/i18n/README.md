@@ -2,7 +2,11 @@
 
 Everything the Arabic pages (`/arabic`, `src/app/pages/localization/**`) need to show text, numbers, dates and
 directions correctly. The rest of the app is still English-only; the fully right-to-left dashboard is **Phase 5
-and is deliberately not built** — but everything new is language-ready.
+and is deliberately not built** — but everything new is language-ready. The only things added to the existing
+English screens are the Arabic *controls* listed under "Embedded components on existing screens" below, visible
+to merchants who have Arabic switched on.
+
+Backend counterpart and the full list of existing-file edits: `waflow-backend/docs/localization/README.md`.
 
 ## Using it
 
@@ -29,7 +33,26 @@ right before the text node, or `// i18n-ignore` at the end of a TypeScript line.
 directional isolate automatically so "50 SAR" and brand names never reorder.
 
 Adding a namespace: create `en/<ns>.json`, `ar/<ns>.json`, `meta/<ns>.json` (`{}`) and add one line in each loader
-map in `catalogs/index.ts`.
+map in `catalogs/index.ts`. There are 19 namespaces (2026-10-12): `ai`, `aimode`, `campaigns`, `captions`, `catalog`,
+`common`, `customers`, `embedded`, `errors`, `flowlang`, `flows`, `hub`, `inbox`, `preview`, `promolang`, `review`,
+`settings`, `status`, `templates`; `embedded`, `flowlang` and `promolang` belong to the components embedded in
+existing screens.
+
+## Embedded components on existing screens (wiring phase)
+
+`src/app/pages/localization/embedded/` holds the small components the existing Promotions, Flows, Customers,
+Products, Services, Imports and Settings screens (and the conversation-flow viewer) render **only when**
+`LocalizationFlagService.arabicEnabled()` is true (`src/app/services/localization-flag.service.ts`; it is a facade over
+`HubStateService`, one cached `GET /api/localization/settings` per login token; false until loaded and on any error, so
+an unflagged merchant sees exactly today's screens plus that one request).
+
+- They all extend `EmbeddedText`: their labels are rendered in **English by default, whatever the active UI language**
+  (an owner whose own language is Arabic must not get Arabic labels inside the English dashboard - Phase 5 is gated).
+  The Arabic *message* text they show (what a customer receives) is always `lang="ar" dir="rtl"`.
+- Everything degrades to "hidden" or an inline retry on 402 / 404 / 5xx; a failed call never blocks the host screen.
+- The build check (`scripts/i18n-check.config.json`) covers `src/app/i18n` and `src/app/pages/localization`, so these
+  components are held to the no-hard-coded-text rule; the few hunks inside the existing page files only add component
+  tags and `@if (loc.arabicEnabled())` guards. Existing English text in those pages is deliberately untouched (Phase 5).
 
 ## Native review (spec §8)
 
@@ -39,7 +62,11 @@ are drafts; `"needsLegalApproval": true` flags consent/AI-notice wording that al
 `node scripts/i18n-review.mjs export --out review.csv` writes `key,english,arabic,status,reviewer,reviewed_at,…`
 for a spreadsheet; `import --in review.csv [--dry-run]` applies it back (changed text never becomes "reviewed"
 unless the reviewer says so and gives their name). `summary --write` refreshes `review-summary.json`, which the
-Review tab reads. Machine/AI text may only ever be saved as draft.
+Review tab reads (run it after every catalogue change). Machine/AI text may only ever be saved as draft.
+State on 2026-10-12: 1,511 Arabic strings, all draft, none flagged `needsLegalApproval` - the AI notice (`ai.notice`)
+and the AI Mode disclaimer (`aimode.disclaimer`) should go to the lawyer; flag them in `catalogs/meta/ai.json` and
+`meta/aimode.json` (`"needsLegalApproval": true`). The server-sent messages (342 strings, 17 flagged) are reviewed with
+`node scripts/i18n-review.js` in the backend repo.
 
 ## Conventions
 

@@ -1,0 +1,31 @@
+@if (ready() && state() !== 'hidden') {
+  @if (state() === 'error') {
+    <div class="clf-error" role="status">
+      <span>{{ errorMessage() }}</span>
+      <button type="button" class="btn btn-outline btn-sm" (click)="retry()">{{ t('common.retry') }}</button>
+    </div>
+  } @else if (state() === 'ready' && row(); as r) {
+    <div class="clf-main">
+      <label class="clf-label" [attr.for]="selectId()">{{ t('embedded.customerLanguage.label') }}</label>
+      <span class="clf-control">
+        <select [id]="selectId()" class="clf-select" [value]="r.language" [disabled]="saveState() === 'saving'" (change)="change($event)">
+          @for (l of languages; track l) {
+            <option [value]="l" [selected]="r.language === l">{{ optionLabel(l) }}</option>
+          }
+        </select>
+      </span>
+    </div>
+    <div class="clf-sub" aria-live="polite">
+      @if (saveState() === 'saving') {
+        <span>{{ t('common.saving') }}</span>
+      } @else if (saveState() === 'saved') {
+        <span class="clf-ok">{{ t('customers.row.saved') }}</span>
+      } @else if (saveState() === 'error') {
+        <span class="clf-bad" role="alert">{{ errorMessage() }}</span>
+      }
+      @if (sourceText()) { <span>{{ sourceText() }}</span> }
+      @if (effectiveText()) { <span>{{ effectiveText() }}</span> }
+    </div>
+    <a class="clf-link" routerLink="/arabic/customers">{{ t('embedded.customerLanguage.manage') }}</a>
+  }
+}

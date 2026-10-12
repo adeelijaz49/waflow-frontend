@@ -1,0 +1,36 @@
+@if (ready() && state() !== 'hidden') {
+  <section class="aif" [attr.aria-label]="t('embedded.itemFields.title')">
+    <h4 class="aif-title">{{ t('embedded.itemFields.title') }}</h4>
+    @if (state() === 'error') {
+      <div class="aif-error" role="status">
+        <span>{{ t('embedded.itemFields.loadFailed') }}</span>
+        <button type="button" class="btn btn-outline btn-sm" (click)="retry()">{{ t('common.retry') }}</button>
+      </div>
+    } @else if (state() === 'loading') {
+      <div class="aif-muted">{{ t('common.loading') }}</div>
+    } @else {
+      <div class="form-group">
+        <label [attr.for]="nameId()">{{ t('catalog.editor.nameAr') }}</label>
+        <input [id]="nameId()" type="text" dir="rtl" lang="ar" [attr.maxlength]="nameMax" [value]="name()" (input)="onName($any($event.target).value)" />
+        <div class="aif-muted aif-count">{{ name().length }} / {{ nameMax }}</div>
+      </div>
+      <div class="form-group">
+        <label [attr.for]="descriptionId()">{{ t('catalog.editor.descriptionAr') }}</label>
+        <textarea [id]="descriptionId()" rows="3" dir="rtl" lang="ar" [attr.maxlength]="descriptionMax" [value]="description()" (input)="onDescription($any($event.target).value)"></textarea>
+        <div class="aif-muted aif-count">{{ description().length }} / {{ descriptionMax }}</div>
+      </div>
+      <p class="aif-muted">{{ t('catalog.editor.draftNote') }}</p>
+      @if (saved(); as s) {
+        <div class="aif-status" aria-live="polite">
+          @if (s.status === 'reviewed') {
+            <span class="badge badge-success">{{ t('status.review.reviewed') }}</span>
+          } @else {
+            <span class="badge badge-warning">{{ t('status.review.draft') }}</span>
+            <span class="aif-muted">{{ t('catalog.editor.notShown') }}</span>
+          }
+        </div>
+      }
+      <a class="aif-link" routerLink="/arabic/catalog">{{ t('embedded.itemFields.hubLink') }}</a>
+    }
+  </section>
+}

@@ -35,4 +35,27 @@ describe('LocalizationApiService URLs', () => {
     api.setCustomerLanguage('64b0c0ffee0123456789abcd', 'ar').subscribe();
     expect(urlOf()).toMatch(/\/customers\/64b0c0ffee0123456789abcd\/language$/);
   });
+
+  it('calls the flow tree and follow-up endpoints with encoded ids, the right verbs and bodies', () => {
+    const last = (): { url: string; method: string; body: unknown } => {
+      const req = http.expectOne(() => true);
+      req.flush({});
+      return { url: req.request.url, method: req.request.method, body: req.request.body };
+    };
+    api.listFlowTrees().subscribe();
+    expect(last()).toMatchObject({ method: 'GET', url: expect.stringMatching(/\/api\/localization\/flows\/tree$/) });
+    api.listPromotionTrees().subscribe();
+    expect(last()).toMatchObject({ method: 'GET', url: expect.stringMatching(/\/api\/localization\/flows\/promotion-trees$/) });
+    api.getFlowOwnerTree('promotion', 'p/1').subscribe();
+    expect(last()).toMatchObject({ method: 'GET', url: expect.stringMatching(/\/flows\/owners\/promotion\/p%2F1\/tree$/) });
+    api.getFollowUp('n 1').subscribe();
+    expect(last()).toMatchObject({ method: 'GET', url: expect.stringMatching(/\/flows\/followups\/n%201$/) });
+    const input = { body: 'مرحباً', buttons: [{ position: 0, text: 'نعم' }], source: 'ai' as const };
+    api.saveFollowUp('n1', input).subscribe();
+    expect(last()).toMatchObject({ method: 'PUT', url: expect.stringMatching(/\/flows\/followups\/n1\/variants\/ar$/), body: input });
+    api.reviewFollowUp('n1', 'reviewed', 7).subscribe();
+    expect(last()).toMatchObject({
+      method: 'POST', url: expect.stringMatching(/\/flows\/followups\/n1\/variants\/ar\/review$/), body: { status: 'reviewed', contentVersion: 7 },
+    });
+  });
 });

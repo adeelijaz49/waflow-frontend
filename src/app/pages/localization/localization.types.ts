@@ -24,7 +24,9 @@ export type AiLanguagePref = 'auto' | 'en' | 'ar';
 // metaStatusRaw and shown as a non-sendable status.
 export type MetaStatus =
   | 'NOT_CREATED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAUSED' | 'DISABLED' | 'IN_APPEAL'
-  | 'PENDING_DELETION' | 'DELETED' | 'LIMIT_EXCEEDED' | 'ARCHIVED' | 'ERROR';
+  | 'PENDING_DELETION' | 'DELETED' | 'LIMIT_EXCEEDED' | 'ARCHIVED' | 'ERROR'
+  // Only on Automated-Flows follow-up replies: free-form replies need no WhatsApp approval.
+  | 'NOT_REQUIRED';
 export type ReviewStatus = 'draft' | 'reviewed';
 export type TemplateCategory = 'MARKETING' | 'UTILITY';
 export type TemplateUseCase =
@@ -33,8 +35,9 @@ export type TemplateUseCase =
   | 'referral_reward' | 'welcome_optin' | 'promotion' | 'greeting' | 'custom';
 // opt_in / decline = consent-request buttons (payload consent_yes_/consent_no_<customerId>);
 // opt_out = marketing opt-out (payload optout_<campaignId>); url = a static https link;
-// flow_button = a button of a linked Automated-Flows message (payload msgnode_<nodeId>_<position>).
-export type ButtonRole = 'opt_in' | 'decline' | 'opt_out' | 'url' | 'flow_button';
+// flow_button = a button of a linked Automated-Flows message (payload msgnode_<nodeId>_<position>);
+// shop_now = the "shop" button of a template linked to a Promotion (payload promo_<promotionId>).
+export type ButtonRole = 'opt_in' | 'decline' | 'opt_out' | 'url' | 'flow_button' | 'shop_now';
 export type VariantSource = 'merchant' | 'library' | 'ai' | 'import';
 
 export type CampaignStatus = 'draft' | 'sending' | 'sent' | 'partial' | 'failed' | 'cancelled';
@@ -144,6 +147,8 @@ export interface LocalizedTemplate {
   category: TemplateCategory;
   archived: boolean;
   linkedMessageNodeId: string | null;
+  // Set for a template created for one Promotion (no custom entry message): enables the shop_now button role.
+  linkedPromotionId?: string | null;
   variants: TemplateVariant[];
   createdAt: string;
   updatedAt: string;
@@ -358,9 +363,182 @@ export interface FlowMessageRow {
   nodes: FlowMessageNodeRow[];
 }
 
+// Full per-flow message trees (GET /flows/tree, GET /flows/owners/{flow|promotion}/{id}/tree): the entry
+// message AND every follow-up reply, each with its per-language versions. `messageSource` says where the
+// entry message comes from: a Promotion, a custom entry message, or one of the four fixed default templates
+// (English only, shared by every workspace: no per-language versions exist for those).
+export type FlowOwnerType = 'flow' | 'promotion';
+export type FlowMessageSource = 'promotion' | 'custom_entry' | 'default_template';
+export type FlowButtonAction = 'send_message' | 'end_flow' | 'apply_discount' | 'redeem_points';
+export interface FlowTreeButton {
+  position: number;
+  label: string;
+  action: FlowButtonAction | string;
+  targetNodeId: string | null;
+}
+export interface FlowNodeVersionButton {
+  // null for the opt-out / link buttons of an entry template: they are not positional flow buttons
+  position: number | null;
+  role: ButtonRole;
+  text: string;
+}
+export interface FlowNodeVersion {
+  language: MessageLanguage;
+  body: string;
+  buttons: FlowNodeVersionButton[];
+  metaStatus: MetaStatus;
+  reviewStatus: ReviewStatus | null;
+  stale: boolean;
+  sendable: boolean | null;
+  contentVersion: number | null;
+  editUrl: string | null;
+}
+export interface FlowTreeNode {
+  messageNodeId: string;
+  parentNodeId: string | null;
+  parentButtonPosition: number | null;
+  depth: number;
+  isEntry: boolean;
+  bodyText: string;
+  // The English text with {{n}} replaced by {field} names; null when it cannot be expressed that way.
+  bodyFields: string | null;
+  slotFields: string[];
+  buttons: FlowTreeButton[];
+  templateStatus: 'not_created' | 'pending' | 'approved' | 'rejected' | null;
+  versions: FlowNodeVersion[];
+  canAddArabic: boolean;
+  addArabicUrl: string | null;
+}
+export interface FlowTreeRow {
+  flowId: string;
+  flowName: string;
+  triggerType: string;
+  status: 'active' | 'paused';
+  promotionId: string | null;
+  promotionName: string | null;
+  messageSource: FlowMessageSource;
+  nodes: FlowTreeNode[];
+}
+export interface FlowOwnerTree {
+  ownerType: FlowOwnerType;
+  ownerId: string;
+  messageSource: FlowMessageSource;
+  nodes: FlowTreeNode[];
+}
+// GET /flows/promotion-trees: promotions that have their own entry message (any English template status) and
+// are NOT sent by any flow, each with the same node trees as a flow row. A promotion that a flow sends is only in
+// the flow's row. `truncated` = more promotions exist than were listed (the newest are kept).
+export type PromotionStatus = 'draft' | 'active' | 'expired';
+export interface PromotionTreeRow {
+  ownerType: 'promotion';
+  promotionId: string;
+  promotionName: string;
+  promotionStatus: PromotionStatus;
+  messageSource: FlowMessageSource;
+  entryTemplateStatus: FlowTreeNode['templateStatus'];
+  nodes: FlowTreeNode[];
+}
+export interface PromotionTreesResponse {
+  items: PromotionTreeRow[];
+  truncated: boolean;
+}
+
+// Arabic version of one follow-up reply (free-form reply: no Meta approval, native review only).
+export interface FollowUpButtonInput { position: number; text: string }
+export interface FollowUpSaveInput {
+  body: string;
+  buttons: FollowUpButtonInput[];
+  source?: 'merchant' | 'ai';
+}
+// Shape of the answer of GET/PUT/POST /flows/followups/:nodeId[...]. Everything except the node id is
+// optional on purpose: the screen re-reads the tree after every write and only uses what is present.
+export interface FollowUpVariantView {
+  language?: 'ar';
+  body?: string;
+  buttons?: FollowUpButtonInput[];
+  contentVersion?: number | null;
+  reviewStatus?: ReviewStatus | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  source?: 'merchant' | 'ai';
+  stale?: boolean;
+  sendable?: boolean;
+  issues?: ValidationIssue[];
+  warnings?: ValidationIssue[];
+}
+export interface FollowUpView extends FollowUpVariantView {
+  messageNodeId?: string;
+  variant?: FollowUpVariantView | null;
+}
+
 // ── Review (native-review counts) ──────────────────────────────────────────
 export interface ReviewSummary {
   templates: { draft: number; reviewed: number };
   catalog: { draft: number; reviewed: number; missing: number };
   backendStrings: { total: number; draft: number; reviewed: number; needsLegalApproval: number };
+}
+
+// ── Language plan for the EXISTING screens (promotion composer, loyalty reminder, consent request) ──
+// POST /promotions/:id/send-plan and POST /senders/:sender/plan. Read-only and advisory: the legacy
+// send is never gated by it. Unknown reason / warning codes must be tolerated by the UI.
+export interface PlanVariantInfo {
+  source: 'entry_node' | 'promotion' | 'none';
+  templateId: string | null;
+  templateName: string | null;
+  language: 'ar';
+  metaStatus: MetaStatus | null;
+  reviewStatus: ReviewStatus | null;
+  sendable: boolean;
+  notSendableReason: string | null;
+  hasOptOut?: boolean;
+  hasShopButton?: boolean;
+  missingFields?: string[];
+}
+export interface PlanWarning { code: string; detail?: unknown }
+export interface PromotionSendPlan {
+  promotionId: string;
+  promotionName: string;
+  sendFormat: string;
+  selected: number;
+  eligible: number;
+  skipped: { noConsent: number; optedOut: number; demoSimulated: number; optedOutSamePhone: number };
+  byLanguage: { ar: number; en: number };
+  fallbacks: Array<{ from: 'ar'; to: 'en'; reason: string; count: number }>;
+  blocked: Array<{ reason: string; count: number }>;
+  variant: PlanVariantInfo | null;
+  warnings: PlanWarning[];
+  canSend: boolean;
+  needsAcknowledgement: boolean;
+  buckets?: { arabic: string[]; englishFallback: string[]; excluded: string[] };
+}
+export type SenderKind = 'loyalty_reminder' | 'consent_request';
+export type SenderSendPlan = Omit<PromotionSendPlan, 'promotionId' | 'promotionName' | 'sendFormat' | 'buckets' | 'variant'> & {
+  variant?: PlanVariantInfo | null;
+};
+// Added by the backend to the existing send responses, only when an Arabic customer was in the batch.
+export interface SendLanguageCounts {
+  languageCounts?: { ar: number; en: number };
+  localization?: {
+    arabicCustomers: number;
+    arabicSent: number;
+    arabicFailed: number;
+    fallbackToEnglish: Array<{ reason: string; count: number }>;
+    excludedOptedOutPhone: number;
+    stopped?: string;
+  };
+}
+export interface PromotionTestSendResult { sent: boolean; dryRun: boolean; usedLanguage?: string; templateName?: string }
+
+// ── Customer data forms (D4): single-item lookups and the flagged-import summary ──
+// GET /api/localization/catalog/:kind/:refId/translation: `translation` is null while no Arabic text exists.
+export interface CatalogTranslationLookup { translation: CatalogTranslation | null }
+// Added by the backend to the existing POST /api/imports/:id/run response, only for flagged workspaces.
+export interface ImportLocalizationSummary {
+  languagesSet?: number;
+  languagesProtected?: number;
+  languagesUnchanged?: number;
+  languagesFailed?: number;
+  translationsSaved?: number;
+  translationsUnchanged?: number;
+  translationsFailed?: number;
 }

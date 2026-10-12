@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -11,6 +11,12 @@ import { MessageNodeEditor, MessageNodeDraft, MessageNodeButtonDraft } from '../
 import { ConversationFlowViewer } from '../../shared/conversation-flow-viewer/conversation-flow-viewer';
 import { InsightCardComponent, Insight } from '../../shared/insight-card/insight-card';
 import { InsightActionsService } from '../../shared/insight-actions.service';
+import { LocalizationFlagService } from '../../services/localization-flag.service';
+import { PromotionLanguagePanel } from '../localization/embedded/promotion-language-panel';
+import { SenderLanguageNote } from '../localization/embedded/sender-language-note';
+import { FlowLanguagePanel } from '../localization/embedded/flow-language-panel';
+import { LanguagePlanBridge } from '../localization/embedded/language-plan-bridge';
+import { TrackedSet } from '../localization/embedded/tracked-set';
 
 const MAX_BRANCH_DEPTH = 3; // mirrors shared/operations.js#MAX_BRANCH_DEPTH
 
@@ -53,7 +59,7 @@ const CAMPAIGN_TYPES = [
 
 @Component({
   selector: 'app-promotions',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, MessageNodeEditor, ConversationFlowViewer, InsightCardComponent],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, MessageNodeEditor, ConversationFlowViewer, InsightCardComponent, PromotionLanguagePanel, SenderLanguageNote, FlowLanguagePanel],
   templateUrl: './promotions.html',
   styleUrl: './promotions.css',
 })
@@ -90,7 +96,7 @@ export class Promotions implements OnInit {
   // Campaign panel
   activePromo: any = null;
   recommendedCustomers: any[] = [];
-  selectedCustomerIds = new Set<string>();
+  selectedCustomerIds = new TrackedSet<string>();
   recommendLimit = 100;
   loadingRecs = false;
 
@@ -128,6 +134,9 @@ export class Promotions implements OnInit {
   // and applied once the newly-created promotion's Campaign Panel opens
   // (see savePromotion()).
   private pendingInsightCustomerIds: string[] | null = null;
+
+  readonly loc = inject(LocalizationFlagService);
+  private readonly langPlan = inject(LanguagePlanBridge);
 
   constructor(
     private api: ApiService, private route: ActivatedRoute, private dialog: DialogService,
@@ -628,7 +637,7 @@ export class Promotions implements OnInit {
 
   async sendCampaign() {
     if (!this.selectedCustomerIds.size) return;
-    const ok = await this.dialog.confirm(`Send WhatsApp promotion to ${this.selectedCustomerIds.size} customers?`, {
+    const ok = await this.dialog.confirm(`Send WhatsApp promotion to ${this.selectedCustomerIds.size} customers?${this.langPlan.confirmNote(this.activePromo?._id, this.selectedCustomerIds.size)}`, {
       title: 'Send campaign', confirmLabel: 'Send', type: 'warning',
     });
     if (!ok) return;

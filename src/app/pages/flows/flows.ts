@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 import { DialogService } from '../../shared/dialog.service';
+import { LocalizationFlagService } from '../../services/localization-flag.service';
+import { FlowLanguagePanel } from '../localization/embedded/flow-language-panel';
+import { FlowLanguageChip } from '../localization/embedded/flow-language-chip';
 
 // DEFECT-03: "A Flow = a trigger condition + a reference to an existing
 // Promotion." All message content/branching now lives in Promotions
@@ -54,7 +57,7 @@ const PROMOTION_ONLY_TRIGGER_TYPES = ['points_threshold', 'purchase_frequency'];
 
 @Component({
   selector: 'app-flows',
-  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, DatePipe],
+  imports: [CommonModule, FormsModule, AppCurrencyPipe, StatusBadgePipe, DatePipe, FlowLanguagePanel, FlowLanguageChip],
   templateUrl: './flows.html',
   styleUrl: './flows.css',
 })
@@ -90,6 +93,8 @@ export class Flows implements OnInit {
   showPresets = false;
   presets: any[] = [];
   loadingPresets = false;
+
+  readonly loc = inject(LocalizationFlagService);
 
   constructor(private api: ApiService, private dialog: DialogService) {}
 

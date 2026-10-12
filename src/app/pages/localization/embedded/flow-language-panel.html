@@ -1,0 +1,88 @@
+@if (ready() && visible()) {
+  <section class="flp" [attr.aria-label]="t('flowlang.title')">
+    <div class="flp-top">
+      <div class="flp-label">{{ t('flowlang.title') }}</div>
+      @if (!isDefaultTemplate() && nodes().length) {
+        <app-preview-lang-toggle [uiLang]="uiLang()" />
+      }
+    </div>
+
+    @if (owner()?.state === 'error') {
+      <div class="flp-error" role="status">
+        <span>{{ t('flowlang.error') }}</span>
+        <button type="button" class="btn btn-outline btn-sm" (click)="retry()">{{ t('flowlang.retry') }}</button>
+      </div>
+    } @else if (!tree()) {
+      <p class="flp-hint">{{ t('flowlang.loading') }}</p>
+    } @else if (isDefaultTemplate()) {
+      <p class="flp-hint">{{ t('flowlang.noteDefault') }}</p>
+    } @else {
+      @for (n of nodes(); track n.messageNodeId) {
+        <div class="flp-node" [style.margin-inline-start.px]="indent(n)">
+          <div class="flp-head">
+            @if (n.isEntry) {
+              {{ t('flowlang.entry') }}
+            } @else {
+              {{ t('flowlang.afterTap') }} <span class="flp-q" dir="auto">{{ '“' + headingLabel(n) + '”' }}</span>
+            }
+          </div>
+
+          <div class="flp-matrix">
+            <div class="flp-line">
+              <span class="flp-lang">{{ t('flowlang.english') }}</span>
+              @if (n.isEntry) {
+                <app-approval-badge [status]="englishStatus(n)" uiLang="en" />
+              } @else {
+                <span class="flp-muted">{{ t('flowlang.freeReply') }}</span>
+              }
+            </div>
+            <div class="flp-line">
+              <span class="flp-lang">{{ t('flowlang.arabic') }}</span>
+              <app-node-language-status [node]="n" [messageSource]="tree()?.messageSource ?? null" [uiLang]="uiLang()" />
+            </div>
+            @if (bilingual(n); as b) {
+              <div class="flp-line">
+                <span class="flp-lang">{{ t('flowlang.bilingual') }}</span>
+                @if (b.metaStatus === 'NOT_REQUIRED') {
+                  <span class="badge badge-neutral">{{ t('flowlang.notRequired') }}</span>
+                } @else {
+                  <app-approval-badge [status]="$any(b.metaStatus)" [review]="b.reviewStatus" [uiLang]="uiLang()" />
+                }
+                <span class="flp-muted">{{ t('flowlang.bilingualNote') }}</span>
+              </div>
+            }
+          </div>
+
+          @if (n.isEntry && arabic(n) && englishPending(n)) {
+            <p class="flp-note">{{ t('flowlang.noteEnglishNotApproved') }}</p>
+          }
+
+          <div class="flp-previews" [class.flp-both]="mode() === 'both'">
+            @if (mode() !== 'ar') {
+              <div class="flp-col">
+                <app-wa-preview language="en" [body]="n.bodyText" [buttons]="englishButtons(n)" [uiLang]="uiLang()" />
+              </div>
+            }
+            @if (mode() !== 'en') {
+              <div class="flp-col">
+                @if (arabic(n); as v) {
+                  <app-wa-preview language="ar" [body]="v.body" [buttons]="arabicButtons(v)" [uiLang]="uiLang()" />
+                } @else {
+                  <div class="flp-none">
+                    <span>{{ t('flowlang.noArabic') }}</span>
+                    @if (addUrl(n); as u) {
+                      <a class="flp-link" [routerLink]="u.commands" [queryParams]="u.queryParams">{{ t('flowlang.add') }}</a>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+      @if (!readonly()) {
+        <p class="flp-note">{{ t('flowlang.noteEdit') }}</p>
+      }
+    }
+  </section>
+}

@@ -323,6 +323,10 @@
             }
           }
 
+          @if (loc.arabicEnabled()) {
+            <app-promotion-language-panel [promotion]="activePromo" [selection]="selectedCustomerIds" [testPhone]="testPhone" [sendResult]="sendResult" />
+          }
+
           <!-- Send Button -->
           @if (sendResult) {
             @if (sendResult.error) {
@@ -559,6 +563,7 @@
                     variableSource="promotion"
                     [root]="entryDraft"
                     [templateStatus]="existingEntryNode?.templateStatus || null"
+                    [languageOwnerId]="loc.arabicEnabled() ? editingPromoId : null"
                     (rootChange)="entryDraft = $event">
                   </app-conversation-flow-viewer>
                 }
@@ -577,6 +582,10 @@
                       {{ refreshingStatus ? 'Checking...' : 'Refresh Status' }}
                     </button>
                   </div>
+                }
+
+                @if (loc.arabicEnabled() && editingPromoId && existingEntryNode) {
+                  <app-flow-language-panel ownerType="promotion" [ownerId]="editingPromoId" [anchor]="existingEntryNode" />
                 }
 
                 @if (entryError) {
@@ -629,6 +638,7 @@
         <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px">
           This will send a WhatsApp message to all customers who have loyalty points, reminding them to come in and use them.
         </p>
+        @if (loc.arabicEnabled()) { <app-sender-language-note sender="loyalty_reminder" [result]="loyaltyResult" /> }
         @if (loyaltyResult) {
           <div class="result-box result-success">✅ Sent {{ loyaltyResult.sentCount }} loyalty reminder messages!</div>
         }

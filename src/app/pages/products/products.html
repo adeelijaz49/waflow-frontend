@@ -124,6 +124,9 @@
           <label>Description</label>
           <textarea [(ngModel)]="form.description" placeholder="Product description..."></textarea>
         </div>
+        @if (loc.arabicEnabled()) {
+          <app-arabic-item-fields kind="product" [refId]="editingId" />
+        }
         <div class="form-group">
           <label>Base Price ({{ currencyCode }})</label>
           <input type="number" [(ngModel)]="form.basePrice" placeholder="0.00" min="0" step="0.01" />

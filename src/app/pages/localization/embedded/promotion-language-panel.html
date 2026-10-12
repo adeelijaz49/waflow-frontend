@@ -1,0 +1,137 @@
+@if (ready() && status() !== 'unavailable') {
+  <section class="plp" [attr.aria-label]="t('promolang.title')">
+    <div class="plp-label">{{ t('promolang.title') }}</div>
+
+    <div class="plp-mode"><span class="badge badge-info">{{ t('promolang.default') }}</span></div>
+    <p class="plp-hint">{{ t('promolang.defaultHint', { language: defaultLanguage() }) }}</p>
+    <p class="plp-hint">{{ t('promolang.otherModes') }} <a class="plp-link" routerLink="/arabic/campaigns/new">{{ t('promolang.openBuilder') }}</a></p>
+
+    <div class="plp-sub">{{ t('promolang.versions') }}</div>
+    <div class="plp-ver">
+      <span class="plp-lang">{{ t('promolang.english') }}</span>
+      @if (englishStatus(); as st) {
+        <app-approval-badge [status]="st" uiLang="en" />
+        <span class="plp-src">{{ t('promolang.englishCustom') }}</span>
+      } @else {
+        <span class="plp-src">{{ t('promolang.englishStandard') }}</span>
+      }
+    </div>
+
+    @if (variant(); as v) {
+      <div class="plp-ver">
+        <span class="plp-lang">{{ t('promolang.arabic') }}</span>
+        @if (v.source !== 'none') {
+          <app-approval-badge [status]="v.metaStatus || 'NOT_CREATED'" [review]="v.reviewStatus" [uiLang]="uiLang()" />
+        }
+        <span class="plp-src">{{ sourceText(v) }}</span>
+      </div>
+      <div class="plp-links">
+        @if (v.templateId) {
+          <a class="plp-link" [routerLink]="['/arabic/templates', v.templateId]">{{ t('promolang.edit') }}</a>
+        } @else if (entryNode()?._id) {
+          <a class="plp-link" routerLink="/arabic/flows" [queryParams]="{ node: entryNode()?._id }">{{ t('promolang.add') }}</a>
+        } @else {
+          <a class="plp-link" routerLink="/arabic/templates" [queryParams]="{ forPromotion: promotionId(), name: promotion()?.name || '' }">{{ t('promolang.add') }}</a>
+        }
+      </div>
+    }
+
+    @switch (status()) {
+      @case ('empty') {
+        <p class="plp-hint">{{ t('promolang.selectPrompt') }}</p>
+      }
+      @case ('toomany') {
+        <p class="plp-hint">{{ t('promolang.tooMany') }}</p>
+      }
+      @case ('error') {
+        <div class="plp-error" role="status">
+          <span>{{ t('promolang.error.plan') }}</span>
+          <button type="button" class="btn btn-outline btn-sm" (click)="retry()">{{ t('promolang.retry') }}</button>
+        </div>
+      }
+      @default {
+        @if (shownPlan(); as p) {
+          <div class="plp-sub">{{ tp('promolang.selected', selection().size) }}</div>
+          <div [class.plp-dim]="status() === 'loading'">
+            <app-language-plan-summary [plan]="p" [uiLang]="uiLang()" />
+          </div>
+          @if (shortcuts(); as sc) {
+            <div class="plp-actions">
+              @if (sc.arabic.length > 0 && sc.arabic.length < sc.size) {
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="status() !== 'ready' || narrowing()" (click)="keepArabic()">{{ t('promolang.action.keepArabic', { count: sc.arabic.length }) }}</button>
+              }
+              @if (sc.english > 0 && sc.english < sc.size) {
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="status() !== 'ready' || narrowing()" (click)="keepEnglish()">{{ t('promolang.action.keepEnglish', { count: sc.english }) }}</button>
+              }
+              @if (sc.fallback.length > 0) {
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="status() !== 'ready' || narrowing()" (click)="skipFallbacks()">{{ t('promolang.action.skipFallbacks', { count: sc.fallback.length }) }}</button>
+              }
+            </div>
+            @if (narrowFailed()) {
+              <p class="plp-bad" role="status">{{ t('promolang.action.failed') }}</p>
+            }
+          }
+        } @else if (status() === 'loading') {
+          <p class="plp-hint">{{ t('promolang.loading') }}</p>
+        }
+      }
+    }
+
+    @if (variant()?.templateId) {
+      <button type="button" class="plp-toggle" [attr.aria-expanded]="previewOpen()" (click)="togglePreview()">
+        <span aria-hidden="true">{{ previewOpen() ? '▾' : '▸' }}</span> {{ t('promolang.preview.toggle') }}
+      </button>
+      @if (previewOpen()) {
+        <div class="plp-preview">
+          @switch (previewState()) {
+            @case ('loading') { <p class="plp-hint">{{ t('promolang.loading') }}</p> }
+            @case ('error') { <p class="plp-hint">{{ t('promolang.preview.error') }}</p> }
+            @case ('ready') {
+              @if (previewVariant(); as pv) {
+                <app-wa-preview language="ar" [header]="pv.header" [body]="pv.body" [footer]="pv.footer" [buttons]="pv.buttons" [uiLang]="uiLang()" />
+                <p class="plp-hint">{{ t('promolang.preview.fields') }}</p>
+              }
+            }
+          }
+        </div>
+      }
+    }
+
+    @if (variant(); as v) {
+      <div class="plp-test">
+        <div class="plp-sub">{{ t('promolang.test.title') }}</div>
+        <div class="plp-test-row">
+          <input type="text" dir="ltr" class="plp-input" [value]="phone()" (input)="onPhone($any($event.target).value)"
+                 [attr.aria-label]="t('promolang.test.phone')" [attr.placeholder]="t('promolang.test.phonePlaceholder')" />
+          <button type="button" class="btn btn-outline btn-sm" (click)="sendTest()"
+                  [disabled]="!v.sendable || !phone().trim() || test().kind === 'sending'">
+            {{ test().kind === 'sending' ? t('promolang.test.sending') : t('promolang.test.send') }}
+          </button>
+        </div>
+        @if (!v.sendable) {
+          <p class="plp-hint">{{ t('promolang.test.notReady') }}</p>
+        }
+        @switch (test().kind) {
+          @case ('sent') { <p class="plp-ok" role="status">{{ t('promolang.test.sent') }}</p> }
+          @case ('dry') { <p class="plp-ok" role="status">{{ t('promolang.test.dry') }}</p> }
+          @case ('error') { <p class="plp-bad" role="status">{{ t('promolang.test.error') }}</p> }
+          @case ('no_version') { <p class="plp-bad" role="status">{{ t('promolang.test.noVersion', { reason: reasonText($any(test()).reason) }) }}</p> }
+        }
+      </div>
+    }
+
+    @if (sendSummary(); as ss) {
+      <div class="plp-last" role="status">
+        @if (ss.counts) {
+          <p class="plp-note">{{ t('promolang.sent.counts', { ar: ss.counts.ar, en: ss.counts.en }) }}</p>
+        }
+        @for (f of ss.fallbacks; track $index) {
+          <p class="plp-note">{{ fallbackLine(f) }}</p>
+        }
+        @if (ss.stopped) {
+          <p class="plp-bad">{{ t('promolang.sent.stopped', { code: ss.stopped }) }}</p>
+        }
+      </div>
+    }
+  </section>
+}

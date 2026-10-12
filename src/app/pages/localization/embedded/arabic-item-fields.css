@@ -1,0 +1,11 @@
+:host { display: block; min-inline-size: 0; }
+.aif { margin-block-end: 16px; padding-block: 12px; padding-inline: 14px; border: 1px solid var(--border, #e2e8f0); border-radius: 10px; background: #f8fafc; text-align: start; }
+.aif-title { margin: 0 0 10px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-muted, #64748b); }
+.aif .form-group { margin-block-end: 10px; }
+.aif-muted { margin: 0; font-size: 12px; line-height: 1.45; color: var(--text-muted, #64748b); overflow-wrap: anywhere; }
+.aif-count { margin-block-start: 2px; text-align: end; }
+.aif-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-block-start: 8px; }
+.aif-link { display: inline-block; margin-block-start: 8px; font-size: 12.5px; font-weight: 600; color: var(--primary, #3b82f6); text-decoration: none; }
+.aif-link:hover { text-decoration: underline; }
+.aif-link:focus-visible { outline: 2px solid var(--primary, #3b82f6); outline-offset: 2px; border-radius: 4px; }
+.aif-error { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12.5px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding-block: 8px; padding-inline: 10px; }

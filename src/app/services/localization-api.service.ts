@@ -6,11 +6,12 @@ import type {
   AiAssistContext, AiInboundTranslation, AiLanguagePref, AiModeConfirmResult, AiModeInsight, AiModeSession,
   AiModeTurn, AiProductSuggestion, AiSaudiFriendlyResult, AiTextResult, BilingualOrder, CampaignCreateRequest,
   CampaignPlan, CampaignPlanRequest, CampaignRecipientRow, CampaignReport, CampaignStatus, CatalogImportResult,
-  CatalogKind, CatalogList, CatalogTranslation, CustomerLang, CustomerLanguageList, CustomerLanguageRow,
-  FlowMessageRow, InboxActionResult, InboxContext, InboxConversation, LanguageImportResult, LibraryEntry, Lang,
+  CatalogKind, CatalogList, CatalogTranslation, CatalogTranslationLookup, CustomerLang, CustomerLanguageList, CustomerLanguageRow,
+  FlowMessageRow, FlowOwnerTree, FlowOwnerType, FlowTreeRow, FollowUpSaveInput, FollowUpView, InboxActionResult, InboxContext, InboxConversation, LanguageImportResult, LibraryEntry, Lang,
   LocalizationSettings, LocalizedCampaignView, LocalizedTemplate, MessageLanguage, MyLanguagePrefs, OverviewSummary,
-  Page, RenderedPreview, ReviewStatus, ReviewSummary, SegmentOption, SendStatus, SubmitResult, TemplateButton,
-  TemplateCategory, TemplateUseCase, TemplatesUsage, VariantInput, VariantValidation,
+  Page, PromotionSendPlan, PromotionTestSendResult, PromotionTreesResponse, RenderedPreview, ReviewStatus, ReviewSummary, SegmentOption, SendStatus,
+  SenderKind, SenderSendPlan, SubmitResult, TemplateButton, TemplateCategory, TemplateUseCase, TemplatesUsage, VariantInput,
+  VariantValidation,
 } from '../pages/localization/localization.types';
 
 const API = `${environment.apiBaseUrl}/api/localization`;
@@ -87,7 +88,7 @@ export class LocalizationApiService {
     return this.http.get<{ items: LibraryEntry[] }>(`${API}/templates/library`);
   }
   createTemplate(body: {
-    name: string; useCase?: TemplateUseCase; category?: TemplateCategory;
+    name: string; useCase?: TemplateUseCase; category?: TemplateCategory; linkedPromotionId?: string;
     variants?: Array<VariantInput & { language: MessageLanguage }>;
   }): Observable<LocalizedTemplate> {
     return this.http.post<LocalizedTemplate>(`${API}/templates`, body);
@@ -229,6 +230,47 @@ export class LocalizationApiService {
   }
   localizeFlowMessage(messageNodeId: string): Observable<LocalizedTemplate> {
     return this.http.post<LocalizedTemplate>(`${API}/flows/messages/${seg(messageNodeId)}/localize`, {});
+  }
+  // Full message trees (entry + follow-ups) with per-language versions, for every flow / for one flow or promotion.
+  listFlowTrees(): Observable<{ items: FlowTreeRow[] }> {
+    return this.http.get<{ items: FlowTreeRow[] }>(`${API}/flows/tree`);
+  }
+  // Promotions with their own entry message that no flow sends (their trees are not in listFlowTrees).
+  listPromotionTrees(): Observable<PromotionTreesResponse> {
+    return this.http.get<PromotionTreesResponse>(`${API}/flows/promotion-trees`);
+  }
+  getFlowOwnerTree(ownerType: FlowOwnerType, ownerId: string): Observable<FlowOwnerTree> {
+    return this.http.get<FlowOwnerTree>(`${API}/flows/owners/${seg(ownerType)}/${seg(ownerId)}/tree`);
+  }
+  // Arabic version of a follow-up reply (free reply: native review only, no Meta approval).
+  getFollowUp(messageNodeId: string): Observable<FollowUpView> {
+    return this.http.get<FollowUpView>(`${API}/flows/followups/${seg(messageNodeId)}`);
+  }
+  saveFollowUp(messageNodeId: string, body: FollowUpSaveInput): Observable<FollowUpView> {
+    return this.http.put<FollowUpView>(`${API}/flows/followups/${seg(messageNodeId)}/variants/ar`, body);
+  }
+  reviewFollowUp(messageNodeId: string, status: ReviewStatus, contentVersion: number): Observable<FollowUpView> {
+    return this.http.post<FollowUpView>(`${API}/flows/followups/${seg(messageNodeId)}/variants/ar/review`, { status, contentVersion });
+  }
+
+  // ── Language plan / test for the existing Promotions, loyalty-reminder and consent screens ──
+  // Read-only: what each selected customer would receive in the legacy send (never gates it).
+  getPromotionSendPlan(promotionId: string, customerIds: string[], includeIds = false): Observable<PromotionSendPlan> {
+    return this.http.post<PromotionSendPlan>(`${API}/promotions/${seg(promotionId)}/send-plan`, { customerIds, includeIds });
+  }
+  getSenderPlan(sender: SenderKind, customerIds?: string[]): Observable<SenderSendPlan> {
+    return this.http.post<SenderSendPlan>(`${API}/senders/${seg(sender)}/plan`, customerIds ? { customerIds } : {});
+  }
+  testSendPromotionArabic(promotionId: string, phone: string): Observable<PromotionTestSendResult> {
+    return this.http.post<PromotionTestSendResult>(`${API}/promotions/${seg(promotionId)}/test-send`, { phone, language: 'ar' });
+  }
+
+  // ── Single-item lookups for the profile / product / service forms (read-only) ──
+  getCustomerLanguage(customerId: string): Observable<CustomerLanguageRow> {
+    return this.http.get<CustomerLanguageRow>(`${API}/customers/${seg(customerId)}/language`);
+  }
+  getCatalogTranslation(kind: CatalogKind, refId: string): Observable<CatalogTranslationLookup> {
+    return this.http.get<CatalogTranslationLookup>(`${API}/catalog/${seg(kind)}/${seg(refId)}/translation`);
   }
 
   // ── Review (native-review counts) ────────────────────────────────────────

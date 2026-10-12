@@ -67,5 +67,6 @@
   "meta.DELETED": "محذوف",
   "meta.LIMIT_EXCEEDED": "تم بلوغ الحد الأقصى للقوالب",
   "meta.ARCHIVED": "مؤرشف",
-  "flagged": "عليه علامة تحذير من واتساب"
+  "flagged": "عليه علامة تحذير من واتساب",
+  "meta.NOT_REQUIRED": "غير مطلوب"
 }

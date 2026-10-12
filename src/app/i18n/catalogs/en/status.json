@@ -67,5 +67,6 @@
   "meta.DELETED": "Deleted",
   "meta.LIMIT_EXCEEDED": "Template limit reached",
   "meta.ARCHIVED": "Archived",
-  "flagged": "At risk"
+  "flagged": "At risk",
+  "meta.NOT_REQUIRED": "Not required"
 }

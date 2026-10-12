@@ -1,0 +1,25 @@
+@if (ready()) {
+  <div class="lps">
+    @if (rows().length) {
+      <div class="lps-bar" role="img" [attr.aria-label]="barLabel()">
+        @for (r of rows(); track r.key) {
+          <span class="lps-seg" [class]="'lps-seg lps-' + r.key" [style.flex-grow]="r.count"></span>
+        }
+      </div>
+      <ul class="lps-counts">
+        @for (r of rows(); track r.key) {
+          <li><span class="lps-dot" [class]="'lps-dot lps-' + r.key" aria-hidden="true"></span><span class="lps-label">{{ r.label + " " }}</span><strong class="lps-n">{{ r.count }}</strong></li>
+        }
+      </ul>
+    }
+    @for (line of fallbackLines(); track $index) {
+      <p class="lps-note lps-note-warn">{{ line }}</p>
+    }
+    @if (notMessagedLine()) {
+      <p class="lps-note">{{ notMessagedLine() }}</p>
+    }
+    @for (line of warningLines(); track $index) {
+      <p class="lps-note">{{ line }}</p>
+    }
+  </div>
+}

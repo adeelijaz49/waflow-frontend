@@ -1,0 +1,120 @@
+<div class="fl-node">
+  <div class="fl-label" dir="auto">
+    @if (node().isEntry) {
+      {{ 'flows.entryMessage' | t }}
+    } @else if (parentLabel()) {
+      {{ 'flows.node.afterTap' | t: { label: parentLabel() } }}
+    } @else {
+      {{ 'flows.node.followUp' | t }}
+    }
+  </div>
+  <div class="fl-body" dir="auto" lang="en">{{ node().bodyText }}</div>
+  @if (node().buttons.length) {
+    <div class="fl-label">{{ 'flows.buttons' | t }}</div>
+    <div class="fl-buttons">
+      @for (b of node().buttons; track b.position) {
+        <span class="fl-btn" dir="auto">{{ b.label }}@if (actionKey(b); as key) { <span class="fl-btn-action"> - {{ key | t }}</span> }</span>
+      }
+    </div>
+  }
+  @if (node().isEntry && node().templateStatus) {
+    <div class="loc-muted">
+      {{ 'flows.englishStatus' | t }}:
+      <span class="badge" [ngClass]="tplClass(node().templateStatus)">{{ ('flows.tpl.' + node().templateStatus) | t }}</span>
+    </div>
+  } @else if (!node().isEntry) {
+    <div class="loc-muted">{{ 'flowlang.freeReply' | t }}</div>
+  }
+
+  <div class="fl-matrix">
+    @for (lang of langs(); track lang) {
+      <div class="fl-cell">
+        <app-lang-pill [lang]="lang" />
+        @if (versionOf(lang); as v) {
+          <app-approval-badge [status]="v.metaStatus" [review]="v.reviewStatus" />
+          @if (lang === 'ar' && v.stale) {
+            <span class="badge badge-warning">{{ 'flowlang.state.stale' | t }}</span>
+          }
+        } @else if (!node().isEntry && lang === 'en') {
+          <span class="loc-muted">{{ 'flowlang.notRequired' | t }}</span>
+        } @else {
+          <span class="loc-muted">{{ 'flows.notAdded' | t }}</span>
+        }
+        @if (lang === 'bilingual') {
+          <span class="loc-muted">{{ 'flowlang.bilingualNote' | t }}</span>
+        }
+      </div>
+    }
+  </div>
+
+  @if (arabic(); as ar) {
+    <div class="fl-ar">
+      <div class="fl-label">{{ 'flows.editor.body' | t }}</div>
+      <div class="fl-body" dir="auto" lang="ar">{{ ar.body }}</div>
+      @if (ar.buttons.length) {
+        <div class="fl-buttons">
+          @for (b of ar.buttons; track $index) {
+            <span class="fl-btn" dir="auto" lang="ar">{{ b.text }}</span>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <div class="fl-state">
+    <span class="loc-muted">{{ 'flows.arabicStatus' | t }}:</span>
+    <span class="badge" [ngClass]="stateClass(state())">{{ ('flowlang.state.' + state()) | t }}</span>
+  </div>
+  @if (stale()) {
+    <div class="loc-warn fl-stale" role="alert">
+      <strong>{{ 'flows.stale.title' | t }}</strong>
+      <div>{{ (node().isEntry ? 'flows.stale.entry' : 'flows.stale.followUp') | t }}</div>
+    </div>
+  }
+
+  <div class="fl-actions">
+    @if (node().isEntry) {
+      @if (templateId()) {
+        <a class="btn btn-outline btn-sm" [routerLink]="editLink()">{{ 'flows.editVersions' | t }}</a>
+      } @else if (node().canAddArabic !== false) {
+        <button type="button" class="btn btn-primary btn-sm" [disabled]="localizeDisabled()" (click)="localize.emit(node())">
+          {{ (localizing() ? 'flows.adding' : 'flows.addArabic') | t }}
+        </button>
+      }
+    } @else {
+      <!-- follow-ups: the backend reports canAddArabic=false once an Arabic version EXISTS, so it must not hide the editor (edit / re-review / fix an out-of-date version) -->
+      <button type="button" class="btn btn-primary btn-sm" [attr.aria-expanded]="editing()" (click)="toggleEditor()">
+        {{ (editing() ? 'common.close' : (arabic() ? 'flows.followUp.edit' : 'flows.followUp.add')) | t }}
+      </button>
+    }
+    <button type="button" class="btn btn-outline btn-sm" [attr.aria-expanded]="previewOpen()" (click)="togglePreview()">
+      {{ (previewOpen() ? 'flows.hidePreview' : 'flows.showPreview') | t }}
+    </button>
+  </div>
+  @if (node().isEntry && !templateId()) {
+    <p class="loc-hint">{{ 'flows.sameButtons' | t }}</p>
+  }
+
+  @if (previewOpen()) {
+    <div class="fl-panes">
+      @for (pane of panes(); track pane.lang) {
+        <div>
+          @if (pane.missing) {
+            <p class="loc-warn">{{ 'flows.noArabicYet' | t }}</p>
+          }
+          <app-wa-preview
+            [language]="pane.messageLanguage"
+            [phoneLanguage]="pane.lang"
+            [body]="pane.body"
+            [buttons]="pane.buttons" />
+        </div>
+      }
+    </div>
+    <div class="loc-muted">{{ 'templates.preview.sample' | t }}</div>
+  }
+
+  @if (editing() && !node().isEntry) {
+    <app-loc-followup-editor [node]="node()" [mode]="mode()"
+                             (changed)="onChanged($event)" (reloadRequested)="reloadRequested.emit()" (closed)="editing.set(false)" />
+  }
+</div>

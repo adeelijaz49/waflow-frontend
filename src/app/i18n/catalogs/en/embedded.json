@@ -1,0 +1,16 @@
+{
+  "customerLanguage.label": "Message language",
+  "customerLanguage.notSet": "Not set",
+  "customerLanguage.manage": "Manage all customer languages",
+  "itemFields.title": "Arabic name and description (optional)",
+  "itemFields.needName": "Add an Arabic name too. A description cannot be saved on its own.",
+  "itemFields.saveFailed.product": "The product was saved, but the Arabic text was not. Open the product again to retry.",
+  "itemFields.saveFailed.service": "The service was saved, but the Arabic text was not. Open the service again to retry.",
+  "itemFields.loadFailed": "We couldn't load the Arabic text.",
+  "itemFields.hubLink": "Review Arabic texts",
+  "importSummary.customer.counts": "Languages set: {set}. Languages unchanged: {unchanged}.",
+  "importSummary.customer.failed": "Some customer languages could not be saved ({count}). Open the Arabic section to check them.",
+  "importSummary.item.counts": "Arabic texts saved as drafts: {saved}. Unchanged: {unchanged}.",
+  "importSummary.item.failed": "Some Arabic texts could not be saved ({count}). Open the Arabic section to check them.",
+  "importSummary.protected": "Customers who chose their own language were left unchanged: {count}."
+}

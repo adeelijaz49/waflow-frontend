@@ -6,7 +6,7 @@
       "reviewed": 0,
       "draft": 15,
       "missing": 0,
-      "needsLegal": 0
+      "needsLegal": 1
     },
     "aimode": {
       "total": 67,
@@ -14,7 +14,7 @@
       "reviewed": 0,
       "draft": 67,
       "missing": 0,
-      "needsLegal": 0
+      "needsLegal": 1
     },
     "campaigns": {
       "total": 204,
@@ -56,6 +56,14 @@
       "missing": 0,
       "needsLegal": 0
     },
+    "embedded": {
+      "total": 14,
+      "arabic": 14,
+      "reviewed": 0,
+      "draft": 14,
+      "missing": 0,
+      "needsLegal": 0
+    },
     "errors": {
       "total": 51,
       "arabic": 51,
@@ -64,11 +72,19 @@
       "missing": 0,
       "needsLegal": 0
     },
-    "flows": {
-      "total": 33,
-      "arabic": 33,
+    "flowlang": {
+      "total": 40,
+      "arabic": 40,
       "reviewed": 0,
-      "draft": 33,
+      "draft": 40,
+      "missing": 0,
+      "needsLegal": 0
+    },
+    "flows": {
+      "total": 96,
+      "arabic": 96,
+      "reviewed": 0,
+      "draft": 96,
       "missing": 0,
       "needsLegal": 0
     },
@@ -96,6 +112,14 @@
       "missing": 0,
       "needsLegal": 0
     },
+    "promolang": {
+      "total": 86,
+      "arabic": 86,
+      "reviewed": 0,
+      "draft": 86,
+      "missing": 0,
+      "needsLegal": 0
+    },
     "review": {
       "total": 59,
       "arabic": 59,
@@ -113,28 +137,28 @@
       "needsLegal": 0
     },
     "status": {
-      "total": 69,
-      "arabic": 69,
+      "total": 70,
+      "arabic": 70,
       "reviewed": 0,
-      "draft": 69,
+      "draft": 70,
       "missing": 0,
       "needsLegal": 0
     },
     "templates": {
-      "total": 304,
-      "arabic": 304,
+      "total": 307,
+      "arabic": 307,
       "reviewed": 0,
-      "draft": 304,
+      "draft": 307,
       "missing": 0,
       "needsLegal": 0
     }
   },
   "totals": {
-    "total": 1304,
-    "arabic": 1304,
+    "total": 1511,
+    "arabic": 1511,
     "reviewed": 0,
-    "draft": 1304,
+    "draft": 1511,
     "missing": 0,
-    "needsLegal": 0
+    "needsLegal": 2
   }
 }

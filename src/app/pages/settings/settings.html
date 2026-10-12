@@ -241,6 +241,7 @@
           </div>
         }
 
+        @if (loc.arabicEnabled()) { <app-sender-language-note sender="consent_request" [result]="consentRequestResult" /> }
         <button class="btn btn-primary" style="margin-top:12px" (click)="sendConsentRequests()"
           [disabled]="sendingConsentRequests || !consentStats.eligibleForConsentRequest">
           {{ sendingConsentRequests ? 'Sending...' : 'Send consent request to ' + consentStats.eligibleForConsentRequest + ' customer' + (consentStats.eligibleForConsentRequest === 1 ? '' : 's') }}

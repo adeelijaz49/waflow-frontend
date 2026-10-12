@@ -2,7 +2,7 @@
   "title": "Customer languages",
   "subtitle": "Choose the language each customer receives WhatsApp messages in.",
   "hint.detect": "Customers who message you on WhatsApp get their language detected automatically from their first message.",
-  "hint.fallback": "If a customer's language is unknown, we use your default customer language, then English. The customer profile and the main import are unchanged: manage languages here.",
+  "hint.fallback": "If a customer's language is unknown, we use your default customer language, then English. You can also change a customer's language on their profile (Customers page) and with a language column in the main import.",
   "search.placeholder": "Search by name or phone",
   "search.aria": "Search customers by name or phone",
   "filter.aria": "Filter by language",

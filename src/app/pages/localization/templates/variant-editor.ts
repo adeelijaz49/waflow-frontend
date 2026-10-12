@@ -271,7 +271,7 @@ export class VariantEditor {
 
   // ── Buttons ──────────────────────────────────────────────────────────────
   private labelFor(role: ButtonRole, lang: MessageLanguage = this.language()): string {
-    if (role !== 'opt_out' && role !== 'opt_in' && role !== 'decline') return '';
+    if (role !== 'opt_out' && role !== 'opt_in' && role !== 'decline' && role !== 'shop_now') return '';
     const target: Lang = lang === 'bilingual' ? (this.form().bilingualOrder === 'en_first' ? 'en' : 'ar') : lang;
     return this.i18n.t(`templates.button.default.${role}`, undefined, target);
   }
@@ -298,8 +298,12 @@ export class VariantEditor {
   isFlowButton(b: TemplateButton): boolean {
     return b.role === 'flow_button';
   }
+  // shop_now (payload promo_<promotionId>) is offered only for a template linked to a Promotion.
   rolesFor(b: TemplateButton): ButtonRole[] {
-    return b.role === 'flow_button' ? ['flow_button'] : [...ROLE_OPTIONS];
+    if (b.role === 'flow_button') return ['flow_button'];
+    const roles: ButtonRole[] = [...ROLE_OPTIONS];
+    if (this.template().linkedPromotionId || b.role === 'shop_now') roles.push('shop_now');
+    return roles;
   }
   isQuickReply(role: ButtonRole): boolean {
     return QUICK_ROLES.has(role);

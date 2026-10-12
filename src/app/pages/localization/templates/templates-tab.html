@@ -166,6 +166,9 @@
           </div>
         </div>
         <div class="loc-hint" id="tl-new-category-hint">{{ newCategoryHint() | t }}</div>
+        @if (forPromotion()) {
+          <div class="loc-hint tl-gap">{{ 'templates.linkedPromotion' | t }}</div>
+        }
         @if (newError(); as message) {
           <div class="loc-error tl-gap" role="alert">{{ message }}</div>
         }

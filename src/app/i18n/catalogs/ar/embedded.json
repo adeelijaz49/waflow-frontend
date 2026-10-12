@@ -1,0 +1,16 @@
+{
+  "customerLanguage.label": "لغة الرسائل",
+  "customerLanguage.notSet": "غير محددة",
+  "customerLanguage.manage": "إدارة لغات جميع العملاء",
+  "itemFields.title": "الاسم والوصف بالعربية (اختياري)",
+  "itemFields.needName": "أضف اسماً بالعربية أيضاً، إذ لا يمكن حفظ الوصف وحده.",
+  "itemFields.saveFailed.product": "تم حفظ المنتج، لكن تعذّر حفظ النص العربي. افتح المنتج مرة أخرى وأعد المحاولة.",
+  "itemFields.saveFailed.service": "تم حفظ الخدمة، لكن تعذّر حفظ النص العربي. افتح الخدمة مرة أخرى وأعد المحاولة.",
+  "itemFields.loadFailed": "تعذّر تحميل النص العربي.",
+  "itemFields.hubLink": "مراجعة النصوص العربية",
+  "importSummary.customer.counts": "اللغات المحددة: {set}. اللغات دون تغيير: {unchanged}.",
+  "importSummary.customer.failed": "تعذّر حفظ لغات بعض العملاء ({count}). افتح «العربية واللغات» للتحقق منها.",
+  "importSummary.item.counts": "النصوص العربية المحفوظة كمسودات: {saved}. دون تغيير: {unchanged}.",
+  "importSummary.item.failed": "تعذّر حفظ بعض النصوص العربية ({count}). افتح «العربية واللغات» للتحقق منها.",
+  "importSummary.protected": "عدد العملاء الذين اختاروا لغتهم بأنفسهم وبقيت دون تغيير: {count}."
+}

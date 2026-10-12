@@ -1,0 +1,157 @@
+<div class="fe-grid">
+  <div class="card fe-edit">
+    <div class="card-body">
+      <div class="fe-head">
+        <strong>{{ 'flows.editor.title' | t }}</strong>
+        <button type="button" class="btn btn-outline btn-sm" (click)="close()">{{ 'common.close' | t }}</button>
+      </div>
+
+      @if (stale()) {
+        <div class="loc-warn fe-gap" role="alert">
+          <strong>{{ 'flows.stale.title' | t }}</strong>
+          <div>{{ 'flows.stale.followUp' | t }}</div>
+        </div>
+      }
+      @if (showAiNote()) {
+        <div class="loc-hint fe-gap" role="note">{{ 'templates.aiDraftNote' | t }}</div>
+      }
+      @if (slotProblem()) {
+        <div class="loc-hint fe-gap">{{ 'flows.editor.slotProblem' | t }}</div>
+      }
+
+      <div class="fe-field">
+        <div class="fe-sub">{{ 'flows.editor.english' | t }}</div>
+        <div class="fe-source" dir="auto" lang="en">{{ englishSource() }}</div>
+      </div>
+
+      <div class="fe-field">
+        <div class="fe-label-row">
+          <label [for]="'fe-body-' + node().messageNodeId">{{ 'flows.editor.body' | t }}</label>
+          <span class="fe-count" dir="ltr" [class.near]="countClass(form().body, maxBody()) === 'near'" [class.over]="countClass(form().body, maxBody()) === 'over'">{{ count(form().body) }} / {{ maxBody() }}</span>
+        </div>
+        <div class="fe-chips" role="group" [attr.aria-label]="'flows.editor.fields' | t">
+          <span class="fe-sub">{{ 'flows.editor.fields' | t }}</span>
+          @for (f of fields(); track f) {
+            <button type="button" class="fe-chip" [class.used]="usedField(f)" (mousedown)="$event.preventDefault()" (click)="insertField(f)">{{ fieldLabel(f) }}</button>
+          }
+        </div>
+        <textarea #bodyField [id]="'fe-body-' + node().messageNodeId" rows="6" dir="auto" lang="ar" [value]="form().body"
+                  (input)="onBody($any($event.target).value)"></textarea>
+        <div class="loc-muted">{{ 'flows.editor.bodyHint' | t }}</div>
+        <app-ai-assist [text]="englishSource()" textLanguage="en" [actions]="toArabicOnly" context="template_body"
+                       [maxLength]="maxBody()" (applied)="onAiBody($event)" />
+        @if (form().body.trim()) {
+          <app-ai-assist [text]="form().body" textLanguage="ar" [actions]="saudiOnly" context="template_body"
+                         [buttons]="node().buttons.length ? arabicLabels() : null" [maxLength]="maxBody()" (applied)="onAiBody($event)" />
+        }
+      </div>
+
+      <div class="fe-field">
+        <div class="fe-sub">{{ 'flows.editor.labels' | t }}</div>
+        <div class="loc-muted">{{ 'flows.editor.labelsHint' | t: { max: limits.label } }}</div>
+        @for (b of node().buttons; track b.position; let i = $index) {
+          <div class="fe-btn">
+            <div class="fe-btn-en" dir="auto" lang="en">{{ b.label }}</div>
+            <div class="fe-btn-label">
+              <input type="text" dir="auto" lang="ar" [value]="labelOf(b.position)"
+                     [attr.aria-label]="'flows.editor.labelFor' | t: { n: i + 1 }"
+                     (input)="onLabel(b.position, $any($event.target).value)" />
+              <span class="fe-count" dir="ltr" [class.near]="countClass(labelOf(b.position), limits.label) === 'near'" [class.over]="countClass(labelOf(b.position), limits.label) === 'over'">{{ count(labelOf(b.position)) }} / {{ limits.label }}</span>
+              <app-ai-assist [text]="b.label" textLanguage="en" [actions]="toArabicOnly" context="button"
+                             [maxLength]="limits.label" (applied)="onAiLabel(b.position, $event)" />
+            </div>
+          </div>
+        } @empty {
+          <div class="loc-muted">{{ 'flows.editor.noButtons' | t }}</div>
+        }
+      </div>
+
+      <div class="fe-checks" aria-live="polite">
+        @if (errors().length) {
+          <div class="loc-error">
+            <strong>{{ 'flows.editor.errorsTitle' | t }}</strong>
+            <ul class="fe-issues">
+              @for (i of errors(); track $index) {
+                <li>{{ i.text }}</li>
+              }
+            </ul>
+          </div>
+        }
+        @if (warnings().length) {
+          <div class="loc-warn">
+            <strong>{{ 'templates.validation.warnings' | t }}</strong>
+            <ul class="fe-issues">
+              @for (i of warnings(); track $index) {
+                <li>{{ i.text }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+
+      @if (conflict()) {
+        <div class="loc-error fe-gap" role="alert">
+          <div>{{ 'flows.editor.conflict' | t }}</div>
+          <button type="button" class="btn btn-outline btn-sm" (click)="reload()">{{ 'flows.editor.reload' | t }}</button>
+        </div>
+      }
+      @if (error(); as message) {
+        <div class="loc-error fe-gap" role="alert">{{ message }}</div>
+      }
+
+      <div class="fe-review">
+        <div class="fe-sub">{{ 'templates.review.title' | t }}</div>
+        @if (version(); as v) {
+          <app-approval-badge [status]="v.metaStatus" [review]="v.reviewStatus" />
+        }
+        <div class="loc-muted">{{ 'flows.editor.reviewHint' | t }}</div>
+        @if (version() && dirty()) {
+          <div class="loc-muted">{{ 'templates.review.saveFirst' | t }}</div>
+        } @else if (version() && stale()) {
+          <div class="loc-muted">{{ 'flows.editor.saveStaleFirst' | t }}</div>
+        }
+        <div class="loc-row">
+          @if (version()?.reviewStatus === 'reviewed') {
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!canRevert()" (click)="setReview('draft')">
+              {{ (reviewing() ? 'ai.working' : 'templates.review.backToDraft') | t }}
+            </button>
+          } @else {
+            <button type="button" class="btn btn-outline btn-sm" [disabled]="!canReview()" (click)="setReview('reviewed')">
+              {{ (reviewing() ? 'ai.working' : 'templates.review.markReviewed') | t }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="fe-savebar">
+        <span class="fe-state" aria-live="polite" [class.dirty]="dirty()">
+          @if (dirty()) {
+            {{ 'templates.unsaved' | t }}
+          } @else if (version()) {
+            {{ 'templates.saved' | t }}
+          }
+        </span>
+        @if (dirty()) {
+          <button type="button" class="btn btn-outline" [disabled]="busy()" (click)="discard()">{{ 'templates.discard' | t }}</button>
+        }
+        <button type="button" class="btn btn-primary" [disabled]="!canSave()" (click)="save()">
+          {{ (saving() ? 'templates.saving' : 'flows.editor.save') | t }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card fe-side">
+    <div class="card-header"><div class="card-title">{{ 'preview.title' | t }}</div></div>
+    <div class="card-body">
+      <div class="fe-previews">
+        @for (p of panes(); track p.lang) {
+          <div class="fe-preview">
+            <app-wa-preview [language]="p.lang" [phoneLanguage]="p.lang" [body]="p.body" [buttons]="p.buttons" />
+          </div>
+        }
+      </div>
+      <div class="loc-muted">{{ 'templates.preview.sample' | t }}</div>
+    </div>
+  </div>
+</div>

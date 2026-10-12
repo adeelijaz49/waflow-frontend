@@ -1,7 +1,7 @@
 import { ModalFocus } from '../shared/modal-focus';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
 import { I18N_DIRECTIVES, I18N_PIPES, I18nService } from '../../../i18n';
 import { LocalizationApiService } from '../../../services/localization-api.service';
@@ -27,6 +27,7 @@ export class TemplatesTab implements OnInit {
   private readonly api = inject(LocalizationApiService);
   private readonly ui = inject(LocUiService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   readonly i18n = inject(I18nService);
 
@@ -52,6 +53,8 @@ export class TemplatesTab implements OnInit {
   readonly newCategory = signal<TemplateCategory>('MARKETING');
   readonly newBusy = signal(false);
   readonly newError = signal<string | null>(null);
+  // Set when the page was opened from a Promotion (?forPromotion=<id>&name=<name>): the new template is linked to it.
+  readonly forPromotion = signal<string | null>(null);
 
   private readonly reload$ = new Subject<void>();
   private readonly search$ = new Subject<string>();
@@ -96,6 +99,21 @@ export class TemplatesTab implements OnInit {
   ngOnInit(): void {
     this.reload$.next();
     this.loadUsage();
+    this.openForPromotionFromLink();
+  }
+
+  // Deep link from the Promotions screen: /arabic/templates?forPromotion=<id>&name=<promotion name> opens the
+  // new-template dialog for that promotion (use case Promotion, Marketing, name prefilled).
+  private openForPromotionFromLink(): void {
+    const q = this.route.snapshot?.queryParamMap;
+    const id = q?.get('forPromotion') ?? '';
+    if (!/^[a-f0-9]{24}$/i.test(id)) return;
+    this.forPromotion.set(id);
+    this.newName.set((q?.get('name') ?? '').trim().slice(0, 80));
+    this.newUseCase.set('promotion');
+    this.newCategory.set('MARKETING');
+    this.newError.set(null);
+    this.showNew.set(true);
   }
 
   reload(): void {
@@ -189,6 +207,7 @@ export class TemplatesTab implements OnInit {
   }
 
   openNew(): void {
+    this.forPromotion.set(null);
     this.newName.set('');
     this.newUseCase.set('custom');
     this.newCategory.set('MARKETING');
@@ -211,7 +230,8 @@ export class TemplatesTab implements OnInit {
     if (this.newBusy()) return;
     this.newBusy.set(true);
     this.newError.set(null);
-    this.api.createTemplate({ name, useCase: this.newUseCase(), category: this.newCategory() }).subscribe({
+    const linkedPromotionId = this.forPromotion();
+    this.api.createTemplate({ name, useCase: this.newUseCase(), category: this.newCategory(), ...(linkedPromotionId ? { linkedPromotionId } : {}) }).subscribe({
       next: (t) => {
         this.newBusy.set(false);
         this.showNew.set(false);

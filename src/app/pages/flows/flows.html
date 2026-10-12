@@ -35,6 +35,7 @@
               @if (needsTemplateApproval(f)) {
                 <span class="badge badge-warning" style="font-size:10px">⏳ Pending Approval</span>
               }
+              @if (loc.arabicEnabled()) { <app-flow-language-chip [flowId]="f._id" /> }
               <div class="flow-actions">
                 <button class="btn btn-outline btn-sm" (click)="openEdit(f, $event)">Edit</button>
                 <button class="btn btn-outline btn-sm" (click)="toggleStatus(f, $event)"
@@ -81,6 +82,7 @@
             </div>
           }
 
+          @if (loc.arabicEnabled()) { <app-flow-language-panel ownerType="flow" [ownerId]="activeFlow._id" [readonly]="true" /> }
           <div class="section-label" style="margin-top:16px">Enrolled Customers</div>
           @if (loadingEnrollments) {
             <div class="loading" style="padding:12px">Loading...</div>

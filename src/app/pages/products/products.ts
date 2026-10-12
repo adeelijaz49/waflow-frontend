@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -7,14 +7,18 @@ import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { SettingsService } from '../../shared/settings.service';
 import { ImageCarousel } from '../../shared/image-carousel/image-carousel';
 import { DialogService } from '../../shared/dialog.service';
+import { LocalizationFlagService } from '../../services/localization-flag.service';
+import { ArabicItemFields } from '../localization/embedded/arabic-item-fields';
 
 @Component({
   selector: 'app-products',
-  imports: [CommonModule, FormsModule, RouterLink, AppCurrencyPipe, ImageCarousel],
+  imports: [CommonModule, FormsModule, RouterLink, AppCurrencyPipe, ImageCarousel, ArabicItemFields],
   templateUrl: './products.html',
   styleUrl: './products.css',
 })
 export class Products implements OnInit {
+  readonly loc = inject(LocalizationFlagService);
+  private readonly arabicFields = viewChild(ArabicItemFields);
   products: any[] = [];
   categories: string[] = [];
   total = 0;
@@ -152,7 +156,7 @@ export class Products implements OnInit {
       ? this.api.updateProduct(this.editingId, payload)
       : this.api.createProduct(payload);
     req.subscribe({
-      next: () => { this.showModal = false; this.saving = false; this.load(); },
+      next: (saved) => { void this.arabicFields()?.commit(saved?._id || this.editingId); this.showModal = false; this.saving = false; this.load(); },
       error: (err) => {
         this.saving = false;
         this.dialog.error(err.error?.error || 'Could not save this product — please try again.');

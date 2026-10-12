@@ -3,12 +3,13 @@
     <h2 class="page-title">{{ 'flows.title' | t }}</h2>
     <p class="page-sub">{{ 'flows.subtitle' | t }}</p>
   </div>
-  <button type="button" class="btn btn-outline btn-sm" (click)="load()" [disabled]="loading()">{{ 'common.refresh' | t }}</button>
+  <button type="button" class="btn btn-outline btn-sm" (click)="refresh()" [disabled]="loading() || refreshing()">{{ 'common.refresh' | t }}</button>
 </div>
 
 <div class="card fl-info"><div class="card-body">
   <strong>{{ 'flows.info.title' | t }}</strong>
-  <p class="loc-muted">{{ 'flows.info.sending' | t }}</p>
+  <p class="loc-muted">{{ 'flows.info.sendingLive' | t }}</p>
+  <p class="loc-muted">{{ 'flows.info.followUps' | t }}</p>
   <p class="loc-muted">{{ 'flows.info.approval' | t }}</p>
 </div></div>
 
@@ -16,20 +17,32 @@
   <div class="loc-error" role="alert">{{ actionError() }}</div>
 }
 
-<div aria-live="polite">
+<div>
 @if (loading()) {
-  <div class="loading">{{ 'common.loading' | t }}</div>
+  <div class="loading" role="status">{{ 'common.loading' | t }}</div>
 } @else if (error()) {
   <div class="card"><div class="card-body">
     <div class="loc-error" role="alert">{{ error() }}</div>
     <button type="button" class="btn btn-outline btn-sm" (click)="load()">{{ 'common.retry' | t }}</button>
   </div></div>
-} @else if (!hasFlows()) {
-  <div class="empty-state">
-    <p>{{ 'flows.empty' | t }}</p>
-    <a class="btn btn-primary" routerLink="/flows">{{ 'flows.openFlows' | t }}</a>
-  </div>
 } @else {
+  @if (nodeMissing()) {
+    <div class="loc-warn fl-gap" role="status">{{ 'flows.node.notFound' | t }}</div>
+  }
+  @if (showEmpty()) {
+    <div class="empty-state">
+      <p>{{ 'flows.empty' | t }}</p>
+      <a class="btn btn-primary" routerLink="/flows">{{ 'flows.openFlows' | t }}</a>
+    </div>
+  }
+  @if (hasFlows() || hasPromos()) {
+    <div class="fl-toggle" role="group" [attr.aria-label]="'preview.asCustomer' | t">
+      @for (m of modes; track m) {
+        <button type="button" class="btn btn-outline btn-sm" [attr.aria-pressed]="mode() === m" (click)="mode.set(m)">{{ modeKey(m) | t }}</button>
+      }
+    </div>
+  }
+
   @for (flow of flows(); track flow.flowId) {
     <div class="card fl-flow">
       <div class="card-header flex-between">
@@ -38,89 +51,75 @@
       </div>
       <div class="card-body">
         <div class="loc-muted">{{ 'flows.trigger.label' | t }}: {{ triggerKey(flow.triggerType) | t }}</div>
-        @for (node of flow.nodes; track node.messageNodeId) {
-          <div class="fl-node">
-            <div class="fl-label">{{ 'flows.entryMessage' | t }}</div>
-            <div class="fl-body" dir="auto">{{ node.bodyText }}</div>
-            @if (node.buttons.length) {
-              <div class="fl-label">{{ 'flows.buttons' | t }}</div>
-              <div class="fl-buttons">
-                @for (b of node.buttons; track b.position) {
-                  <span class="fl-btn" dir="auto">{{ b.label }}</span>
-                }
-              </div>
-            }
-            <div class="loc-muted">
-              {{ 'flows.englishStatus' | t }}:
-              <span class="badge" [ngClass]="tplClass(node.templateStatus)">{{ ('flows.tpl.' + node.templateStatus) | t }}</span>
-            </div>
-            <div class="fl-matrix">
-              @for (lang of langs; track lang) {
-                <div class="fl-cell">
-                  <app-lang-pill [lang]="lang" />
-                  @if (variantOf(node, lang); as v) {
-                    <app-approval-badge [status]="v.metaStatus" [review]="v.reviewStatus" />
-                  } @else {
-                    <span class="loc-muted">{{ 'flows.notAdded' | t }}</span>
-                  }
-                </div>
-              }
-            </div>
-            <div class="fl-actions">
-              @if (node.localizedTemplateId) {
-                <a class="btn btn-outline btn-sm" [routerLink]="editLink(node)">{{ 'flows.editVersions' | t }}</a>
-              } @else {
-                <button type="button" class="btn btn-primary btn-sm" [disabled]="busyNode() !== null" (click)="localize(node)">
-                  {{ (busyNode() === node.messageNodeId ? 'flows.adding' : 'flows.addArabic') | t }}
-                </button>
-              }
-              <button type="button" class="btn btn-outline btn-sm" [attr.aria-expanded]="openNode() === node.messageNodeId" (click)="togglePreview(node)">
-                {{ (openNode() === node.messageNodeId ? 'flows.hidePreview' : 'flows.showPreview') | t }}
-              </button>
-            </div>
-            @if (!node.localizedTemplateId) {
-              <p class="loc-hint">{{ 'flows.sameButtons' | t }}</p>
-            }
-
-            @if (openNode() === node.messageNodeId) {
-              <div class="fl-preview">
-                <div class="fl-toggle" role="group" [attr.aria-label]="'preview.asCustomer' | t">
-                  <button type="button" class="btn btn-outline btn-sm" [attr.aria-pressed]="mode() === 'ar'" (click)="mode.set('ar')">{{ 'preview.arabicCustomer' | t }}</button>
-                  <button type="button" class="btn btn-outline btn-sm" [attr.aria-pressed]="mode() === 'en'" (click)="mode.set('en')">{{ 'preview.englishCustomer' | t }}</button>
-                  <button type="button" class="btn btn-outline btn-sm" [attr.aria-pressed]="mode() === 'both'" (click)="mode.set('both')">{{ 'flows.both' | t }}</button>
-                </div>
-                @if (tplState(node); as st) {
-                  @if (st.state === 'loading') {
-                    <div class="loading">{{ 'common.loading' | t }}</div>
-                  } @else if (st.state === 'error') {
-                    <div class="loc-error" role="alert">{{ st.message }}</div>
-                    <button type="button" class="btn btn-outline btn-sm" (click)="retryTemplate(node)">{{ 'common.retry' | t }}</button>
-                  }
-                }
-                @if (!node.localizedTemplateId || tplState(node)?.state === 'ready') {
-                  <div class="fl-panes">
-                    @for (pane of panes(node); track pane.lang) {
-                      <div>
-                        @if (pane.missing) {
-                          <p class="loc-warn">{{ 'flows.noArabicYet' | t }}</p>
-                        }
-                        <app-wa-preview
-                          [language]="pane.messageLanguage"
-                          [phoneLanguage]="pane.lang"
-                          [header]="pane.header"
-                          [body]="pane.body"
-                          [footer]="pane.footer"
-                          [buttons]="pane.buttons" />
-                      </div>
-                    }
-                  </div>
-                }
-              </div>
-            }
+        @if (flow.promotionName) {
+          <div class="loc-muted">{{ 'flows.sendsPromotion' | t }}: <span dir="auto">{{ flow.promotionName }}</span></div>
+        }
+        <div class="fl-chip" role="status">{{ chip(flow) }}</div>
+        @if (flow.messageSource === 'default_template') {
+          <div class="loc-hint fl-default">
+            <p>{{ 'flows.defaultTemplate.note' | t }}</p>
+            <a class="btn btn-outline btn-sm" routerLink="/flows">{{ 'flows.openFlows' | t }}</a>
           </div>
+        } @else {
+          @for (node of flow.nodes; track node.messageNodeId) {
+            <app-loc-flow-node-card
+              [node]="node"
+              [nodes]="flow.nodes"
+              [messageSource]="flow.messageSource"
+              [mode]="mode()"
+              [focused]="focusId() === node.messageNodeId"
+              [localizing]="busyNode() === node.messageNodeId"
+              [localizeDisabled]="busyNode() !== null"
+              (localize)="localize($event)"
+              (versionChanged)="onVersionChanged(flow, $event)"
+              (reloadRequested)="load(true)" />
+          }
         }
       </div>
     </div>
+  }
+
+  @if (promoState() === 'loading') {
+    <div class="loading" role="status">{{ 'common.loading' | t }}</div>
+  } @else if (promoState() === 'error') {
+    <div class="card fl-promos-error"><div class="card-body">
+      <h3 class="card-title">{{ 'flows.promoMessages.title' | t }}</h3>
+      <div class="loc-error" role="alert">{{ promoError() }}</div>
+      <button type="button" class="btn btn-outline btn-sm" (click)="loadPromotions()">{{ 'common.retry' | t }}</button>
+    </div></div>
+  } @else if (hasPromos()) {
+    <section class="fl-promos" aria-labelledby="fl-promos-title">
+      <h3 class="fl-section-title" id="fl-promos-title">{{ 'flows.promoMessages.title' | t }}</h3>
+      <p class="loc-muted">{{ 'flows.promoMessages.note' | t }}</p>
+      @for (row of promoRows(); track row.promotionId) {
+        <div class="card fl-promo" [attr.data-promotion-id]="row.promotionId">
+          <div class="card-header flex-between">
+            <h4 class="card-title" dir="auto">{{ row.promotionName }}</h4>
+            <span class="badge" [ngClass]="row.promotionStatus === 'active' ? 'badge-success' : 'badge-neutral'">{{ promoStatusKey(row.promotionStatus) | t }}</span>
+          </div>
+          <div class="card-body">
+            <div class="fl-chip" role="status">{{ chip(row) }}</div>
+            @for (node of row.nodes; track node.messageNodeId) {
+              <app-loc-flow-node-card
+                [node]="node"
+                [nodes]="row.nodes"
+                [messageSource]="row.messageSource"
+                [mode]="mode()"
+                [focused]="focusId() === node.messageNodeId"
+                [localizing]="busyNode() === node.messageNodeId"
+                [localizeDisabled]="busyNode() !== null"
+                (localize)="localize($event)"
+                (versionChanged)="onPromotionVersionChanged(row, $event)"
+                (reloadRequested)="load(true)" />
+            }
+            <a class="btn btn-outline btn-sm fl-promo-link" routerLink="/promotions">{{ 'flows.promoMessages.open' | t }}</a>
+          </div>
+        </div>
+      }
+      @if (promoTruncated()) {
+        <p class="loc-hint">{{ 'flows.promoMessages.truncated' | t: { count: promoRows().length } }}</p>
+      }
+    </section>
   }
 }
 </div>

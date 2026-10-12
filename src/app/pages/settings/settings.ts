@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
@@ -6,10 +6,12 @@ import { SettingsService } from '../../shared/settings.service';
 import { AuthService } from '../../shared/auth.service';
 import { DialogService } from '../../shared/dialog.service';
 import { LegalSection } from './legal-section/legal-section';
+import { LocalizationFlagService } from '../../services/localization-flag.service';
+import { SenderLanguageNote } from '../localization/embedded/sender-language-note';
 
 @Component({
   selector: 'app-settings',
-  imports: [CommonModule, DatePipe, FormsModule, LegalSection],
+  imports: [CommonModule, DatePipe, FormsModule, LegalSection, SenderLanguageNote],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
 })
@@ -49,6 +51,8 @@ export class Settings implements OnInit {
   consentStatsLoading = false;
   sendingConsentRequests = false;
   consentRequestResult: any = null;
+
+  readonly loc = inject(LocalizationFlagService);
 
   constructor(private api: ApiService, private settings: SettingsService, public auth: AuthService, private dialog: DialogService) {}
 

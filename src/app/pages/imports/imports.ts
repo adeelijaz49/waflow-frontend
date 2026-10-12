@@ -3,12 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { ImportLanguageSummary } from '../localization/embedded/import-language-summary';
+import type { ImportLocalizationSummary } from '../localization/localization.types';
 
 interface FieldConfig {
   key: string;
   label: string;
   required: boolean;
   type: string;
+  hint?: string;
 }
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -19,7 +22,7 @@ const ENTITY_LABELS: Record<string, string> = {
 
 @Component({
   selector: 'app-imports',
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ImportLanguageSummary],
   templateUrl: './imports.html',
   styleUrl: './imports.css',
 })
@@ -47,7 +50,7 @@ export class Imports implements OnInit {
   running = false;
 
   // Step 4
-  results: { importedCount: number; skippedDuplicateCount: number; failedCount: number; totalRows: number } | null = null;
+  results: { importedCount: number; skippedDuplicateCount: number; failedCount: number; totalRows: number; localization?: ImportLocalizationSummary } | null = null;
 
   error: string | null = null;
 

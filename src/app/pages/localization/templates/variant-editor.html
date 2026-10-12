@@ -102,6 +102,9 @@
           @if (flowLocked()) {
             <div class="loc-hint">{{ 'templates.editor.flowLinked' | t }}</div>
           }
+          @if (template().linkedPromotionId) {
+            <div class="loc-hint">{{ 'templates.linkedPromotion' | t }}</div>
+          }
           @if (needsOptOut()) {
             <div class="loc-warn ve-optout">
               <span>{{ 'templates.buttons.needOptOut' | t }}</span>

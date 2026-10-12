@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
@@ -7,14 +7,17 @@ import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 import { InsightCardComponent, Insight } from '../../shared/insight-card/insight-card';
 import { InsightActionsService } from '../../shared/insight-actions.service';
+import { LocalizationFlagService } from '../../services/localization-flag.service';
+import { CustomerLanguageField } from '../localization/embedded/customer-language-field';
 
 @Component({
   selector: 'app-customers',
-  imports: [CommonModule, FormsModule, RouterLink, AppCurrencyPipe, DatePipe, StatusBadgePipe, InsightCardComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AppCurrencyPipe, DatePipe, StatusBadgePipe, InsightCardComponent, CustomerLanguageField],
   templateUrl: './customers.html',
   styleUrl: './customers.css',
 })
 export class Customers implements OnInit {
+  readonly loc = inject(LocalizationFlagService);
   customers: any[] = [];
   total = 0;
   page = 1;

@@ -218,6 +218,9 @@
           <label>Description</label>
           <textarea [(ngModel)]="serviceForm.description" placeholder="Describe the service..."></textarea>
         </div>
+        @if (loc.arabicEnabled()) {
+          <app-arabic-item-fields kind="service" [refId]="editingServiceId" />
+        }
         <div class="form-row">
           <div class="form-group">
             <label>Duration (minutes)</label>

@@ -1,0 +1,30 @@
+@if (ready() && state() !== 'hidden') {
+  @if (state() === 'error') {
+    <div class="sln sln-error" role="status">
+      <span>{{ t('promolang.error.plan') }}</span>
+      <button type="button" class="btn btn-outline btn-sm" (click)="load()">{{ t('promolang.retry') }}</button>
+    </div>
+  } @else if (state() === 'ready' && plan(); as p) {
+    @if (hasArabic()) {
+      <div class="sln">
+        <div class="sln-title">{{ t('promolang.title') }}</div>
+        <p class="sln-hint">{{ t('promolang.sender.' + sender()) }}</p>
+        <app-language-plan-summary [plan]="p" [kind]="sender()" [uiLang]="uiLang()" />
+        <a class="sln-link" routerLink="/arabic/templates">{{ t('promolang.sender.hubLink') }}</a>
+      </div>
+    }
+  }
+  @if (sendSummary(); as ss) {
+    <div class="sln sln-last" role="status">
+      @if (ss.counts) {
+        <p class="sln-note">{{ t('promolang.sent.counts', { ar: ss.counts.ar, en: ss.counts.en }) }}</p>
+      }
+      @for (f of ss.fallbacks; track $index) {
+        <p class="sln-note">{{ fallbackLine(f) }}</p>
+      }
+      @if (ss.stopped) {
+        <p class="sln-note sln-bad">{{ t('promolang.sent.stopped', { code: ss.stopped }) }}</p>
+      }
+    </div>
+  }
+}

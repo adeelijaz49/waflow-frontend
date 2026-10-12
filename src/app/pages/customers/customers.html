@@ -112,6 +112,9 @@
                 </button>
               }
             </div>
+            @if (loc.arabicEnabled()) {
+              <app-customer-language-field [customerId]="selectedCustomer._id" />
+            }
           </div>
         </div>
 

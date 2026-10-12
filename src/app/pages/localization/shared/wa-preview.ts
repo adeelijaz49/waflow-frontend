@@ -24,6 +24,8 @@ export class WaPreview {
   readonly time = input<string>('');
   // Override the phone direction (e.g. "preview as an English customer").
   readonly phoneLanguage = input<Lang | null>(null);
+  // Force the language of the UI labels ("nothing to preview"); undefined = the active UI language.
+  readonly uiLang = input<Lang | undefined>(undefined);
 
   readonly frameLang = computed<Lang>(() => {
     const forced = this.phoneLanguage();

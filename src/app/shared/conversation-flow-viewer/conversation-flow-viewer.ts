@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MessageNodeEditor, MessageNodeDraft, MessageNodeButtonDraft, MessageNodeAction } from '../message-node-editor/message-node-editor';
+import { NodeLanguageStrip } from '../../pages/localization/embedded/node-language-strip';
 
 interface PathStep {
   node: MessageNodeDraft;
@@ -23,7 +24,7 @@ interface PathStep {
 @Component({
   selector: 'app-conversation-flow-viewer',
   standalone: true,
-  imports: [CommonModule, MessageNodeEditor],
+  imports: [CommonModule, MessageNodeEditor, NodeLanguageStrip],
   templateUrl: './conversation-flow-viewer.html',
   styleUrl: './conversation-flow-viewer.css',
 })
@@ -33,6 +34,7 @@ export class ConversationFlowViewer implements OnChanges {
   @Input() root: MessageNodeDraft = { bodyText: '', buttons: [] };
   @Input() templateStatus: string | null = null;
   @Input() maxDepth = 3;
+  @Input() languageOwnerId: string | null = null; // set only for flagged merchants (the host decides)
   @Output() rootChange = new EventEmitter<MessageNodeDraft>();
 
   pathSteps: PathStep[] = [];

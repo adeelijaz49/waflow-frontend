@@ -29,6 +29,9 @@
           }
         </div>
       </div>
+      @if (languageOwnerId && step.node.targetNodeId) {
+        <app-node-language-strip [ownerType]="variableSource" [ownerId]="languageOwnerId" [nodeId]="step.node.targetNodeId" />
+      }
       @if (editingNode === step.node) {
         <div class="convo-edit-drawer" (click)="$event.stopPropagation()">
           <app-message-node-editor
