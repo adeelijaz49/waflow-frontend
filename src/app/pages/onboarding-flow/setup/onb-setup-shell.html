@@ -1,0 +1,57 @@
+<div class="onb onb-root onb-setup" [appLangDir]="i18n.lang()">
+  @if (i18n.ready()) {
+    <header class="onb-head">
+      <div class="onb-head-row">
+        <span class="onb-head-title">{{ 'onboarding.title' | t }}</span>
+        <div class="onb-head-tools">
+          @if (state.level()) {
+            <app-onb-status-pill [level]="state.level()" />
+          }
+          <button type="button" class="onb-link onb-head-bell" [attr.aria-label]="'onboarding.bell.label' | t" (click)="bellOpen.set(true)">
+            <span aria-hidden="true">&#128276;</span>
+            @if (state.unread() > 0) {
+              <span class="onb-head-count">{{ state.unread() }}</span>
+            }
+          </button>
+          <app-onb-help />
+          <button type="button" class="onb-link" [attr.lang]="otherLang()" (click)="switchLanguage()">{{ ('common.langName.' + otherLang()) | t }}</button>
+        </div>
+      </div>
+      @if (!state.takeover()) {
+        <div class="onb-progress-text">{{ 'onboarding.progress.label' | t: { n: stepNumber(), total: 5 } }}: {{ ('onboarding.step.' + rows()[stepNumber() - 1].key) | t }}</div>
+        <ol class="onb-progress" aria-hidden="true">
+          @for (r of rows(); track r.key) {
+            <li [attr.data-s]="r.status === 'done' ? 'done' : r.current ? 'current' : 'todo'"></li>
+          }
+        </ol>
+        <button type="button" class="onb-link onb-steps-toggle" [attr.aria-expanded]="showSteps()" (click)="showSteps.set(!showSteps())">
+          {{ (showSteps() ? 'onboarding.progress.hideAll' : 'onboarding.progress.showAll') | t }}
+        </button>
+      }
+    </header>
+    <div class="onb-layout">
+      @if (!state.takeover()) {
+        <nav class="onb-side" [class.onb-side-open]="showSteps()" [attr.aria-label]="'onboarding.title' | t">
+          <app-onb-checklist />
+        </nav>
+      }
+      <main class="onb-main">
+        <router-outlet />
+      </main>
+    </div>
+    @if (bellOpen()) {
+      <app-onb-notifications (closed)="bellOpen.set(false)" />
+    }
+    <app-onb-help-sheet />
+    <app-loc-ui-host />
+    <div class="onb-sr" role="status" aria-live="polite">{{ announcer.message() }}</div>
+  } @else if (textsFailed()) {
+    <!-- The texts themselves failed to load, so this message is deliberately in both languages. -->
+    <div class="onb-alert onb-alert-error" role="alert" dir="auto">
+      <!-- i18n-ignore -->
+      تعذر تحميل الصفحة. Could not load this page.
+      <!-- i18n-ignore -->
+      <button type="button" class="onb-link" (click)="start()">إعادة المحاولة / Retry</button>
+    </div>
+  }
+</div>

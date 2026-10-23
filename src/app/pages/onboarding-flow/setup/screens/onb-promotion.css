@@ -1,0 +1,17 @@
+/* Step 5 (test message, first Promotion, celebration). Logical properties only, every selector prefixed. */
+.onb-promo { display: flex; flex-direction: column; gap: 16px; }
+.onb-promo-loading { display: flex; align-items: center; gap: 12px; }
+.onb-promo-preview { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); white-space: pre-wrap; overflow-wrap: anywhere; text-align: start; }
+.onb-promo-sent { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.onb-promo-tick { flex: none; display: inline-flex; align-items: center; justify-content: center; inline-size: 28px; block-size: 28px; border-radius: 50%; color: #fff; background: var(--success); font-weight: 700; }
+.onb-promo-ai { margin: 0; padding: 12px 14px; border-radius: 12px; border: 1px dashed var(--border); overflow-wrap: anywhere; user-select: all; }
+.onb-promo-links { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.onb-promo-done { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+.onb-promo-check {
+  display: inline-flex; align-items: center; justify-content: center; inline-size: 72px; block-size: 72px; border-radius: 50%;
+  font-size: 40px; font-weight: 700; color: #fff; background: var(--success); animation: onb-promo-pop .5s ease-out both;
+}
+.onb-promo-lines { list-style: none; margin: 0; padding: 0; inline-size: 100%; display: flex; flex-direction: column; gap: 8px; text-align: start; }
+.onb-promo-lines li { padding: 10px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); overflow-wrap: anywhere; }
+@keyframes onb-promo-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .onb-promo-check { animation: none; } }

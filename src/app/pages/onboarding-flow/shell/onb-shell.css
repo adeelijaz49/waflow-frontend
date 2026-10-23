@@ -1,0 +1,41 @@
+/* Status strip + lock treatment. Loaded only when the strip mounts (enrolled merchants). Every selector starts with
+   .onb- or body.onb-, so nothing can match for a merchant who is not enrolled. Logical properties only. */
+.onb-shell-host { position: sticky; inset-block-start: 0; z-index: 60; }
+.onb-shell-host.onb-hide { display: none; }
+
+.onb-shell {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
+  padding: 8px 16px; font-size: 15px; color: var(--text); background: var(--surface);
+  border-block-end: 1px solid var(--border);
+}
+.onb-shell[data-variant="pastDue"], .onb-shell[data-variant="cancelled"], .onb-shell[data-variant="reconnect"], .onb-shell[data-variant="paused"] {
+  background: #fffbeb; border-block-end-color: var(--warning);
+}
+.onb-shell-msg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; flex: 1 1 260px; min-inline-size: 0; }
+.onb-shell-sub { color: var(--text-muted); }
+/* Two classes on purpose: .onb-btn-primary (onb-base.css, loaded after this file) is 100% wide and 56px tall and would win over one class. */
+.onb-shell .onb-shell-btn { inline-size: auto; min-block-size: 44px; font-size: 15px; padding: 6px 16px; }
+.onb-shell-tools { display: flex; align-items: center; gap: 4px; margin-inline-start: auto; }
+.onb-shell-pillbtn { background: none; border: 0; padding: 4px; cursor: pointer; border-radius: 999px; }
+.onb-shell-bell { position: relative; text-decoration: none; }
+.onb-shell-count {
+  position: absolute; inset-block-start: 2px; inset-inline-end: 0; min-inline-size: 18px; padding-inline: 4px;
+  font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; color: #fff; background: var(--danger); border-radius: 9px;
+}
+
+/* Phones: the strip is one short line plus its button. The longer explanation stays in the DOM for screen readers
+   (visually hidden, never display: none); the status pill, bell and help keep their own row. */
+@media (max-width: 599px) {
+  .onb-shell { padding-block: 6px; row-gap: 2px; }
+  .onb-shell-more {
+    position: absolute; inline-size: 1px; block-size: 1px; margin: -1px; padding: 0; border: 0;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+}
+
+body.onb-veil main.main-content > :not(.onb-shell-host) {
+  opacity: .5; pointer-events: none; user-select: none; filter: grayscale(.35);
+}
+body.onb-locked .sidebar-nav a.nav-item:not([href="/dashboard"]):not([href="/support"])::after {
+  content: "\1F512"; content: "\1F512" / ""; margin-inline-start: .5rem; font-size: 12px; opacity: .85;
+}

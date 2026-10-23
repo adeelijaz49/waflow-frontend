@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { legalAcceptanceGuard } from './guards/legal-acceptance.guard';
+import { ONBOARDING_FLOW_ROUTES } from './pages/onboarding-flow/onb.routes';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+  ...ONBOARDING_FLOW_ROUTES,
   { path: 'login',       loadComponent: () => import('./pages/login/login').then(m => m.Login) },
   { path: 'auth/verify', loadComponent: () => import('./pages/auth-verify/auth-verify').then(m => m.AuthVerify) },
   { path: 'dashboard',  canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/dashboard/dashboard').then(m => m.Dashboard) },

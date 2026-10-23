@@ -1,0 +1,206 @@
+{
+  "billing.metaFees": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "number.bizapp.c4": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "connect.note": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "approvals.payment.body": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.optin.yes": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.optin.warning": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.attest": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.result.noOptin": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.result.ask": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.one.agreed": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "promotion.first.audience": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "promotion.first.noAudience": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "promotion.first.blocked": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "errors.SENDING_NOT_AVAILABLE_YET": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "errors.TEST_RECIPIENT_OPTED_OUT": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.optin.fileTitle": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.optin.fileYes": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.preview.noOptin": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.optin.unknownBlocked": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.optin.unknownIgnored": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.optin.optOutFound": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.preview.conflicting": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.optin.title": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.optin.unsure": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "customers.paste.hint": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "number.personal.ack": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "number.personal.warning": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "number.personal.how": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "number.migrate.body": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "approvals.payment.confirm": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "approvals.payment.confirmed": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "approvals.payment.cantSee": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "billing.manual": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "errors.CHECKOUT_NOT_CONFIGURED": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "billing.pastDue.body": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "business.email.hint": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "connect.disconnect.body": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "connect.disconnect.impact.sending": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "connect.disconnect.impact.templates": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "connect.disconnect.impact.number": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "strip.cancelled": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "billing.cancelled.body": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "errors.SUBSCRIPTION_CANCELLED": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "notify.subscription_cancelled.body": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "number.bizapp.body": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "number.bizapp.c1": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "number.bizapp.c2": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "number.bizapp.c3": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "number.landline.body": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "done.sent": {
+    "status": "draft",
+    "needsLegalApproval": true
+  },
+  "promotion.test.body": {
+    "status": "draft",
+    "needsLegalApproval": true
+  }
+}

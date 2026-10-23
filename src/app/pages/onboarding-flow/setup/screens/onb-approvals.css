@@ -1,0 +1,17 @@
+/* Step 4 (Get approved): status rows, template list, checked line. Logical properties only. */
+.onb-appr { display: flex; flex-direction: column; min-block-size: 100%; }
+.onb-appr-loading { display: flex; align-items: center; gap: 12px; }
+.onb-appr-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.onb-appr-rows > .onb-card + .onb-card { margin-block-start: 0; }
+.onb-appr-row { display: flex; flex-direction: column; gap: 10px; }
+.onb-appr-row p { margin: 0; }
+.onb-appr-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.onb-appr-head .onb-card-title { margin: 0; }
+.onb-appr-name { font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
+.onb-appr-tpls { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.onb-appr-tpl { display: flex; flex-direction: column; gap: 6px; padding-block-start: 10px; border-block-start: 1px solid var(--border); }
+.onb-appr-tpl-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.onb-appr-tpl-title { font-weight: 600; overflow-wrap: anywhere; }
+.onb-appr-tpl-note { color: #7f1d1d; }
+.onb-appr-checked { justify-content: space-between; }
+.onb-appr-check { inline-size: auto; }

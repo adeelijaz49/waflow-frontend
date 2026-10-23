@@ -1,0 +1,22 @@
+/* Customers / products prompts: file picker, count list, kind toggle. Logical properties only, every class onb-prompt- prefixed. */
+.onb-prompt-file { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); opacity: 0; }
+/* Real-browser fix (I4): the global rule input:not([type=checkbox]):not([type=radio]) (width 100%, padding, border) beat the rule above, so the hidden
+   file input was as wide as the column and the page scrolled sideways on a phone. More specific on purpose. */
+.onb-stack input.onb-prompt-file[type="file"] { inline-size: 1px; block-size: 1px; padding: 0; margin: 0; border: 0; }
+.onb-prompt-file:focus-visible + .onb-btn { outline: 3px solid var(--primary-dark); outline-offset: 2px; }
+.onb-prompt-file-name { margin-block-start: 8px; font-weight: 600; overflow-wrap: anywhere; }
+.onb-prompt-counts { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.onb-prompt-counts > li { display: flex; align-items: center; gap: 10px; font-size: 18px; }
+.onb-prompt-counts > li::before { content: ""; flex: none; inline-size: 10px; block-size: 10px; border-radius: 50%; background: var(--primary-dark); }
+.onb-prompt-counts > li[data-bad]::before { background: var(--warning); }
+.onb-prompt-kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border: 0; padding: 0; margin: 0; min-inline-size: 0; }
+.onb-prompt-kinds > legend { grid-column: 1 / -1; padding: 0; margin-block-end: 8px; font-weight: 600; }
+.onb-prompt-more { display: flex; flex-direction: column; gap: 16px; }
+.onb-prompt-links { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.onb-prompt-paste { min-block-size: 200px; font-size: 17px; }
+.onb-prompt-consent { display: flex; flex-direction: column; gap: 12px; }
+/* The sentence copied for AI Mode (shown when the browser refuses the clipboard, so it can be copied by hand). */
+.onb-prompt-ai { margin: 0; padding: 12px 14px; border-radius: 12px; border: 1px dashed var(--border); overflow-wrap: anywhere; user-select: all; }
+/* Names of the file's columns we did not understand (shown on the opt-in screen), and a choice that cannot be picked. */
+.onb-prompt-columns { margin: 8px 0 0; padding-inline-start: 20px; font-weight: 600; overflow-wrap: anywhere; }
+.onb-prompt-choice-off { opacity: .6; cursor: not-allowed; }

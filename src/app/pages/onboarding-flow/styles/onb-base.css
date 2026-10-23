@@ -1,0 +1,50 @@
+/* WhatsApp onboarding flow: base layout, type, buttons, inputs. Logical properties only. Loaded with the setup shell. */
+.onb { color: var(--text); font-size: 17px; line-height: 1.5; }
+.onb-root { min-block-size: 100%; background: var(--bg); }
+.onb-wrap { max-inline-size: 560px; margin-inline: auto; padding: 16px; padding-block-end: 96px; scroll-padding-block-end: 120px; }
+.onb-q { font-size: 24px; line-height: 1.25; font-weight: 700; margin-block-end: 12px; }
+.onb-q:focus { outline: none; }
+.onb .onb-q:focus-visible { outline: none; }
+.onb-lead { font-size: 17px; color: var(--text-muted); margin-block-end: 16px; }
+.onb-muted { color: var(--text-muted); }
+.onb-stack { display: flex; flex-direction: column; gap: 16px; }
+.onb-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.onb-label { display: block; font-weight: 600; margin-block-end: 6px; }
+.onb-input, .onb-select, .onb-textarea {
+  inline-size: 100%; min-block-size: 52px; padding: 12px 14px; font-size: 18px; font-family: inherit;
+  color: var(--text); background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+}
+.onb-textarea { min-block-size: 110px; resize: vertical; }
+.onb-input[aria-invalid="true"] { border-color: var(--danger); }
+/* The app-wide input/select/textarea rule outranks the classes above (13px, 1px border, no focus ring): repeat them with higher specificity. */
+.onb input.onb-input.onb-input, .onb-sheet input.onb-input.onb-input, .onb select.onb-select.onb-select, .onb textarea.onb-textarea.onb-textarea, .onb-sheet textarea.onb-textarea.onb-textarea {
+  font-size: 18px; padding: 12px 14px; border: 2px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text);
+}
+.onb input.onb-input.onb-input:focus-visible, .onb-sheet input.onb-input.onb-input:focus-visible, .onb select.onb-select.onb-select:focus-visible,
+.onb textarea.onb-textarea.onb-textarea:focus-visible, .onb-sheet textarea.onb-textarea.onb-textarea:focus-visible { outline: 3px solid var(--primary-dark); outline-offset: 2px; }
+.onb input.onb-input.onb-input[aria-invalid="true"], .onb-sheet input.onb-input.onb-input[aria-invalid="true"] { border-color: var(--danger); }
+.onb-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; cursor: pointer;
+  min-block-size: 48px; padding: 10px 20px; font-size: 17px; font-weight: 600; font-family: inherit;
+  border-radius: 14px; border: 2px solid transparent;
+}
+.onb-btn-primary { min-block-size: 56px; inline-size: 100%; font-size: 18px; color: #fff; background: var(--primary-dark); }
+.onb-btn-secondary { color: var(--primary-dark); background: var(--surface); border-color: var(--primary-dark); inline-size: 100%; }
+.onb-btn[disabled], .onb-btn[aria-busy="true"] { opacity: .6; cursor: not-allowed; }
+.onb-link {
+  min-block-size: 48px; padding: 8px 12px; font: inherit; font-weight: 600; color: var(--primary-dark);
+  background: none; border: 0; cursor: pointer; text-decoration: underline;
+}
+
+.onb-bar {
+  position: sticky; inset-block-end: 0; z-index: 5; display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 16px; padding-block-end: max(16px, env(safe-area-inset-bottom));
+  background: var(--surface); border-block-start: 1px solid var(--border);
+}
+.onb-bar-links { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+.onb :focus-visible, .onb-sheet :focus-visible, .onb-shell :focus-visible { outline: 3px solid var(--primary-dark); outline-offset: 2px; }
+.onb-sr { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) { .onb *, .onb-shell * { animation-duration: .001ms !important; transition: none !important; } }

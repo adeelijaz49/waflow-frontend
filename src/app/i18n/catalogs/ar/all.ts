@@ -14,6 +14,7 @@ import flowlang from './flowlang.json';
 import flows from './flows.json';
 import hub from './hub.json';
 import inbox from './inbox.json';
+import onboarding from './onboarding.json';
 import preview from './preview.json';
 import promolang from './promolang.json';
 import review from './review.json';
@@ -35,6 +36,7 @@ const catalogue: Record<string, Record<string, string>> = {
   flows,
   hub,
   inbox,
+  onboarding,
   preview,
   promolang,
   review,

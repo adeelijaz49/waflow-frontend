@@ -1,0 +1,17 @@
+/* Step 3 (Connect to WhatsApp): waiting panel, success mark, facts list, disconnect dialog. Logical properties only. */
+.onb-conn { display: flex; flex-direction: column; min-block-size: 100%; }
+.onb-conn-wait { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+.onb-conn-wait .onb-spinner { flex: none; }
+.onb-conn-done {
+  inline-size: 64px; block-size: 64px; display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 700; color: #fff; background: var(--success); border-radius: 50%;
+  animation: onb-conn-pop .35s ease-out;
+}
+@keyframes onb-conn-pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.onb-conn-facts { display: grid; gap: 4px; margin: 0; }
+.onb-conn-facts dt { font-size: 14px; color: var(--text-muted); }
+.onb-conn-facts dd { margin: 0 0 8px; font-size: 20px; font-weight: 700; overflow-wrap: anywhere; }
+.onb-conn-danger { color: #b91c1c; border-color: #b91c1c; }
+.onb-conn-danger-fill { background: #b91c1c; }
+.onb-conn-impact { margin: 0; padding-inline-start: 22px; display: flex; flex-direction: column; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { .onb-conn-done { animation: none; } }
