@@ -228,6 +228,13 @@
               </div>
               @if (campaignReport.messagesFailed > 0) {
                 <div class="text-muted" style="font-size:11px;margin-top:6px">⚠️ {{ campaignReport.messagesFailed }} message(s) failed to deliver</div>
+                @if (reportFailures.length) {
+                  <ul class="text-muted" style="font-size:11px;margin:4px 0 0 18px;padding:0">
+                    @for (f of reportFailures; track f.label) {
+                      <li>{{ f.count }} × {{ f.label }}</li>
+                    }
+                  </ul>
+                }
               }
             }
           }
@@ -333,7 +340,36 @@
               <div class="result-box result-error">{{ sendResult.message || 'Failed to send — please try again.' }}</div>
             } @else {
               @if (sendResult.sentCount > 0) {
-                <div class="result-box result-success">✅ Sent {{ sendResult.sentCount }} WhatsApp messages successfully!</div>
+                <!-- "Sent" here only means WhatsApp ACCEPTED the request; what it did with the messages follows below. -->
+                <div class="result-box result-success">
+                  ✅ WhatsApp accepted {{ sendResult.sentCount }} message{{ sendResult.sentCount === 1 ? '' : 's' }}.
+                  @if (!delivery) {
+                    @if (deliveryUnavailable) { <span style="font-weight:400">Could not check delivery just now — see the Campaign Report.</span> }
+                    @else { <span style="font-weight:400">Checking delivery…</span> }
+                  }
+                </div>
+                @if (delivery && delivery.total > 0) {
+                  <div class="result-box result-info">
+                    <div>Result of this send</div>
+                    <div style="font-size:12px;font-weight:400;margin-top:4px">
+                      ✅ Delivered: {{ delivery.delivered }}
+                      @if (delivery.waiting > 0) { · ⏳ Waiting for WhatsApp: {{ delivery.waiting }} }
+                      @if (delivery.failed > 0) { · ❌ Refused: {{ delivery.failed }} }
+                    </div>
+                    @if (delivery.viaTemplate > 0) {
+                      <div style="font-size:11px;font-weight:400;margin-top:4px">
+                        {{ delivery.viaTemplate }} sent as the approved message template, which WhatsApp delivers even when the customer has not messaged you in the last 24 hours.
+                      </div>
+                    }
+                    @if (delivery.failures?.length) {
+                      <ul style="margin:6px 0 0 18px;padding:0;font-weight:400">
+                        @for (f of delivery.failures; track f.label) {
+                          <li style="font-size:12px">{{ f.count }} × {{ f.label }}</li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                }
               }
               @if (sendResult.errors?.length) {
                 <div class="result-box result-error">

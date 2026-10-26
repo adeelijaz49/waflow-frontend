@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -63,7 +63,7 @@ const CAMPAIGN_TYPES = [
   templateUrl: './promotions.html',
   styleUrl: './promotions.css',
 })
-export class Promotions implements OnInit {
+export class Promotions implements OnInit, OnDestroy {
   promotions: any[] = [];
   categories: string[] = [];
   allProducts: any[] = [];
@@ -114,6 +114,14 @@ export class Promotions implements OnInit {
   sendResult: any = null;
   campaignReport: any = null;
   loadingReport = false;
+  // What WhatsApp did with the send just made (accepted vs delivered vs refused, with the reasons) — see checkDelivery().
+  delivery: any = null;
+  // Why messages of this promotion were refused (whole promotion), listed under the Campaign Report when any failed.
+  reportFailures: any[] = [];
+  deliveryUnavailable = false; // the delivery check itself failed (shown instead of "Checking delivery…")
+  private sendStartedAt = 0;
+  private deliveryTimer: any = null;
+  private sendSeq = 0; // bumped by every send and every promotion switch: answers carrying an older number are stale and ignored
   preview: any = null;
   loadingPreview = false;
   previewError: string | null = null;
@@ -164,6 +172,10 @@ export class Promotions implements OnInit {
 
     const runAgainId = params.get('runAgainPromotionId');
     if (runAgainId) this.api.getPromotion(runAgainId).subscribe({ next: (p) => this.duplicatePromotion(p), error: () => {} });
+  }
+
+  ngOnDestroy() {
+    clearTimeout(this.deliveryTimer);
   }
 
   dismissInsight(insight: Insight)   { this.insightActions.dismiss(insight, this.insights); }
@@ -522,6 +534,11 @@ export class Promotions implements OnInit {
     this.allCustomersSearch = '';
     this.sendResult = null;
     this.campaignReport = null;
+    clearTimeout(this.deliveryTimer);
+    this.sendSeq++;
+    this.delivery = null;
+    this.deliveryUnavailable = false;
+    this.reportFailures = [];
     this.preview = null;
     this.testResult = null;
     this.loadRecommended(true);
@@ -532,8 +549,47 @@ export class Promotions implements OnInit {
   loadCampaignReport() {
     this.loadingReport = true;
     this.api.getCampaignReport(this.activePromo._id).subscribe({
-      next: (data) => { this.campaignReport = data; this.loadingReport = false; },
+      next: (data) => {
+        this.campaignReport = data; this.loadingReport = false;
+        if (data?.messagesFailed > 0) this.loadReportFailures(); else this.reportFailures = [];
+      },
       error: () => { this.loadingReport = false; },
+    });
+  }
+
+  // The reasons behind "N message(s) failed to deliver" (whole promotion), in plain language.
+  private loadReportFailures() {
+    const id = this.activePromo?._id;
+    if (!id) return;
+    this.api.getPromotionDelivery(id).subscribe({
+      next: (d) => { if (this.activePromo?._id === id) this.reportFailures = d?.failures || []; },
+      error: () => {},
+    });
+  }
+
+  // WhatsApp answering "OK" to a send only means it ACCEPTED the request. Delivery - or a refusal such as "the customer has not
+  // written to you in 24 hours" - is reported a moment later, so after a send we look at what actually happened (3 s, 10 s and
+  // 25 s after the send came back, while some messages are still waiting) instead of announcing success.
+  private scheduleDeliveryCheck(step: number, token: number) {
+    const delays = [3000, 7000, 15000];
+    if (step >= delays.length) return;
+    clearTimeout(this.deliveryTimer);
+    this.deliveryTimer = setTimeout(() => this.checkDelivery(step, token), delays[step]);
+  }
+
+  private checkDelivery(step: number, token: number) {
+    const promoId = this.activePromo?._id;
+    if (!promoId || token !== this.sendSeq) return;
+    // Elapsed time, not a clock timestamp: the server subtracts it from ITS clock, so a wrong clock on this PC cannot matter.
+    const sinceSeconds = Math.ceil((performance.now() - this.sendStartedAt) / 1000) + 5;
+    this.api.getPromotionDelivery(promoId, sinceSeconds).subscribe({
+      next: (d) => {
+        if (this.activePromo?._id !== promoId || token !== this.sendSeq) return;
+        this.delivery = d;
+        if (d?.waiting > 0 && step < 2) this.scheduleDeliveryCheck(step + 1, token);
+        else this.loadCampaignReport(); // settled (or out of checks): bring the report numbers in step
+      },
+      error: () => { if (this.activePromo?._id === promoId && token === this.sendSeq) this.deliveryUnavailable = true; },
     });
   }
 
@@ -643,9 +699,24 @@ export class Promotions implements OnInit {
     if (!ok) return;
     this.sending = true;
     this.sendResult = null;
-    this.api.sendPromotion(this.activePromo._id, [...this.selectedCustomerIds]).subscribe({
-      next: (res) => { this.sendResult = res; this.sending = false; this.loadPromotions(); this.loadCampaignReport(); },
-      error: (err) => { this.sending = false; this.sendResult = { error: true, message: err.error?.error }; },
+    this.delivery = null;
+    this.deliveryUnavailable = false;
+    clearTimeout(this.deliveryTimer);
+    this.sendStartedAt = performance.now();
+    const promoId = this.activePromo._id;
+    const token = ++this.sendSeq;
+    this.api.sendPromotion(promoId, [...this.selectedCustomerIds]).subscribe({
+      next: (res) => {
+        this.sending = false; this.loadPromotions();
+        // The merchant opened another promotion (or sent again) while this one was in flight: its answer no longer belongs on screen.
+        if (this.activePromo?._id !== promoId || token !== this.sendSeq) return;
+        this.sendResult = res; this.loadCampaignReport();
+        if (res?.sentCount > 0) this.scheduleDeliveryCheck(0, token);
+      },
+      error: (err) => {
+        this.sending = false;
+        if (this.activePromo?._id === promoId && token === this.sendSeq) this.sendResult = { error: true, message: err.error?.error };
+      },
     });
   }
 

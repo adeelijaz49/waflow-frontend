@@ -213,6 +213,11 @@ export class ApiService {
   getCampaignReport(promotionId: string): Observable<any> {
     return this.http.get(`${API}/promotions/${promotionId}/report`);
   }
+  // What WhatsApp did with a send: accepted / delivered / refused, with the reasons. `sinceSeconds` limits it to one send
+  // (seconds elapsed since the merchant pressed Send, so the browser's clock never matters); omit it for the whole promotion.
+  getPromotionDelivery(promotionId: string, sinceSeconds?: number): Observable<any> {
+    return this.http.get(`${API}/promotions/${promotionId}/delivery`, { params: sinceSeconds ? { sinceSeconds } : {} });
+  }
   previewPromotionMessage(promotionId: string): Observable<any> {
     return this.http.get(`${API}/promotions/${promotionId}/preview`);
   }
