@@ -140,3 +140,14 @@
 .convo-close-btn { margin-top: 6px; width: 100%; }
 
 .convo-end-note { font-size: 12px; padding: 4px 0; }
+
+/* Consent request: the action each entry button performs, shown next to its chip. */
+.convo-chip-action {
+  font-size: 10px;
+  font-weight: 600;
+  color: #047857;
+  background: #d1fae5;
+  border-radius: 999px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}

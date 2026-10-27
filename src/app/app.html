@@ -32,7 +32,7 @@
         @if (auth.session | async; as session) {
           <div class="store-info">
             <div class="store-name">{{ session.workspace.name }}</div>
-            <div class="store-sub">{{ session.user.name || session.user.phone || session.user.email }} · {{ session.role === 'owner' ? 'Owner' : 'Member' }}</div>
+            <div class="store-sub">{{ session.user.name || session.user.phone || session.user.email }} · {{ roleLabel(session) }}</div>
           </div>
         }
         <button type="button" class="btn-logout" (click)="logout()">Log out</button>
@@ -41,6 +41,8 @@
   }
 
   <main class="main-content">
+    <!-- Sticky strip, only while a super admin is inside a customer. -->
+    <app-acting-as-banner />
     <router-outlet />
   </main>
 </div>

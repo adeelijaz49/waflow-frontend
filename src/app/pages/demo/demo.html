@@ -54,7 +54,7 @@
               </tbody>
             </table>
           </div>
-          @if (missingFixedTemplates.length) {
+          @if (canCreateTemplates && missingFixedTemplates.length) {
             <div class="hint-box" style="margin-top:14px">
               {{ missingFixedTemplates.length }} of Waflow's default templates haven't been created yet.
               <button class="btn btn-primary btn-sm" style="margin-left:8px" (click)="createMissingTemplates()" [disabled]="creatingTemplates">

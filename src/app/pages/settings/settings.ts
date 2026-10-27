@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { SettingsService } from '../../shared/settings.service';
 import { AuthService } from '../../shared/auth.service';
@@ -15,7 +16,7 @@ import { SenderLanguageNote } from '../localization/embedded/sender-language-not
   templateUrl: './settings.html',
   styleUrl: './settings.css',
 })
-export class Settings implements OnInit {
+export class Settings implements OnInit, OnDestroy {
   loyaltySettings: any = { loyaltyPointsPerUnit: 100, minPointsPerPurchase: 100, currency: 'AUD', flowCooldownDays: 3, merchantName: '', defaultCountryCode: '966' };
   loyaltySaving  = false;
   loyaltySaved   = false;
@@ -56,13 +57,33 @@ export class Settings implements OnInit {
 
   constructor(private api: ApiService, private settings: SettingsService, public auth: AuthService, private dialog: DialogService) {}
 
+  // The WhatsApp token and template cards are for the people who may manage that account: platform staff for the platform's shared
+  // number, the owner of a customer for its own number (and only they trigger the two calls behind them). The server says who that is
+  // (canManageWhatsApp): the same rule it enforces on those calls, which also covers the setup where no super admin is configured yet
+  // and a super admin working inside a customer. The session fills asynchronously, hence the subscription.
+  private platformCardsLoaded = false;
+  private sessionSub?: Subscription;
+
+  get showPlatformCards(): boolean {
+    return this.auth.sessionSnapshot?.canManageWhatsApp === true;
+  }
+
   ngOnInit() {
     this.loadLoyaltySettings();
-    this.loadTokenStatus();
-    this.loadTemplates();
+    this.sessionSub = this.auth.session.subscribe((s) => {
+      if (s?.canManageWhatsApp === true && !this.platformCardsLoaded) {
+        this.platformCardsLoaded = true;
+        this.loadTokenStatus();
+        this.loadTemplates();
+      }
+    });
     this.loadMembers();
     this.loadInvites();
     this.loadConsentStats();
+  }
+
+  ngOnDestroy() {
+    this.sessionSub?.unsubscribe();
   }
 
   loadConsentStats() {

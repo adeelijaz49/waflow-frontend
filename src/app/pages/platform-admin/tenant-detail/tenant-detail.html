@@ -1,0 +1,150 @@
+<div class="page">
+  <a class="back-link" routerLink="/platform">&larr; All customers</a>
+
+  @if (loading) {
+    <div class="loading">Loading customer...</div>
+  } @else if (error || !tenant) {
+    <div class="empty-state" role="alert">
+      {{ error || 'This customer was not found.' }}
+      <div style="margin-top:12px"><button type="button" class="btn btn-outline btn-sm" (click)="load()">Try again</button></div>
+    </div>
+  } @else {
+    <div class="page-header">
+      <div>
+        @if (editingName) {
+          <form class="title-row" (ngSubmit)="saveRename()" novalidate>
+            <input name="nameDraft" [(ngModel)]="nameDraft" aria-label="Customer name" autocomplete="off" />
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="renaming">{{ renaming ? 'Saving...' : 'Save' }}</button>
+            <button type="button" class="btn btn-outline btn-sm" (click)="cancelRename()">Cancel</button>
+          </form>
+          @if (nameError) { <div class="text-danger field-error">{{ nameError }}</div> }
+        } @else {
+          <div class="title-row">
+            <div class="page-title">{{ tenant.name }}</div>
+            @if (tenant.isPlatformDefault) { <span class="badge badge-primary">Platform default</span> }
+            <button type="button" class="btn btn-outline btn-sm" (click)="startRename()">Rename</button>
+          </div>
+        }
+        <div class="page-sub">Customer details, who can sign in, and the WhatsApp number it sends from.</div>
+      </div>
+      <button type="button" class="btn btn-primary" [disabled]="entering" (click)="enter()">{{ entering ? 'Entering...' : 'Enter customer' }}</button>
+    </div>
+
+    <!-- Overview -->
+    <div class="card mb-4">
+      <div class="card-header"><span class="card-title">Overview</span></div>
+      <div class="card-body">
+        <div class="meta">
+          <span><span class="text-muted">Created</span> {{ tenant.createdAt | date:'d MMM y' }}</span>
+          <span><span class="text-muted">Plan</span> {{ tenant.plan ? tenant.plan.code + ' (' + tenant.plan.status + ')' : 'None' }}</span>
+          <span><span class="text-muted">WhatsApp</span> {{ whatsappLabel(tenant.whatsapp) }}</span>
+          <span><span class="text-muted">Arabic</span> {{ tenant.arabicEnabled ? 'On' : 'Off' }}</span>
+        </div>
+        @if (counts) {
+          <div class="stat-grid">
+            <div class="stat"><div class="stat-num">{{ counts.customers }}</div><div class="stat-label">Customers</div></div>
+            <div class="stat"><div class="stat-num">{{ counts.products }}</div><div class="stat-label">Products</div></div>
+            <div class="stat"><div class="stat-num">{{ counts.services }}</div><div class="stat-label">Services</div></div>
+            <div class="stat"><div class="stat-num">{{ counts.promotions }}</div><div class="stat-label">Promotions</div></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Owners and team -->
+    <div class="card mb-4">
+      <div class="card-header"><span class="card-title">Owners and team</span></div>
+      <div class="card-body">
+        @if (members.length === 0) {
+          <div class="text-muted" style="font-size:13px">Nobody can sign in to this customer yet. Add an owner below.</div>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Signs in with</th><th>Role</th><th>Added</th></tr></thead>
+              <tbody>
+                @for (m of members; track m.userId) {
+                  <tr>
+                    <td>{{ m.name || '-' }}</td>
+                    <td>{{ m.contactMasked }}</td>
+                    <td><span class="badge {{ m.role === 'owner' ? 'badge-primary' : 'badge-neutral' }}">{{ m.role === 'owner' ? 'Owner' : 'Member' }}</span></td>
+                    <td>{{ m.createdAt | date:'d MMM y' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <form class="add-person" (ngSubmit)="addMember()" novalidate>
+          <h4>Add a person</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="td-type">Signs in with</label>
+              <select id="td-type" name="memberContactType" [(ngModel)]="memberContactType" (ngModelChange)="onMemberTypeChange()">
+                <option value="phone">WhatsApp phone number</option>
+                <option value="email">Email address</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="td-contact">{{ memberContactType === 'email' ? 'Email' : 'Phone number' }}</label>
+              <input id="td-contact" name="memberContact" [(ngModel)]="memberContact" autocomplete="off"
+                     [placeholder]="memberContactType === 'email' ? 'name@example.com' : '966501234567'" />
+              @if (memberSubmitted && memberContactError) { <div class="text-danger field-error">{{ memberContactError }}</div> }
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="td-name">Name (optional)</label>
+              <input id="td-name" name="memberName" [(ngModel)]="memberName" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label for="td-role">Role</label>
+              <select id="td-role" name="memberRole" [(ngModel)]="memberRole">
+                <option value="owner">Owner</option>
+                <option value="member">Member</option>
+              </select>
+            </div>
+          </div>
+          @if (memberError) { <div class="text-danger" role="alert" style="font-size:13px;margin-bottom:10px">{{ memberError }}</div> }
+          <button type="submit" class="btn btn-primary" [disabled]="memberSaving">{{ memberSaving ? 'Adding...' : 'Add person' }}</button>
+          @if (memberNotice) { <div class="note-ok" role="status">{{ memberNotice }}</div> }
+        </form>
+      </div>
+    </div>
+
+    <!-- WhatsApp number: the one place a customer's own number is entered -->
+    <app-tenant-whatsapp-form [tenantId]="id" [status]="tenant.whatsapp" (statusChange)="onWhatsAppChange($event)" />
+
+    <!-- Audit -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <span class="card-title">Recent staff activity</span>
+        <button type="button" class="btn btn-outline btn-sm" (click)="loadAudit()" [disabled]="auditLoading">Refresh</button>
+      </div>
+      <div class="card-body">
+        @if (auditLoading) {
+          <div class="loading" style="padding:16px">Loading activity...</div>
+        } @else if (auditError) {
+          <div class="text-muted" style="font-size:13px">Could not load the activity list.</div>
+        } @else if (audit.length === 0) {
+          <div class="text-muted" style="font-size:13px">No staff activity recorded for this customer yet.</div>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>When</th><th>Who</th><th>What</th></tr></thead>
+              <tbody>
+                @for (e of audit; track e.id || e._id || e.createdAt + e.action) {
+                  <tr>
+                    <td style="white-space:nowrap">{{ e.createdAt | date:'d MMM y, HH:mm' }}</td>
+                    <td>{{ e.actorLabel || '-' }}</td>
+                    <td>{{ auditActionLabel(e.action) }} @if (auditDetail(e); as d) { <span class="audit-detail">({{ d }})</span> }</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

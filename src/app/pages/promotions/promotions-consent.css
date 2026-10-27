@@ -1,0 +1,58 @@
+/* Styles of the consent and template-approval parts of the Promotions screen (opt-in buttons, wording guard, audience filter, approval banners).
+   Kept in their own file so promotions.css stays inside the component-style budget. */
+/* Template approval banner (campaign panel and promotion list): waiting / refused / approved-notice. */
+.template-banner {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-bottom: 12px;
+  border: 1px solid transparent;
+}
+.template-banner-sub { font-size: 11px; font-weight: 400; margin-top: 4px; opacity: 0.85; }
+.template-banner-actions { display: flex; gap: 8px; margin-top: 8px; }
+.template-banner-wait { background: #fffbeb; border-color: #f59e0b; color: #78350f; }
+.template-banner-bad { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+.template-banner-ok { background: #d1fae5; border-color: #6ee7b7; color: #065f46; font-weight: 600; }
+.template-rejected-note { font-size: 11px; margin-top: 4px; color: #991b1b; }
+
+/* Preview: the action of each custom button, and the footer WhatsApp adds. */
+.wa-bubble-action {
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #047857;
+  background: rgba(16,185,129,0.15);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.wa-bubble-footer { margin-top: 8px; font-size: 11px; color: #667781; }
+
+/* Consent audience filter, row tags, warning, report block. */
+.audience-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.audience-row label { font-size: 12px; font-weight: 600; margin: 0; }
+.audience-row select { max-width: 220px; font-size: 12px; }
+.audience-hint { font-size: 11px; margin-bottom: 8px; }
+.consent-tag { font-size: 10px; margin-left: 6px; }
+.consent-warning { background: #fffbeb; border: 1px solid #f59e0b; color: #78350f; font-size: 12px; }
+.report-consent { grid-template-columns: repeat(3, 1fr); }
+
+/* Consent wording guard (under the message editor of a consent request). */
+.consent-guard {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+}
+.consent-guard-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.consent-guard-block { margin-bottom: 10px; }
+.consent-guard-sub { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); margin-bottom: 4px; }
+.consent-suggestions { display: flex; flex-wrap: wrap; gap: 6px; }
+.consent-guidance { margin: 0 0 0 18px; padding: 0; font-size: 12px; }
+.consent-issues { margin: 0 0 10px 0; padding: 0; list-style: none; font-size: 12px; }
+.consent-issues li { padding: 4px 8px; border-radius: 6px; margin-bottom: 4px; }
+.consent-issue-error { background: #fee2e2; color: #991b1b; }
+.consent-issue-warning { background: #fffbeb; color: #78350f; }
+.consent-issue-ok { font-size: 12px; color: #065f46; margin-bottom: 10px; }
+.consent-ack { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; cursor: pointer; }
+.consent-ack input { margin-top: 2px; }

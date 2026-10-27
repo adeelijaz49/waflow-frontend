@@ -38,6 +38,8 @@
             [triggerType]="triggerType"
             [variableSource]="variableSource"
             [node]="step.node"
+            [depth]="$index"
+            [allowConsentActions]="allowConsentActions"
             [hideNestedEditors]="true"
             (nodeChange)="onNodeEdited()">
           </app-message-node-editor>
@@ -57,6 +59,9 @@
               (click)="tapChip(b)">
               {{ b.label || '(no label)' }}
             </button>
+            @if (isConsentAction(b.nextAction)) {
+              <span class="convo-chip-action">{{ actionName(b.nextAction) }}</span>
+            }
             <button type="button" class="convo-chip-gear" (click)="openActionPicker(b)" title="Change what happens when tapped">⚙</button>
           </div>
 
@@ -64,34 +69,55 @@
             <div class="convo-action-picker">
               <div class="convo-action-picker-title">When "{{ b.label || '(no label)' }}" is tapped →</div>
 
+              @if (consentMode || isConsentAction(b.nextAction)) {
+                <label class="convo-action-option">
+                  <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'opt_in'" (change)="setAction(b, 'opt_in')" />
+                  Opt in
+                </label>
+                <label class="convo-action-option">
+                  <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'opt_out'" (change)="setAction(b, 'opt_out')" />
+                  Opt out
+                </label>
+                <label class="convo-action-option">
+                  <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'interested'" (change)="setAction(b, 'interested')" />
+                  Interested
+                </label>
+              }
+
               <label class="convo-action-option">
                 <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'end_flow'" (change)="setAction(b, 'end_flow')" />
-                End here
+                {{ consentMode ? 'None' : 'End here' }}
               </label>
 
-              <label class="convo-action-option" [class.convo-action-disabled]="!canOfferSendMessage(b)">
-                <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'send_message'"
-                  [disabled]="!canOfferSendMessage(b)"
-                  (change)="setAction(b, 'send_message')" />
-                Send a follow-up message
-              </label>
-              @if (!canOfferSendMessage(b)) {
-                <div class="text-muted convo-depth-note">Messages can only branch {{ maxDepth }} levels deep.</div>
-              }
-              @if (b.nextAction === 'send_message' && !b.followUp) {
-                <button type="button" class="btn btn-primary btn-sm convo-create-btn" (click)="createFollowUp(b)">+ Create new message</button>
-              } @else if (b.nextAction === 'send_message' && b.followUp) {
-                <div class="text-muted convo-existing-note">Already sends: "{{ b.followUp.bodyText || '(empty)' }}" — tap the chip to view/edit it.</div>
+              @if (!consentMode || b.nextAction === 'send_message') {
+                <label class="convo-action-option" [class.convo-action-disabled]="!canOfferSendMessage(b)">
+                  <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'send_message'"
+                    [disabled]="!canOfferSendMessage(b)"
+                    (change)="setAction(b, 'send_message')" />
+                  Send a follow-up message
+                </label>
+                @if (!canOfferSendMessage(b)) {
+                  <div class="text-muted convo-depth-note">Messages can only branch {{ maxDepth }} levels deep.</div>
+                }
+                @if (b.nextAction === 'send_message' && !b.followUp) {
+                  <button type="button" class="btn btn-primary btn-sm convo-create-btn" (click)="createFollowUp(b)">+ Create new message</button>
+                } @else if (b.nextAction === 'send_message' && b.followUp) {
+                  <div class="text-muted convo-existing-note">Already sends: "{{ b.followUp.bodyText || '(empty)' }}" — tap the chip to view/edit it.</div>
+                }
               }
 
-              <label class="convo-action-option">
-                <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'apply_discount'" (change)="setAction(b, 'apply_discount')" />
-                Apply a discount (not yet available)
-              </label>
-              <label class="convo-action-option">
-                <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'redeem_points'" (change)="setAction(b, 'redeem_points')" />
-                Mark points redeemed (not yet available)
-              </label>
+              @if (!consentMode || b.nextAction === 'apply_discount') {
+                <label class="convo-action-option">
+                  <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'apply_discount'" (change)="setAction(b, 'apply_discount')" />
+                  Apply a discount (not yet available)
+                </label>
+              }
+              @if (!consentMode || b.nextAction === 'redeem_points') {
+                <label class="convo-action-option">
+                  <input type="radio" name="action-{{ b.position }}" [checked]="b.nextAction === 'redeem_points'" (change)="setAction(b, 'redeem_points')" />
+                  Mark points redeemed (not yet available)
+                </label>
+              }
 
               <button type="button" class="btn btn-outline btn-sm convo-close-btn" (click)="closeActionPicker()">Close</button>
             </div>

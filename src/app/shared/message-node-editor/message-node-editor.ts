@@ -2,13 +2,19 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
+import {
+  CONSENT_BODY_SUGGESTIONS, CONSENT_LABEL_PAIRS, ConsentLabelPair, DEFAULT_CONFIRMATIONS, OPT_IN_PRESET,
+  actionName, isConsentAction, labelLimitFor,
+} from './consent-wording';
 
-export type MessageNodeAction = 'end_flow' | 'send_message' | 'apply_discount' | 'redeem_points';
+// opt_in / opt_out / interested are the consent actions (entry step of a consent request only); 'end_flow' is "None".
+export type MessageNodeAction = 'end_flow' | 'send_message' | 'apply_discount' | 'redeem_points' | 'opt_in' | 'opt_out' | 'interested';
 
 export interface MessageNodeButtonDraft {
   position: number;
   label: string;
   nextAction: MessageNodeAction; // apply_discount/redeem_points are visible, not-yet-wired no-ops (see server.js#handleMessageNodeTap)
+  replyText?: string; // the confirmation sent after a consent tap (opt_in / opt_out / interested); empty = the standard one
   followUp?: MessageNodeDraft; // recursive — only present when nextAction === 'send_message'
   targetNodeId?: string; // set once this button's follow-up has been created/loaded — orchestrated by the parent, unused by this component
 }
@@ -42,9 +48,15 @@ export class MessageNodeEditor implements OnChanges {
   @Input() depth = 0; // 0 = entry node
   @Input() maxDepth = 3;
   @Input() hideNestedEditors = false; // true when a host (e.g. ConversationFlowViewer) handles "go deeper" as navigation instead of an inline nested form
+  // True only for a consent request's message: offers Opt in / Opt out / Interested / None per button, the
+  // confirmation text and the one-click presets. Only ever applies to the entry step (depth 0).
+  @Input() allowConsentActions = false;
   @Output() nodeChange = new EventEmitter<MessageNodeDraft>();
 
   variables: Array<{ key: string; label: string; slot: number }> = [];
+  readonly labelPairs = CONSENT_LABEL_PAIRS;
+  readonly defaultConfirmations = DEFAULT_CONFIRMATIONS;
+  readonly actionName = actionName;
 
   constructor(private api: ApiService) {}
 
@@ -54,6 +66,24 @@ export class MessageNodeEditor implements OnChanges {
 
   get canBranchFurther(): boolean {
     return this.depth < this.maxDepth;
+  }
+
+  // The entry step is a WhatsApp template (labels up to 25); every follow-up is an interactive message (20).
+  get labelMax(): number {
+    return labelLimitFor(this.depth);
+  }
+
+  get consentMode(): boolean {
+    return this.allowConsentActions && this.depth === 0;
+  }
+
+  // A button that already carries a consent action keeps showing it even where the host does not offer them.
+  showConsentOptionsFor(b: MessageNodeButtonDraft): boolean {
+    return this.consentMode || isConsentAction(b.nextAction);
+  }
+
+  isConsentAction(a: string): boolean {
+    return isConsentAction(a);
   }
 
   loadVariables() {
@@ -93,11 +123,43 @@ export class MessageNodeEditor implements OnChanges {
     if (button.nextAction === 'send_message' && !button.followUp) {
       button.followUp = { bodyText: '', buttons: [] };
     }
+    // A confirmation text only means something for a consent action: never leave a stale one behind.
+    if (!isConsentAction(button.nextAction)) delete button.replyText;
     this.emit();
   }
 
   onFollowUpChange(button: MessageNodeButtonDraft, updated: MessageNodeDraft) {
     button.followUp = updated;
+    this.emit();
+  }
+
+  // One click: the two standard buttons (Opt in / Opt out), and the suggested wording when nothing is written yet.
+  // Existing confirmation texts are kept, the merchant's own body is never overwritten.
+  applyOptInPreset() {
+    const keep = (action: string) => this.node.buttons.find((b) => b.nextAction === action)?.replyText;
+    const yesReply = keep('opt_in');
+    const noReply = keep('opt_out');
+    this.node.buttons = [
+      { position: 0, label: OPT_IN_PRESET.yes, nextAction: 'opt_in', ...(yesReply ? { replyText: yesReply } : {}) },
+      { position: 1, label: OPT_IN_PRESET.no, nextAction: 'opt_out', ...(noReply ? { replyText: noReply } : {}) },
+    ];
+    if (!(this.node.bodyText || '').trim()) this.node.bodyText = CONSENT_BODY_SUGGESTIONS[0].body;
+    this.emit();
+  }
+
+  // Sets the labels of the Opt in / Opt out buttons from one of the suggested pairs (adding either button when
+  // it is missing). Every label stays editable afterwards.
+  applyLabelPair(key: string) {
+    const chosen: ConsentLabelPair | undefined = CONSENT_LABEL_PAIRS.find((p) => p.key === key);
+    if (!chosen) return;
+    const ensure = (action: 'opt_in' | 'opt_out', label: string) => {
+      const existing = this.node.buttons.find((b) => b.nextAction === action);
+      if (existing) { existing.label = label; return; }
+      if (this.node.buttons.length >= 3) return;
+      this.node.buttons.push({ position: this.node.buttons.length, label, nextAction: action });
+    };
+    ensure('opt_in', chosen.yes);
+    ensure('opt_out', chosen.no);
     this.emit();
   }
 

@@ -62,7 +62,8 @@
     </div>
   </div>
 
-  <!-- Token Status -->
+  <!-- Token Status — platform data (the shared WhatsApp number's token): super admins only. -->
+  @if (showPlatformCards) {
   <div class="card mb-4">
     <div class="card-header">
       <span class="card-title">📱 WhatsApp Token</span>
@@ -117,6 +118,8 @@
       }
     </div>
   </div>
+
+  }
 
   <!-- Team -->
   <div class="card mb-4">
@@ -275,7 +278,8 @@
        where the message itself lives: inside a Promotion or a Flow's custom
        entry message. The 6 fixed fallback templates below (waflow_promo,
        waflow_loyalty, etc.) are created automatically on first use if missing —
-       nothing to click here. -->
+       nothing to click here. Platform data (the shared number's templates): super admins only. -->
+  @if (showPlatformCards) {
   <div class="card">
     <div class="card-header">
       <span class="card-title">📋 WhatsApp Message Templates</span>
@@ -325,4 +329,5 @@
       }
     </div>
   </div>
+  }
 </div>

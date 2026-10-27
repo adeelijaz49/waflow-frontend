@@ -59,3 +59,18 @@
   border-left: 3px solid var(--primary);
 }
 .follow-up-box textarea { font-size: 12px; }
+
+/* Consent request: one-click preset + alternative label pairs, and the per-button confirmation text. */
+.consent-presets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+}
+.consent-pair-select { max-width: 260px; font-size: 12px; }
+.consent-confirmation textarea { font-size: 12px; }

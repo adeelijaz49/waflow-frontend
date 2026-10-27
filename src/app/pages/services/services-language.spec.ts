@@ -3,6 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { DialogService } from '../../shared/dialog.service';
+import { AuthService } from '../../shared/auth.service';
+import { of } from 'rxjs';
 import { Services } from './services';
 
 // Loading the real catalogues (and, for the Arabic cases, a second one) is slow on a busy machine.
@@ -29,7 +31,11 @@ async function boot(settingsAnswer: Answer, opts: { uiLang?: string; handler?: H
   localStorage.clear();
   localStorage.setItem('waflow_auth_token', 'token-A');
   if (opts.uiLang) localStorage.setItem('waflow_ui_language', opts.uiLang);
-  TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
+  // SettingsService (behind the currency pipe) watches the signed-in session so it can reset when the workspace changes. The real AuthService
+  // would add its own GET /api/auth/me here (the app shell makes that call once at start-up, not this screen), so the screen is given a
+  // signed-in session stub and the request list below stays exactly as characterised.
+  const authStub = { isLoggedIn: true, token: 'token-A', session: of(null), sessionSnapshot: null };
+  TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), { provide: AuthService, useValue: authStub }] });
   const http = TestBed.inject(HttpTestingController);
   const dialog = TestBed.inject(DialogService);
   const seen: string[] = [];

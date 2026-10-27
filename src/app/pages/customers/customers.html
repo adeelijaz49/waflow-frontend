@@ -6,9 +6,17 @@
     </div>
     <div style="display:flex; gap:8px">
       <a class="btn btn-outline" [routerLink]="['/imports']" [queryParams]="{entityType:'customer'}">⬆ Import CSV</a>
+      <button class="btn btn-outline" id="export-consent-log" (click)="exportConsentLog()" [disabled]="exportingConsent"
+        title="Download every opt-in and opt-out on record, with the message the customer saw and the button they tapped">
+        {{ exportingConsent ? 'Exporting...' : '⬇ Export consent log (CSV)' }}
+      </button>
       <button class="btn btn-primary" (click)="openAdd()">+ Add Customer</button>
     </div>
   </div>
+
+  @if (exportConsentError) {
+    <div class="export-error" role="alert">{{ exportConsentError }}</div>
+  }
 
   @if (insights.length) {
     <div class="section-label">Customer Opportunities</div>
@@ -24,6 +32,12 @@
     <div class="list-panel">
       <div class="search-bar">
         <input placeholder="Search by name or phone..." [(ngModel)]="search" (ngModelChange)="onSearch()" />
+        <select class="consent-filter" aria-label="Filter by marketing consent" [(ngModel)]="consentFilter" (ngModelChange)="onConsentFilter()">
+          <option value="all">All consent statuses</option>
+          <option value="opted_in">Opted in</option>
+          <option value="opted_out">Opted out</option>
+          <option value="not_responded">Not responded</option>
+        </select>
       </div>
 
       <div class="card">
@@ -36,6 +50,7 @@
                 <tr>
                   <th>Name</th>
                   <th>Phone</th>
+                  <th>Consent</th>
                   <th>Orders</th>
                   <th>Total Spent</th>
                   <th>Loyalty Pts</th>
@@ -50,6 +65,10 @@
                       @if (c.optedOut) { <span class="badge badge-danger" style="margin-left:6px;font-size:10px">Opted Out</span> }
                     </td>
                     <td class="text-muted">{{ c.phone }}</td>
+                    <td class="consent-cell" [attr.title]="consentTooltip(c)">
+                      <span class="badge {{ consentBadgeClass(c) }} consent-badge">{{ consentLabel(c) }}</span>
+                      @if (c.consentAt) { <span class="text-muted consent-date">{{ c.consentAt | date:'d MMM y' }}</span> }
+                    </td>
                     <td>{{ c.orderCount }}</td>
                     <td>{{ c.totalSpent | appCurrency }}</td>
                     <td>
@@ -62,7 +81,7 @@
                     <td class="text-muted">{{ c.lastOrder ? (c.lastOrder | date:'dd MMM yy') : '—' }}</td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="6" class="empty-state">No customers found</td></tr>
+                  <tr><td colspan="7" class="empty-state">No customers found</td></tr>
                 }
               </tbody>
             </table>
@@ -124,6 +143,7 @@
           <button class="tab-btn" [class.active]="detailTab === 'products'" (click)="openDetailTab('products')">Products</button>
           <button class="tab-btn" [class.active]="detailTab === 'campaigns'" (click)="openDetailTab('campaigns')">Campaigns</button>
           <button class="tab-btn" [class.active]="detailTab === 'services'" (click)="openDetailTab('services')">Services Booked</button>
+          <button class="tab-btn" [class.active]="detailTab === 'consent'" (click)="openDetailTab('consent')">Consent History</button>
         </div>
 
         <div class="card-body">
@@ -216,6 +236,35 @@
                   </div>
                 } @empty {
                   <div class="text-muted" style="font-size:13px">No services booked yet</div>
+                }
+              </div>
+            }
+          }
+
+          @if (detailTab === 'consent') {
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px">Consent History ({{ consentEvents.length }})</div>
+            @if (loadingConsentEvents) {
+              <div class="loading">Loading...</div>
+            } @else if (consentEventsError) {
+              <div class="text-muted" style="font-size:13px">
+                Consent history could not be loaded.
+                <button class="btn btn-outline btn-sm" style="margin-left:8px" (click)="loadConsentEvents()">Try again</button>
+              </div>
+            } @else {
+              <div class="order-list consent-events">
+                @for (e of consentEvents; track e.id || e._id || $index) {
+                  <div class="consent-event">
+                    <div class="consent-event-head">
+                      <span class="badge {{ eventBadgeClass(e.type) }}">{{ eventTypeLabel(e.type) }}</span>
+                      <span class="text-muted" style="font-size:11px">{{ (e.eventTimeUtc || e.tappedAt || e.recordedAtUtc || e.createdAt) | date:'dd MMM yyyy, h:mm a' }}</span>
+                    </div>
+                    @if (e.promotionName) { <div class="fw-600" style="font-size:12px">{{ e.promotionName }}</div> }
+                    @if (e.buttonLabel) { <div style="font-size:12px">Tapped: “{{ e.buttonLabel }}”</div> }
+                    @if (e.messageText) { <div class="consent-message text-muted">{{ e.messageText }}</div> }
+                    @if (e.source) { <div class="text-muted" style="font-size:11px">{{ e.source }}</div> }
+                  </div>
+                } @empty {
+                  <div class="text-muted" style="font-size:13px">No consent events recorded for this customer yet</div>
                 }
               </div>
             }

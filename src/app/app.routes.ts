@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { legalAcceptanceGuard } from './guards/legal-acceptance.guard';
+import { platformAdminGuard } from './guards/platform-admin.guard';
 import { ONBOARDING_FLOW_ROUTES } from './pages/onboarding-flow/onb.routes';
 
 export const routes: Routes = [
@@ -26,6 +27,9 @@ export const routes: Routes = [
   { path: 'onboarding', canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/onboarding/onboarding').then(m => m.Onboarding) },
   { path: 'imports',    canActivate: [authGuard, legalAcceptanceGuard], loadComponent: () => import('./pages/imports/imports').then(m => m.Imports) },
   { path: 'arabic',     canActivate: [authGuard, legalAcceptanceGuard], loadChildren: () => import('./pages/localization/localization.routes').then(m => m.LOCALIZATION_ROUTES) },
+  // Platform (super admin) console. No legalAcceptanceGuard on purpose: staff never accept a customer's documents.
+  // platformAdminGuard waits for the session and lets only a super admin who is not inside a customer through.
+  { path: 'platform',   canActivate: [authGuard, platformAdminGuard], loadChildren: () => import('./pages/platform-admin/platform.routes').then(m => m.PLATFORM_ROUTES) },
   // Not gated by legalAcceptanceGuard — a user must be able to read the very
   // documents they're being asked to accept, and reach the acceptance flow
   // itself without an infinite redirect loop.

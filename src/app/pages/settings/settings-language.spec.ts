@@ -54,7 +54,9 @@ async function boot(settingsAnswer: Answer, uiLang?: string) {
     fixture.detectChanges();
   };
   await settle();
-  return { fixture, el: fixture.nativeElement as HTMLElement, seen };
+  // the embedded note renders from a catalogue that loads on its own schedule (slow on a busy machine): when a test needs its text, wait for it
+  const until = async (done: () => boolean) => { for (let i = 0; i < 80 && !done(); i++) { await sleep(25); await settle(); } };
+  return { fixture, el: fixture.nativeElement as HTMLElement, seen, until };
 }
 
 describe('Settings screen: consent request language note', () => {
@@ -80,7 +82,8 @@ describe('Settings screen: consent request language note', () => {
   });
 
   it('shows the note above the consent button for a flagged merchant with Arabic customers', async () => {
-    const { el, seen } = await boot(settings({ arabicEnabled: true }));
+    const { el, seen, until } = await boot(settings({ arabicEnabled: true }));
+    await until(() => (el.textContent || '').includes('the Arabic opt-in message is not set up yet'));
     expect(seen).toContain('POST /api/localization/senders/consent_request/plan');
     expect(el.querySelector('app-sender-language-note')).not.toBeNull();
     expect(el.textContent).toContain('the Arabic opt-in message is not set up yet');

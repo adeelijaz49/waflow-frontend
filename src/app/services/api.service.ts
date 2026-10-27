@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 const BASE = environment.apiBaseUrl;
@@ -100,6 +100,29 @@ export class ApiService {
   sendConsentRequests(): Observable<any> {
     return this.http.post(`${API}/customers/consent-requests`, {});
   }
+  // Consent log (who opted in / out, when, through which message). Filters: status (opted_in | opted_out |
+  // not_responded), promotionId, page, limit. Empty filter values are left out of the request.
+  getConsentLog(filter: any = {}): Observable<any> {
+    return this.http.get(`${API}/customers/consent-log`, { params: ApiService.cleanParams(filter) });
+  }
+  // The same log as a spreadsheet. A Bearer-auth export cannot be a plain link, so it is fetched as a blob.
+  downloadConsentLogCsv(filter: { status?: string; promotionId?: string } = {}): Observable<Blob> {
+    return this.http.get(`${API}/customers/consent-log.csv`, { params: ApiService.cleanParams(filter), responseType: 'blob' });
+  }
+  getCustomerConsentEvents(customerId: string): Observable<any[]> {
+    return this.http.get<any>(`${API}/customers/${customerId}/consent-events`).pipe(
+      map((res) => (Array.isArray(res) ? res : (res?.events ?? []))),
+    );
+  }
+
+  // Drops undefined / null / empty-string values so an unset filter never reaches the URL.
+  private static cleanParams(filter: Record<string, any> = {}): Record<string, string | number | boolean> {
+    const out: Record<string, string | number | boolean> = {};
+    for (const [k, v] of Object.entries(filter || {})) {
+      if (v !== undefined && v !== null && v !== '') out[k] = v;
+    }
+    return out;
+  }
 
   // ── Orders ────────────────────────────────────────────────────────────────
   getOrders(params: any = {}): Observable<any> {
@@ -196,8 +219,9 @@ export class ApiService {
   deletePromotion(id: string): Observable<any> {
     return this.http.delete(`${API}/promotions/${id}`);
   }
-  getRecommendedCustomers(promotionId: string, limit = 100): Observable<any[]> {
-    return this.http.get<any[]>(`${API}/promotions/${promotionId}/recommended-customers`, { params: { limit } });
+  // `audience` (opted_in | not_responded | opted_out) narrows the list by consent; omitted = exactly the legacy request.
+  getRecommendedCustomers(promotionId: string, limit = 100, audience?: string): Observable<any[]> {
+    return this.http.get<any[]>(`${API}/promotions/${promotionId}/recommended-customers`, { params: audience ? { limit, audience } : { limit } });
   }
   sendPromotion(promotionId: string, customerIds: string[]): Observable<any> {
     return this.http.post(`${API}/promotions/${promotionId}/send`, { customerIds });
@@ -223,6 +247,10 @@ export class ApiService {
   }
   sendTestMessage(promotionId: string, phone: string): Observable<any> {
     return this.http.post(`${API}/promotions/${promotionId}/test-send`, { phone });
+  }
+  // The merchant closed the "your message was approved - you can now send" notice (Promotion.sendRequest.dismissedAt).
+  dismissSendRequest(promotionId: string): Observable<any> {
+    return this.http.post(`${API}/promotions/${promotionId}/dismiss-send-request`, {});
   }
 
   // ── Flows ─────────────────────────────────────────────────────────────────

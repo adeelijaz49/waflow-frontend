@@ -49,24 +49,39 @@
                 </span>
               </div>
               <div class="promo-meta">
-                @if (p.customerType === 'points') {
-                  <span class="badge badge-info">💎 {{ p.pointsPrice }} pts</span>
+                @if (isConsentPromo(p)) {
+                  <span class="badge badge-info" title="Asks customers for permission to send them offers on WhatsApp">🤝 Opt-in request</span>
                 } @else {
-                  <span class="badge badge-warning">{{ p.discountPercent }}% OFF</span>
-                }
-                <span class="badge badge-neutral">{{ p.customerType === 'points' ? '💎 Points' : '💵 Cash' }}</span>
-                @if (p.scope === 'services') {
-                  <span class="badge badge-info">✂️ {{ p.services?.length }} Service{{ p.services?.length !== 1 ? 's' : '' }}</span>
-                } @else {
-                  <span class="badge badge-neutral">{{ p.type === 'store_wide' ? '🏪 Store Wide' : '📦 ' + p.products?.length + ' Products' }}</span>
+                  @if (p.customerType === 'points') {
+                    <span class="badge badge-info">💎 {{ p.pointsPrice }} pts</span>
+                  } @else {
+                    <span class="badge badge-warning">{{ p.discountPercent }}% OFF</span>
+                  }
+                  <span class="badge badge-neutral">{{ p.customerType === 'points' ? '💎 Points' : '💵 Cash' }}</span>
+                  @if (p.scope === 'services') {
+                    <span class="badge badge-info">✂️ {{ p.services?.length }} Service{{ p.services?.length !== 1 ? 's' : '' }}</span>
+                  } @else {
+                    <span class="badge badge-neutral">{{ p.type === 'store_wide' ? '🏪 Store Wide' : '📦 ' + p.products?.length + ' Products' }}</span>
+                  }
                 }
                 @if (p.sentAt) {
                   <span class="badge badge-success">Sent {{ p.sentCount }} msgs</span>
                 }
-                @if (needsTemplateApproval(p)) {
-                  <span class="badge badge-warning" title="Custom message awaiting WhatsApp approval — sends use the default message until then">⏳ Pending Approval</span>
+                @if (templateRejected(p)) {
+                  <span class="badge badge-danger" title="Facebook (Meta) did not approve this message — sending is paused until it is edited and approved">Not approved</span>
+                } @else if (needsTemplateApproval(p)) {
+                  <span class="badge badge-warning" title="This message is being sent to Facebook (Meta) for approval — sending is paused until it is approved">⏳ Pending Approval</span>
                 }
               </div>
+              @if (approvedNotice(p) && activePromo?._id !== p._id) {
+                <div class="template-banner template-banner-ok">
+                  <div>✅ Your message was approved - you can now send the messages you intended</div>
+                  <div class="template-banner-actions">
+                    <button class="btn btn-success btn-sm" (click)="reviewAndSend(p)">Review and send</button>
+                    <button class="btn btn-outline btn-sm" (click)="dismissSendRequest(p)">Dismiss</button>
+                  </div>
+                </div>
+              }
               <div class="promo-actions">
                 <button class="btn btn-outline btn-sm" (click)="openViewEdit(p)">
                   {{ (p.sentCount || 0) > 0 ? '👁 View' : '✏️ Edit' }}
@@ -85,7 +100,7 @@
       <div class="campaign-panel card">
         <div class="card-header">
           <span class="card-title">Campaign: {{ activePromo.name }}</span>
-          <button class="close-btn" (click)="activePromo = null">×</button>
+          <button class="close-btn" (click)="closeCampaign()">×</button>
         </div>
         <div class="card-body">
 
@@ -102,14 +117,45 @@
             </div>
           }
 
-          <!-- DEFECT-02: a custom entry message never blocks sending outright (no
-               separate activate gate exists for Promotions) — it just silently
-               falls back to the default message until Meta approves it, so this
-               makes that state visible rather than leaving the merchant to
-               wonder why customers got the "wrong" message. -->
-          @if (needsTemplateApproval(activePromo)) {
-            <div class="result-box" style="background:var(--bg-subtle,#fffbeb);border:1px solid #f59e0b;font-size:12px;margin-bottom:12px">
-              ⏳ This promotion has a custom message awaiting WhatsApp template approval. Until approved, sends will use the default message instead.
+          @if (isConsentPromo(activePromo) && !activePromo.entryNodeId) {
+            <div class="template-banner template-banner-wait">
+              <div>This consent request has no message yet.</div>
+              <div class="template-banner-sub">Click Edit on the promotion to write your opt-in message and choose your buttons. Nothing can be sent without it.</div>
+            </div>
+          }
+
+          <!-- A custom message is only ever sent once Meta has approved it. Until then sending is paused: the server submits
+               the message for approval itself, remembers who the send was for, and this banner says where things stand. -->
+          @if (templateWaiting(activePromo) && templateBlock?.submitFailed) {
+            <!-- The server tried to send it to Meta and could not: "being sent for approval" would be untrue, so say what happened. -->
+            <div class="template-banner template-banner-bad">
+              <div>⚠️ This message could not be sent to Facebook (Meta) for approval.</div>
+              <div class="template-banner-sub">{{ templateBlock?.message }}</div>
+            </div>
+          } @else if (templateWaiting(activePromo)) {
+            <div class="template-banner template-banner-wait">
+              <div>⏳ This message is being sent to Facebook (Meta) for approval - sending is paused until it is approved.</div>
+              @if (templateStatusOf(activePromo) === 'not_created') {
+                <div class="template-banner-sub">It is sent for approval automatically the first time you press Send, or you can send it from the message editor.</div>
+              } @else {
+                <div class="template-banner-sub">This usually takes a few minutes. This page checks for the answer and will tell you when you can send.</div>
+              }
+              @if (templateBlock?.submittedNow) {
+                <div class="template-banner-sub">We have just sent it to Meta for you.</div>
+              }
+            </div>
+          } @else if (templateRejected(activePromo)) {
+            <div class="template-banner template-banner-bad">
+              <div>⚠️ {{ rejectionText(entryNodeOf(activePromo)) }}</div>
+              <div class="template-banner-sub">Sending is paused. Edit the message to fix this, save it, and it will be sent for approval again.</div>
+            </div>
+          } @else if (approvedNotice(activePromo)) {
+            <div class="template-banner template-banner-ok">
+              <div>✅ Your message was approved - you can now send the messages you intended</div>
+              <div class="template-banner-actions">
+                <button class="btn btn-success btn-sm" (click)="reviewAndSend(activePromo)">Review and send</button>
+                <button class="btn btn-outline btn-sm" (click)="dismissSendRequest(activePromo)">Dismiss</button>
+              </div>
             </div>
           }
 
@@ -177,14 +223,29 @@
                 <img [src]="preview.header" class="wa-bubble-image" alt="" />
               }
               <div class="wa-bubble-text">{{ preview.body }}</div>
-              <div class="wa-bubble-button">{{ preview.buttonLabel }}</div>
-              @if (!preview.isCustomEntryNode) {
+              @if ((preview.isCustomEntryNode || preview.isConsentRequest) && preview.buttons?.length) {
+                <!-- The merchant's own message: every button it has, with what each one does, and the footer WhatsApp adds. -->
+                @for (b of preview.buttons; track $index) {
+                  <div class="wa-bubble-button">{{ b.label }}@if (consentActionTag(b.action)) { <span class="wa-bubble-action">{{ consentActionTag(b.action) }}</span> }</div>
+                }
+              } @else {
+                <div class="wa-bubble-button">{{ preview.buttonLabel }}</div>
+              }
+              @if (!preview.isCustomEntryNode && !preview.isConsentRequest) {
                 <!-- Every promo send (interactive + template fallback) carries this
                      second button below the shop/book action — except a custom
                      entry-node message, which is the merchant's own message tree. -->
                 <div class="wa-bubble-button">Opt Out</div>
               }
+              @if (preview.footer) {
+                <div class="wa-bubble-footer">{{ preview.footer }}</div>
+              }
             </div>
+            @if (preview.isConsentRequest) {
+              <div class="text-muted" style="font-size:11px;margin-top:4px">
+                This message asks customers for permission to send them offers on WhatsApp. A test message does not record anyone's consent.
+              </div>
+            }
             @if (preview.fallbackText) {
               <div class="text-muted" style="font-size:11px;margin-top:4px">
                 If the customer hasn't messaged in the last 24h, they'll get a plain-text version instead.
@@ -192,7 +253,7 @@
             }
             @if (preview.templateStatus && preview.templateStatus !== 'approved') {
               <div class="text-muted" style="font-size:11px;margin-top:4px">
-                This is your custom message, but Meta hasn't approved it yet ({{ preview.templateStatus }}) — sends will fall back to the default message until it's approved.
+                This is your custom message, but Meta hasn't approved it yet ({{ preview.templateStatus }}) — sending is paused until it is approved.
               </div>
             }
             <div class="test-send-row">
@@ -226,6 +287,17 @@
                 <div class="report-stat"><div class="report-value">{{ campaignReport.pointsIssued }}</div><div class="report-label">Points Issued</div></div>
                 <div class="report-stat"><div class="report-value">{{ campaignReport.conversionRate }}%</div><div class="report-label">Conversion</div></div>
               </div>
+              @if (campaignReport.consent) {
+                <div class="section-label" style="margin-top:12px">Opt-in results</div>
+                <div class="report-funnel report-consent">
+                  <div class="report-stat"><div class="report-value">{{ campaignReport.consent.optIns ?? 0 }}</div><div class="report-label">Opt-ins</div></div>
+                  <div class="report-stat"><div class="report-value">{{ campaignReport.consent.optOuts ?? 0 }}</div><div class="report-label">Opt-outs</div></div>
+                  <div class="report-stat"><div class="report-value">{{ campaignReport.consent.interested ?? 0 }}</div><div class="report-label">Interested</div></div>
+                  <div class="report-stat"><div class="report-value">{{ campaignReport.consent.otherTaps ?? 0 }}</div><div class="report-label">Other taps</div></div>
+                  <div class="report-stat"><div class="report-value">{{ consentRate(campaignReport.consent.optInRate) }}</div><div class="report-label">Opt-in rate</div></div>
+                  <div class="report-stat"><div class="report-value">{{ consentRate(campaignReport.consent.optOutRate) }}</div><div class="report-label">Opt-out rate</div></div>
+                </div>
+              }
               @if (campaignReport.messagesFailed > 0) {
                 <div class="text-muted" style="font-size:11px;margin-top:6px">⚠️ {{ campaignReport.messagesFailed }} message(s) failed to deliver</div>
                 @if (reportFailures.length) {
@@ -250,6 +322,20 @@
             </span>
           </div>
 
+          <div class="audience-row">
+            <label for="audience-filter">Audience</label>
+            <select id="audience-filter" [ngModel]="audienceFilter" (ngModelChange)="setAudienceFilter($event)">
+              @if (!isConsentPromo(activePromo)) { <option value="">All customers</option> }
+              <option value="opted_in">Opted in</option>
+              <option value="not_responded">Not yet responded</option>
+              <option value="opted_out" [disabled]="isConsentPromo(activePromo)"
+                [title]="isConsentPromo(activePromo) ? 'Customers who opted out are never asked again' : 'Customers who opted out can never receive promotions'">Opted out</option>
+            </select>
+          </div>
+          @if (audienceHint()) {
+            <div class="text-muted audience-hint">{{ audienceHint() }}</div>
+          }
+
           @if (customerViewMode === 'recommended') {
             <div class="recs-toolbar">
               <input type="number" [(ngModel)]="recommendLimit" placeholder="100" style="width:80px" min="1" max="500" />
@@ -266,12 +352,14 @@
                 @for (c of recommendedCustomers; track c._id) {
                   <div class="rec-row"
                     [class.selected]="selectedCustomerIds.has(c._id)"
-                    [class.disabled]="!customerCanAfford(c)"
-                    [style.opacity]="customerCanAfford(c) ? '1' : '0.45'"
+                    [class.disabled]="!customerSelectable(c)"
+                    [style.opacity]="customerSelectable(c) ? '1' : '0.45'"
                     (click)="toggleCustomer(c)">
-                    <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" [disabled]="!customerCanAfford(c)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c)" />
+                    <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" [disabled]="!customerSelectable(c)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c)" />
                     <div class="rec-info">
-                      <div class="fw-600" style="font-size:13px">{{ c.firstname }} {{ c.lastname }}</div>
+                      <div class="fw-600" style="font-size:13px">{{ c.firstname }} {{ c.lastname }}
+                        @if (consentRowTag(c); as tag) { <span class="badge badge-neutral consent-tag" [title]="tag.title">{{ tag.text }}</span> }
+                      </div>
                       @if (isPointsPromo()) {
                         <div class="text-muted" style="font-size:11px">{{ c.loyaltyPoints }} pts available
                           @if (!customerCanAfford(c)) { <span style="color:#dc2626"> — Not enough points</span> }
@@ -306,12 +394,14 @@
                 @for (c of allCustomers; track c._id) {
                   <div class="rec-row"
                     [class.selected]="selectedCustomerIds.has(c._id)"
-                    [class.disabled]="!customerCanAfford(c)"
-                    [style.opacity]="customerCanAfford(c) ? '1' : '0.45'"
+                    [class.disabled]="!customerSelectable(c)"
+                    [style.opacity]="customerSelectable(c) ? '1' : '0.45'"
                     (click)="toggleCustomer(c)">
-                    <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" [disabled]="!customerCanAfford(c)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c)" />
+                    <input type="checkbox" [checked]="selectedCustomerIds.has(c._id)" [disabled]="!customerSelectable(c)" (click)="$event.stopPropagation()" (change)="toggleCustomer(c)" />
                     <div class="rec-info">
-                      <div class="fw-600" style="font-size:13px">{{ c.firstname }} {{ c.lastname }}</div>
+                      <div class="fw-600" style="font-size:13px">{{ c.firstname }} {{ c.lastname }}
+                        @if (consentRowTag(c); as tag) { <span class="badge badge-neutral consent-tag" [title]="tag.title">{{ tag.text }}</span> }
+                      </div>
                       <div class="text-muted" style="font-size:11px">{{ c.phone }}
                         @if (isPointsPromo() && !customerCanAfford(c)) { <span style="color:#dc2626"> — Not enough points</span> }
                       </div>
@@ -371,6 +461,16 @@
                   </div>
                 }
               }
+              @if (skippedLines(sendResult).length) {
+                <div class="result-box result-info">
+                  <div>Not sent to everyone you selected</div>
+                  <ul style="margin:4px 0 0 18px;padding:0;font-weight:400">
+                    @for (line of skippedLines(sendResult); track line) {
+                      <li style="font-size:12px">{{ line }}</li>
+                    }
+                  </ul>
+                </div>
+              }
               @if (sendResult.errors?.length) {
                 <div class="result-box result-error">
                   ⚠️ {{ sendResult.errors.length }} message{{ sendResult.errors.length === 1 ? '' : 's' }} failed to send:
@@ -384,11 +484,20 @@
             }
           }
 
+          @if (noOptInSelectedCount > 0) {
+            <div class="result-box consent-warning">
+              ⚠️ {{ noOptInSelectedCount }} selected {{ noOptInSelectedCount === 1 ? 'customer has' : 'customers have' }} not opted in and will be skipped - create a Consent request to ask them
+            </div>
+          }
+          @if (templateBlock && !templateBlock.submitFailed && (templateWaiting(activePromo) || templateRejected(activePromo))) {
+            <div class="text-muted" style="font-size:12px;margin-bottom:8px">Nothing was sent. {{ templateBlock.message }}</div>
+          }
+
           <div class="send-bar">
             <button class="btn btn-success btn-send-whatsapp" style="width:100%"
               (click)="sendCampaign()"
               [disabled]="sending || selectedCustomerIds.size === 0">
-              @if (sending) { Sending... } @else { 📱 Send WhatsApp to {{ selectedCustomerIds.size }} Customers }
+              @if (sending) { Sending... } @else if (isConsentPromo(activePromo)) { 📱 Send opt-in request to {{ selectedCustomerIds.size }} Customers } @else { 📱 Send WhatsApp to {{ selectedCustomerIds.size }} Customers }
             </button>
           </div>
         </div>
@@ -447,10 +556,11 @@
         <div class="form-group">
           <label>Description</label>
           <textarea [(ngModel)]="form.description" placeholder="Tell customers what this promotion is about..."></textarea>
-          @if (form.campaignType && !editingPromoId) {
+          @if (form.campaignType && !editingPromoId && !isConsentForm) {
             <div class="text-muted" style="font-size:11px;margin-top:4px">💡 Suggested message for this campaign type — this is what gets sent, feel free to edit it.</div>
           }
         </div>
+        @if (!isConsentForm) {
         <div class="form-row">
           <div class="form-group">
             <label>Promotion Scope</label>
@@ -490,6 +600,7 @@
             </div>
           }
         </div>
+        }
         <div class="form-row">
           <div class="form-group">
             <label>Start Date</label>
@@ -502,19 +613,42 @@
         </div>
 
         <div class="form-group">
+          <label>Purpose</label>
+          <label class="format-option">
+            <input type="radio" name="purpose" [checked]="!isConsentForm" [disabled]="!!existingEntryNode" (change)="setPurpose('standard')" />
+            Promote products or services
+          </label>
+          <label class="format-option">
+            <input type="radio" name="purpose" [checked]="isConsentForm" [disabled]="!!existingEntryNode" (change)="setPurpose('consent_request')" />
+            Ask customers to opt in (consent request)
+          </label>
+          @if (existingEntryNode) {
+            <div class="text-muted" style="font-size:11px;margin-top:4px">The purpose cannot be changed once the message has been written.</div>
+          } @else if (isConsentForm) {
+            <div class="text-muted" style="font-size:11px;margin-top:4px">Customers who tap your opt-in button agree to receive offers from you on WhatsApp. Nothing is sent to anyone who has not been asked.</div>
+          }
+        </div>
+
+        <div class="form-group">
           <label>Message Format</label>
           <label class="format-option">
             <input type="radio" name="sendFormat" [checked]="form.sendFormat !== 'carousel'" (change)="form.sendFormat = 'separate'" />
             Send as separate messages
           </label>
           <label class="format-option">
-            <input type="radio" name="sendFormat" [checked]="form.sendFormat === 'carousel'" (change)="form.sendFormat = 'carousel'" />
+            <input type="radio" name="sendFormat" [checked]="form.sendFormat === 'carousel'" [disabled]="isConsentForm" (change)="form.sendFormat = 'carousel'" />
             Send as horizontal carousel
           </label>
-          <div class="text-muted" style="font-size:11px;margin-top:4px">Carousel needs at least 2 {{ form.scope }} with a photo — needs one-time Meta approval the first time you use it.</div>
+          @if (isConsentForm) {
+            <div class="text-muted" style="font-size:11px;margin-top:4px">A consent request is always sent as a single message with your buttons.</div>
+          } @else {
+            <div class="text-muted" style="font-size:11px;margin-top:4px">Carousel needs at least 2 {{ form.scope }} with a photo — needs one-time Meta approval the first time you use it.</div>
+          }
         </div>
 
-        @if (form.scope === 'services') {
+        @if (isConsentForm) {
+          <!-- nothing to pick: a consent request has no products, services or discount -->
+        } @else if (form.scope === 'services') {
           <div class="form-group">
             <label>Select Services</label>
             <div class="product-picker">
@@ -560,15 +694,28 @@
           </div>
         }
 
+        @if (!viewMode && !editingPromoId && isConsentForm) {
+          <div class="result-box result-info" style="font-size:12px">
+            After you create this promotion the message editor opens, so you can write your opt-in message and choose your buttons.
+          </div>
+        }
+
         @if (!viewMode && editingPromoId) {
           <div class="form-group custom-entry-section">
-            <label class="custom-entry-toggle">
-              <input type="checkbox" [checked]="useCustomEntry" (change)="toggleCustomEntry()" />
-              Customize this message
-            </label>
-            <div class="text-muted" style="font-size:11px;margin-top:2px">
-              Replace the default message above with your own, and configure what happens when a customer taps a button.
-            </div>
+            @if (isConsentForm) {
+              <div class="custom-entry-toggle">Your opt-in message</div>
+              <div class="text-muted" style="font-size:11px;margin-top:2px">
+                Write the message customers receive and choose what each button does. Nothing is sent until Meta has approved it.
+              </div>
+            } @else {
+              <label class="custom-entry-toggle">
+                <input type="checkbox" [checked]="useCustomEntry" (change)="toggleCustomEntry()" />
+                Customize this message
+              </label>
+              <div class="text-muted" style="font-size:11px;margin-top:2px">
+                Replace the default message above with your own, and configure what happens when a customer taps a button.
+              </div>
+            }
 
             @if (useCustomEntry) {
               <div class="custom-entry-editor">
@@ -592,16 +739,61 @@
                   <app-message-node-editor
                     variableSource="promotion"
                     [node]="entryDraft"
+                    [allowConsentActions]="isConsentForm"
                     (nodeChange)="entryDraft = $event">
                   </app-message-node-editor>
                 } @else {
                   <app-conversation-flow-viewer
                     variableSource="promotion"
+                    [allowConsentActions]="isConsentForm"
                     [root]="entryDraft"
                     [templateStatus]="existingEntryNode?.templateStatus || null"
                     [languageOwnerId]="loc.arabicEnabled() ? editingPromoId : null"
                     (rootChange)="entryDraft = $event">
                   </app-conversation-flow-viewer>
+                }
+
+                @if (isConsentForm) {
+                  <div class="consent-guard">
+                    <div class="consent-guard-title">Before you save: check your wording</div>
+
+                    <div class="consent-guard-block">
+                      <div class="consent-guard-sub">Suggested wording (you can edit it)</div>
+                      <div class="consent-suggestions">
+                        @for (sg of bodySuggestions; track sg.key) {
+                          <button type="button" class="btn btn-outline btn-sm" (click)="useSuggestedBody(sg.key)">{{ sg.title }}</button>
+                        }
+                      </div>
+                      <div class="text-muted" style="font-size:11px;margin-top:4px">Replace the [square brackets] with your own words.</div>
+                    </div>
+
+                    <div class="consent-guard-block">
+                      <div class="consent-guard-sub">Writing guidance</div>
+                      <ul class="consent-guidance">
+                        @for (g of writingGuidance; track g) { <li>{{ g }}</li> }
+                      </ul>
+                    </div>
+
+                    @if (consentIssues.length) {
+                      <ul class="consent-issues">
+                        @for (i of consentIssues; track i.code + i.message) {
+                          <li [class.consent-issue-error]="i.level === 'error'" [class.consent-issue-warning]="i.level === 'warning'">
+                            {{ i.level === 'error' ? 'Fix: ' : 'Check: ' }}{{ i.message }}
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <div class="consent-issue-ok">✅ No problems found in this wording.</div>
+                    }
+
+                    <label class="consent-ack">
+                      <input type="checkbox" [checked]="consentAckValid" (change)="setConsentAck($any($event.target).checked)" />
+                      <span>I confirm this message clearly asks customers for their permission to receive offers from my business on WhatsApp, that they can say no or stop at any time, and that I will only message them as this message says.</span>
+                    </label>
+                    @if (!consentAckValid) {
+                      <div class="text-muted" style="font-size:11px;margin-top:4px">Required before you can save or send this message for approval. If you change the wording you need to confirm it again.</div>
+                    }
+                  </div>
                 }
 
                 @if (existingEntryNode) {
@@ -618,6 +810,11 @@
                       {{ refreshingStatus ? 'Checking...' : 'Refresh Status' }}
                     </button>
                   </div>
+                  @if (existingEntryNode.templateStatus === 'pending') {
+                    <div class="text-muted" style="font-size:11px;margin-top:4px">This message is being sent to Facebook (Meta) for approval - sending is paused until it is approved. This page checks for the answer.</div>
+                  } @else if (existingEntryNode.templateStatus === 'rejected') {
+                    <div class="template-rejected-note">{{ rejectionText(existingEntryNode) }} Edit it, save, and send it for approval again.</div>
+                  }
                 }
 
                 @if (loc.arabicEnabled() && editingPromoId && existingEntryNode) {
@@ -628,21 +825,27 @@
                   <div class="result-box result-error" style="margin-top:10px">{{ entryError }}</div>
                 }
                 @if (hasIncompleteButtons(entryDraft)) {
-                  <div class="text-muted" style="font-size:11px;margin-top:6px">Every button (at every level) needs a label before this can be saved.</div>
+                  <div class="text-muted" style="font-size:11px;margin-top:6px">Every button (at every level) needs a label within the character limit before this can be saved.</div>
                 }
 
                 <div style="display:flex;gap:8px;margin-top:10px">
-                  <button class="btn btn-outline btn-sm" (click)="saveCustomEntry()" [disabled]="savingEntryNode || !entryDraft.bodyText || hasIncompleteButtons(entryDraft)">
+                  <button class="btn btn-outline btn-sm" (click)="saveCustomEntry()" [disabled]="!canSaveCustomEntry">
                     {{ savingEntryNode ? 'Saving...' : 'Save Custom Message' }}
                   </button>
                   @if (existingEntryNode && existingEntryNode.templateStatus !== 'approved') {
-                    <button class="btn btn-outline btn-sm" (click)="submitEntryTemplate()" [disabled]="submittingTemplate">
+                    <button class="btn btn-outline btn-sm" (click)="submitEntryTemplate()" [disabled]="submittingTemplate || (isConsentForm && !(consentAckValid && consentErrors.length === 0))">
                       {{ submittingTemplate ? 'Submitting...' : 'Submit for Approval' }}
                     </button>
                   }
                 </div>
+                @if (isConsentForm && !canSaveCustomEntry && !savingEntryNode && entryDraft.bodyText) {
+                  <div class="text-muted" style="font-size:11px;margin-top:6px">
+                    @if (consentErrors.length) { Fix the items marked "Fix" above to save. }
+                    @else if (!consentAckValid) { Tick the confirmation above to save. }
+                  </div>
+                }
                 @if (existingEntryNode && existingEntryNode.templateStatus !== 'approved') {
-                  <div class="text-muted" style="font-size:11px;margin-top:6px">Until Meta approves this custom template, sends will silently fall back to the default message above.</div>
+                  <div class="text-muted" style="font-size:11px;margin-top:6px">Until Meta approves this message, nothing is sent to customers. When you press Send it is submitted for approval automatically and you are told when it is approved.</div>
                 }
               </div>
             }
@@ -652,7 +855,7 @@
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="closeModal()">{{ viewMode ? 'Close' : 'Cancel' }}</button>
         @if (!viewMode) {
-          <button class="btn btn-primary" (click)="savePromotion()" [disabled]="saving || !form.name || (form.scope === 'services' ? !form.selectedServices.length : (form.customerType === 'cash' ? !form.discountPercent : !form.pointsPrice))">
+          <button class="btn btn-primary" (click)="savePromotion()" [disabled]="saving || !form.name || (!isConsentForm && (form.scope === 'services' ? !form.selectedServices.length : (form.customerType === 'cash' ? !form.discountPercent : !form.pointsPrice)))">
             {{ saving ? 'Saving...' : (editingPromoId ? 'Update Promotion' : 'Create Promotion') }}
           </button>
         }

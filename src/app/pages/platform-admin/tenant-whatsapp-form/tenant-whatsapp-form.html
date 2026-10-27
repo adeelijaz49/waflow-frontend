@@ -1,0 +1,87 @@
+<div class="card mb-4">
+  <div class="card-header">
+    <span class="card-title">WhatsApp number</span>
+    @if (status) {
+      <span class="badge {{ isOwn ? 'badge-info' : 'badge-neutral' }}">{{ isOwn ? 'Own number' : 'Platform number' }}</span>
+    }
+  </div>
+  <div class="card-body">
+    <div class="help">
+      <p><strong>If the number was added inside the platform's WhatsApp Business Account</strong>, you only need the phone number id.</p>
+      <p><strong>If the customer has their own WhatsApp Business Account</strong>, you need the phone number id, the WhatsApp Business Account id and a permanent access token.</p>
+      <p>You find these in Meta Business Suite under WhatsApp Manager. The token is stored encrypted and is never shown again.</p>
+    </div>
+
+    @if (status) {
+      <div class="wa-grid" data-test="wa-status">
+        @if (!isOwn) {
+          <div class="wa-row"><span class="wa-label">Sending from</span><span>The shared platform WhatsApp number</span></div>
+        } @else {
+          @if (status.displayPhoneNumber) {
+            <div class="wa-row"><span class="wa-label">Number</span><span>{{ status.displayPhoneNumber }}@if (status.verifiedName) { ({{ status.verifiedName }}) }</span></div>
+          }
+          <div class="wa-row"><span class="wa-label">Phone number id</span><span>{{ status.phoneIdLast4 ? 'Ending ' + status.phoneIdLast4 : 'Saved' }}</span></div>
+          <div class="wa-row"><span class="wa-label">Business Account</span><span>{{ status.wabaId || 'Platform account' }}</span></div>
+          <div class="wa-row">
+            <span class="wa-label">Token</span>
+            <span data-test="wa-token-line">
+              @if (status.tokenConfigured) {
+                {{ status.tokenLast4 ? 'Token saved ending ' + status.tokenLast4 : 'Token saved' }}
+              } @else {
+                No own token (uses the platform account)
+              }
+            </span>
+          </div>
+          <div class="wa-row">
+            <span class="wa-label">Connection</span>
+            <span data-test="wa-validity">
+              @if (status.tokenIsValid === true) { <span class="badge badge-success">Valid</span> }
+              @else if (status.tokenIsValid === false) { <span class="badge badge-danger">Rejected by WhatsApp</span> }
+              @else { <span class="badge badge-neutral">Not checked yet</span> }
+              @if (status.checkedAt) { <span class="text-muted" style="margin-left:8px">Last checked {{ status.checkedAt | date:'d MMM y, HH:mm' }}</span> }
+            </span>
+          </div>
+          @if (!status.enabled) {
+            <div class="wa-row"><span class="wa-label">Status</span><span class="badge badge-warning">Switched off</span></div>
+          }
+        }
+      </div>
+    }
+
+    <form (ngSubmit)="verifyAndSave()" novalidate autocomplete="off">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="wa-phone-id">Phone number id</label>
+          <input id="wa-phone-id" name="phoneId" [(ngModel)]="phoneId" inputmode="numeric" autocomplete="off" placeholder="e.g. 1032683093271618" />
+          @if (submitted && fieldErrors.phoneId) { <div class="text-danger field-error">{{ fieldErrors.phoneId }}</div> }
+        </div>
+        <div class="form-group">
+          <label for="wa-waba-id">WhatsApp Business Account id (optional)</label>
+          <input id="wa-waba-id" name="wabaId" [(ngModel)]="wabaId" inputmode="numeric" autocomplete="off" placeholder="Only for the customer's own account" />
+          @if (submitted && fieldErrors.wabaId) { <div class="text-danger field-error">{{ fieldErrors.wabaId }}</div> }
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="wa-token">Access token (optional)</label>
+        <input id="wa-token" name="waAccessKey" type="password" [(ngModel)]="accessToken" autocomplete="new-password" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true"
+               placeholder="Paste a permanent token only for the customer's own account" />
+        <div class="field-hint">Write-only: it is cleared from this form as soon as you save and is never shown again.</div>
+      </div>
+
+      <div class="wa-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="busy !== null">{{ busy === 'save' ? 'Verifying...' : 'Verify and save' }}</button>
+        <button type="button" class="btn btn-outline" [disabled]="busy !== null || !isOwn" (click)="testConnection()"
+                [attr.title]="isOwn ? null : 'Nothing to test: this customer uses the platform number.'">
+          {{ busy === 'test' ? 'Testing...' : 'Test connection' }}
+        </button>
+        <button type="button" class="btn btn-outline" [disabled]="busy !== null || !isOwn" (click)="usePlatformNumber()"
+                [attr.title]="isOwn ? null : 'This customer already uses the platform number.'">
+          {{ busy === 'clear' ? 'Switching...' : 'Use platform number' }}
+        </button>
+      </div>
+    </form>
+
+    @if (error) { <div class="wa-msg wa-error" role="alert" data-test="wa-error">{{ error }}</div> }
+    @if (notice) { <div class="wa-msg wa-ok" role="status" data-test="wa-notice">{{ notice }}</div> }
+  </div>
+</div>

@@ -2,6 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+import { AuthService } from '../../shared/auth.service';
 import { Customers } from './customers';
 
 // Loading the real catalogues (and, for the Arabic cases, a second one) is slow on a busy machine.
@@ -27,7 +29,11 @@ async function boot(settingsAnswer: Answer, opts: { uiLang?: string; handler?: H
   localStorage.clear();
   localStorage.setItem('waflow_auth_token', 'token-A');
   if (opts.uiLang) localStorage.setItem('waflow_ui_language', opts.uiLang);
-  TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
+  // SettingsService (behind the currency pipe) now watches the signed-in session so it can reset when the workspace changes.
+  // The real AuthService would add its own GET /api/auth/me here (the app shell makes that call once at start-up, not the
+  // Customers screen), so the screen is given a signed-in session stub and the request list below stays exactly as characterised.
+  const authStub = { isLoggedIn: true, token: 'token-A', session: of(null), sessionSnapshot: null };
+  TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), { provide: AuthService, useValue: authStub }] });
   const http = TestBed.inject(HttpTestingController);
   const seen: string[] = [];
   const bodies: Record<string, unknown> = {};
@@ -106,6 +112,8 @@ describe('Customers screen: customer language field', () => {
       expect(field).not.toBeNull();
       expect(field!.parentElement!.classList.contains('customer-meta')).toBe(true);
       expect(field!.previousElementSibling!.classList.contains('meta-item')).toBe(true);
+      // the field's own text comes from a catalogue that loads on its own schedule (slow on a busy machine): wait for it, not a fixed number of ticks
+      for (let i = 0; i < 80 && !(field!.textContent || '').includes('Message language'); i++) { await sleep(25); await settle(); }
       expect(field!.textContent).toContain('Message language');
       expect(seen.filter((s) => s.includes('/api/localization')).sort()).toEqual(['GET /api/localization/customers/c1/language', SETTINGS]);
       expect(el.querySelectorAll('.customer-meta .meta-item').length).toBe(4); // the existing four rows are untouched

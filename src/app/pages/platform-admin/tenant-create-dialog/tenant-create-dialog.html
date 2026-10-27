@@ -1,0 +1,79 @@
+<div class="modal-overlay" (click)="closed.emit()">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Add a customer" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">{{ result ? 'Customer created' : 'Add a customer' }}</span>
+      <button type="button" class="close-btn" aria-label="Close" (click)="closed.emit()">×</button>
+    </div>
+
+    @if (result) {
+      <div class="modal-body">
+        <p class="text-success fw-600">{{ result.tenant.name }} is ready.</p>
+        <p style="font-size:13px;margin-top:10px;line-height:1.6">{{ signInText }}</p>
+        <p class="text-muted" style="font-size:12px;margin-top:10px">
+          {{ result.owner.created ? 'A new account was made for this owner.' : 'This owner already had an account; it now also belongs to this customer.' }}
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closed.emit()">Close</button>
+        <button type="button" class="btn btn-primary" (click)="open.emit(result.tenant.id)">Open customer</button>
+      </div>
+    } @else {
+      <form (ngSubmit)="submit()" novalidate>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="tc-name">Business name</label>
+            <input id="tc-name" name="name" [(ngModel)]="name" placeholder="e.g. MegaSun" autocomplete="off" />
+            @if (submitted && errors.name) { <div class="text-danger field-error">{{ errors.name }}</div> }
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="tc-type">Owner signs in with</label>
+              <select id="tc-type" name="ownerContactType" [(ngModel)]="ownerContactType" (ngModelChange)="onTypeChange()">
+                <option value="phone">WhatsApp phone number</option>
+                <option value="email">Email address</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="tc-contact">{{ ownerContactType === 'email' ? 'Owner email' : 'Owner phone number' }}</label>
+              <input id="tc-contact" name="ownerContact" [(ngModel)]="ownerContact"
+                     [attr.type]="ownerContactType === 'email' ? 'email' : 'tel'"
+                     [placeholder]="ownerContactType === 'email' ? 'owner@example.com' : '966501234567'" autocomplete="off" />
+              @if (submitted && errors.ownerContact) { <div class="text-danger field-error">{{ errors.ownerContact }}</div> }
+            </div>
+          </div>
+          <div class="text-muted hint">Double-check this: a typo creates an account that nobody can sign in to.</div>
+
+          <div class="form-group" style="margin-top:14px">
+            <label for="tc-owner-name">Owner name (optional)</label>
+            <input id="tc-owner-name" name="ownerName" [(ngModel)]="ownerName" autocomplete="off" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="tc-currency">Currency</label>
+              <input id="tc-currency" name="currency" [(ngModel)]="currency" placeholder="SAR" maxlength="3" autocomplete="off" />
+              @if (submitted && errors.currency) { <div class="text-danger field-error">{{ errors.currency }}</div> }
+            </div>
+            <div class="form-group">
+              <label for="tc-cc">Default country code</label>
+              <select id="tc-cc" name="defaultCountryCode" [(ngModel)]="defaultCountryCode">
+                <option value="966">Saudi Arabia (+966)</option>
+                <option value="971">United Arab Emirates (+971)</option>
+                <option value="61">Australia (+61)</option>
+                <option value="44">United Kingdom (+44)</option>
+                <option value="1">United States / Canada (+1)</option>
+              </select>
+            </div>
+          </div>
+
+          @if (error) { <div class="text-danger" role="alert" style="font-size:13px">{{ error }}</div> }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closed.emit()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving">{{ saving ? 'Creating...' : 'Create customer' }}</button>
+        </div>
+      </form>
+    }
+  </div>
+</div>

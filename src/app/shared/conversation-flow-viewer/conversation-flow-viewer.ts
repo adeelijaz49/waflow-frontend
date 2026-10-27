@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MessageNodeEditor, MessageNodeDraft, MessageNodeButtonDraft, MessageNodeAction } from '../message-node-editor/message-node-editor';
+import { actionName, isConsentAction } from '../message-node-editor/consent-wording';
 import { NodeLanguageStrip } from '../../pages/localization/embedded/node-language-strip';
 
 interface PathStep {
@@ -35,8 +36,11 @@ export class ConversationFlowViewer implements OnChanges {
   @Input() templateStatus: string | null = null;
   @Input() maxDepth = 3;
   @Input() languageOwnerId: string | null = null; // set only for flagged merchants (the host decides)
+  // True only for a consent request's message: the entry step's buttons can be Opt in / Opt out / Interested / None.
+  @Input() allowConsentActions = false;
   @Output() rootChange = new EventEmitter<MessageNodeDraft>();
 
+  readonly actionName = actionName;
   pathSteps: PathStep[] = [];
   editingNode: MessageNodeDraft | null = null;
   actionPickerButton: MessageNodeButtonDraft | null = null;
@@ -102,11 +106,21 @@ export class ConversationFlowViewer implements OnChanges {
     return (button.nextAction === 'send_message' && !!button.followUp) || !this.depthCapReached;
   }
 
+  // The chips belong to the last step on the path; consent actions exist only on the entry step.
+  get consentMode(): boolean {
+    return this.allowConsentActions && this.currentDepth === 0;
+  }
+
+  isConsentAction(action: string): boolean {
+    return isConsentAction(action);
+  }
+
   setAction(button: MessageNodeButtonDraft, action: MessageNodeAction) {
     button.nextAction = action;
     if (action !== 'send_message') {
       button.followUp = undefined; // orphaned subtree is cascade-cleaned on save (see shared/operations.js#updateMessageNode)
     }
+    if (!isConsentAction(action)) delete button.replyText; // a confirmation text only belongs to a consent action
     this.rootChange.emit(this.root);
   }
 

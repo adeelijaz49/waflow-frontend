@@ -1,0 +1,69 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Platform</div>
+      <div class="page-sub">Every customer on this deployment. Each one has its own customers, products, promotions and WhatsApp number.</div>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="showCreate = true">+ Add a customer</button>
+  </div>
+
+  <div class="search-bar">
+    <input type="search" name="search" [(ngModel)]="search" (ngModelChange)="onSearchInput()" (keydown.enter)="runSearch()"
+           placeholder="Search customers by name" aria-label="Search customers by name" autocomplete="off" />
+  </div>
+
+  @if (loading) {
+    <div class="loading">Loading customers...</div>
+  } @else if (error) {
+    <div class="empty-state" role="alert">
+      {{ error }}
+      <div style="margin-top:12px"><button type="button" class="btn btn-outline btn-sm" (click)="load()">Try again</button></div>
+    </div>
+  } @else if (tenants.length === 0) {
+    <div class="empty-state">{{ search ? 'No customers match that search.' : 'No customers yet. Add the first one.' }}</div>
+  } @else {
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Owner</th>
+              <th>Created</th>
+              <th>WhatsApp number</th>
+              <th>Plan</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of tenants; track t.id) {
+              <tr>
+                <td>
+                  <a class="fw-600" [routerLink]="['/platform', t.id]">{{ t.name }}</a>
+                  @if (t.isPlatformDefault) { <span class="badge badge-primary" style="margin-left:6px">Platform default</span> }
+                </td>
+                <td>{{ ownerLabel(t) }}</td>
+                <td>{{ t.createdAt | date:'d MMM y' }}</td>
+                <td>
+                  {{ whatsappLabel(t.whatsapp) }}
+                  @if (tokenRejected(t)) { <span class="badge badge-danger" style="margin-left:6px">Token rejected</span> }
+                </td>
+                <td><span class="badge {{ planBadge(t) }}">{{ planLabel(t) }}</span></td>
+                <td style="white-space:nowrap">
+                  <a class="btn btn-outline btn-sm" [routerLink]="['/platform', t.id]">Open</a>
+                  <button type="button" class="btn btn-primary btn-sm" style="margin-left:6px" [disabled]="enteringId === t.id" (click)="enter(t)">
+                    {{ enteringId === t.id ? 'Entering...' : 'Enter' }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+@if (showCreate) {
+  <app-tenant-create-dialog (closed)="showCreate = false" (created)="onCreated()" (open)="openCreated($event)" />
+}

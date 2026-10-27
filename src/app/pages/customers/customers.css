@@ -73,6 +73,31 @@
 .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
 .tab-btn:hover { color: var(--text); }
 
+.consent-filter { max-width: 200px; }
+.consent-cell { white-space: nowrap; }
+.consent-badge { font-size: 11px; }
+.consent-date { margin-left: 6px; font-size: 11px; }
+.export-error {
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 13px;
+}
+
+.consent-event {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.consent-event-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.consent-message { font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
   .detail-panel { position: static; }

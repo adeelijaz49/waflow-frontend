@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { DialogService } from '../../shared/dialog.service';
+import { AuthService } from '../../shared/auth.service';
 
 // Orchestrates the existing send/report endpoints — no simulation, no new
 // backend logic. A real WhatsApp send to a real (isDemo:true) phone, then
@@ -56,7 +57,7 @@ export class Demo implements OnInit, OnDestroy {
   private pollHandle: any = null;
   private pollStartedAt = 0;
 
-  constructor(private api: ApiService, private dialog: DialogService) {}
+  constructor(private api: ApiService, private dialog: DialogService, public auth: AuthService) {}
 
   ngOnInit() { this.loadTemplates(); this.loadFlows(); this.loadDemoData(); }
   ngOnDestroy() { this.stopPolling(); }
@@ -68,6 +69,13 @@ export class Demo implements OnInit, OnDestroy {
       next: (res) => { this.templates = res.templates; this.loadingTemplates = false; },
       error: () => { this.loadingTemplates = false; },
     });
+  }
+
+  // The default templates are created in the WhatsApp account the server lets this person manage (platform staff for the shared number,
+  // the owner of a customer for its own number - canManageWhatsApp on /auth/me, the rule the server enforces on those calls). For anyone
+  // else the list below holds only their own templates, so "default templates missing" would be wrong, and every click would be refused.
+  get canCreateTemplates(): boolean {
+    return this.auth.sessionSnapshot?.canManageWhatsApp === true;
   }
 
   get missingFixedTemplates() {

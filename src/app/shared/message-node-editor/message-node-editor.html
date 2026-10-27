@@ -1,4 +1,16 @@
 <div class="node-editor">
+  @if (consentMode) {
+    <div class="consent-presets">
+      <button type="button" class="btn btn-outline btn-sm" (click)="applyOptInPreset()" title="Sets an Opt in and an Opt out button, and suggested wording if the message is empty">Opt-in request</button>
+      <span class="text-muted" style="font-size:11px">one-click setup, or choose your own button labels:</span>
+      <select class="consent-pair-select" (change)="applyLabelPair($any($event.target).value); $any($event.target).value = ''" aria-label="Button label pairs">
+        <option value="">Button label pairs...</option>
+        @for (p of labelPairs; track p.key) {
+          <option [value]="p.key">{{ p.text }}</option>
+        }
+      </select>
+    </div>
+  }
   <div class="form-group">
     <label>Message Body</label>
     <textarea rows="3" [(ngModel)]="node.bodyText" (ngModelChange)="emit()" placeholder="Write the message..."></textarea>
@@ -17,19 +29,32 @@
     @for (b of node.buttons; track b.position) {
       <div class="button-row">
         <div class="button-row-main">
-          <input [(ngModel)]="b.label" (ngModelChange)="emit()" maxlength="20" placeholder="Button label" />
-          <span class="char-count" [class.char-count-over]="b.label.length > 20">{{ b.label.length }}/20</span>
+          <input [(ngModel)]="b.label" (ngModelChange)="emit()" [attr.maxlength]="labelMax" placeholder="Button label" />
+          <span class="char-count" [class.char-count-over]="b.label.length > labelMax">{{ b.label.length }}/{{ labelMax }}</span>
           <button type="button" class="btn-remove" (click)="removeButton(b.position)">×</button>
         </div>
         <div class="form-group" style="margin-top:6px">
           <label style="font-size:11px">When tapped →</label>
           <select [(ngModel)]="b.nextAction" (ngModelChange)="onNextActionChange(b)">
-            <option value="end_flow">End here</option>
-            @if (canBranchFurther) {
-              <option value="send_message">Send a follow-up message</option>
+            @if (consentMode) {
+              <option value="opt_in">Opt in</option>
+              <option value="opt_out">Opt out</option>
+              <option value="interested">Interested</option>
+              <option value="end_flow">None</option>
+              @if (b.nextAction === 'send_message') { <option value="send_message">Send a follow-up message</option> }
+              @if (b.nextAction === 'apply_discount') { <option value="apply_discount">Apply a discount (not yet available)</option> }
+              @if (b.nextAction === 'redeem_points') { <option value="redeem_points">Mark points redeemed (not yet available)</option> }
+            } @else {
+              <option value="end_flow">End here</option>
+              @if (canBranchFurther) {
+                <option value="send_message">Send a follow-up message</option>
+              }
+              <option value="apply_discount">Apply a discount (not yet available)</option>
+              <option value="redeem_points">Mark points redeemed (not yet available)</option>
+              @if (b.nextAction === 'opt_in' || b.nextAction === 'opt_out' || b.nextAction === 'interested') {
+                <option [value]="b.nextAction">{{ actionName(b.nextAction) }}</option>
+              }
             }
-            <option value="apply_discount">Apply a discount (not yet available)</option>
-            <option value="redeem_points">Mark points redeemed (not yet available)</option>
           </select>
           @if (b.nextAction === 'apply_discount' || b.nextAction === 'redeem_points') {
             <div class="text-muted" style="font-size:11px;margin-top:4px">
@@ -37,6 +62,21 @@
             </div>
           }
         </div>
+        @if (isConsentAction(b.nextAction)) {
+          <div class="form-group consent-confirmation" style="margin-top:6px">
+            <label style="font-size:11px">
+              @if (b.nextAction === 'opt_in') { Confirmation sent when a customer opts in }
+              @else if (b.nextAction === 'opt_out') { Confirmation sent when a customer opts out }
+              @else { Reply sent when a customer taps this (optional) }
+            </label>
+            <textarea rows="2" maxlength="1000" [(ngModel)]="b.replyText" (ngModelChange)="emit()"
+              [placeholder]="defaultConfirmations[b.nextAction]"></textarea>
+            <div class="text-muted" style="font-size:11px;margin-top:2px">
+              @if (b.nextAction === 'interested') { Leave it empty to send nothing extra. }
+              @else { Leave it empty to send our standard confirmation. }
+            </div>
+          </div>
+        }
         @if (b.nextAction === 'send_message' && b.followUp && !hideNestedEditors) {
           <div class="follow-up-box">
             <label style="font-size:11px">Follow-up message</label>

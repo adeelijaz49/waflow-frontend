@@ -23,7 +23,7 @@ const STATE_URL = 'http://localhost:3000/api/onboarding/state';
 const HEAD_PATHS = [
   '', 'login', 'auth/verify', 'dashboard', 'ai-mode', 'demo', 'products', 'customers', 'inbox', 'orders', 'promotions',
   'referrals', 'instagram-promotions', 'flows', 'services', 'settings', 'usage-limits', 'support', 'onboarding', 'imports',
-  'arabic', 'legal/:slug', 'legal-acceptance',
+  'arabic', 'platform', 'legal/:slug', 'legal-acceptance', // 'platform' = the super-admin console (guarded by platformAdminGuard)
 ];
 
 const authStub = {
