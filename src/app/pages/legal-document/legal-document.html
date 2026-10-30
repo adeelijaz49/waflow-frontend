@@ -28,7 +28,7 @@
             💡 You're viewing version {{ doc.version }}, which is no longer the current version of this document. This is the exact version you (or your workspace) accepted on the date shown in Settings → Legal.
           </div>
         }
-        <div class="legal-doc-body" [innerHTML]="html"></div>
+        <div class="legal-doc-body" [innerHTML]="html" (click)="onBodyClick($event)"></div>
       </div>
     </div>
   }

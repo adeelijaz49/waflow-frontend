@@ -38,4 +38,9 @@ export class LegalSection implements OnInit {
   isDpa(slug: LegalDocumentSlug): boolean {
     return slug === 'data_processing_agreement';
   }
+
+  // Some of the documents are final now (the Refund & Cancellation Policy); the "still drafts" note is only true while one remains.
+  get hasDrafts(): boolean {
+    return this.documents.some((d) => d.status === 'draft');
+  }
 }
