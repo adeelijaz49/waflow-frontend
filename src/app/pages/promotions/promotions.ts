@@ -7,6 +7,7 @@ import { ApiService } from '../../services/api.service';
 import { AppCurrencyPipe } from '../../shared/app-currency.pipe';
 import { StatusBadgePipe } from '../../shared/status-badge.pipe';
 import { DialogService } from '../../shared/dialog.service';
+import { sendErrorHelps } from '../../shared/send-error-help';
 import { MessageNodeEditor, MessageNodeDraft, MessageNodeButtonDraft } from '../../shared/message-node-editor/message-node-editor';
 import {
   CONSENT_BODY_SUGGESTIONS, CONSENT_WRITING_GUIDANCE, ConsentWordingIssue, actionName, checkConsentWording,
@@ -1239,6 +1240,11 @@ export class Promotions implements OnInit, OnDestroy {
   // The tag shown on a preview button that opts customers in/out or records interest ('' for every other button).
   consentActionTag(action: string | undefined): string {
     return isConsentAction(action) ? actionName(action) : '';
+  }
+
+  // What to do about the failed messages' codes (Meta's own words stay in the list above it, support staff need them).
+  sendErrorHelps(res: any): string[] {
+    return res?.error ? [] : sendErrorHelps(res?.errors);
   }
 
   // What the server left out of the send and why (plain language), for the counters it returns.

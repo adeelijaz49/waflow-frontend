@@ -75,6 +75,30 @@ describe('PlatformApiService', () => {
     r.flush({});
   });
 
+  it('reads the shared platform number, asking for a fresh look only when told to', () => {
+    api.platformNumber().subscribe();
+    let r = http.expectOne(`${BASE}/whatsapp/platform-number`);
+    expect(r.request.method).toBe('GET');
+    expect(r.request.params.has('fresh')).toBe(false);
+    r.flush({ number: {} });
+
+    api.platformNumber(true).subscribe();
+    r = http.expectOne(`${BASE}/whatsapp/platform-number?fresh=1`);
+    expect(r.request.method).toBe('GET');
+    r.flush({ number: {} });
+  });
+
+  it('hands back the registration and warning that the WhatsApp save and verify routes send', () => {
+    const answer = { whatsapp: {}, registration: { status: 'PENDING', registered: false }, message: 'not registered' };
+    let got: unknown;
+    api.setWhatsApp('t1', { phoneId: '123456' }).subscribe((x) => (got = x));
+    http.expectOne(`${BASE}/tenants/t1/whatsapp`).flush(answer);
+    expect(got).toEqual(answer);
+    api.verifyWhatsApp('t1').subscribe((x) => (got = x));
+    http.expectOne(`${BASE}/tenants/t1/whatsapp/verify`).flush(answer);
+    expect(got).toEqual(answer);
+  });
+
   it('enter and exit; exit is marked so a 401 does not sign the person out', () => {
     api.enter('t1').subscribe();
     let r = http.expectOne(`${BASE}/tenants/t1/enter`);

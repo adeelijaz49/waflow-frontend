@@ -479,6 +479,9 @@
                       <li style="font-size:12px">{{ e.error }}</li>
                     }
                   </ul>
+                  @for (help of sendErrorHelps(sendResult); track help) {
+                    <div style="font-size:12px;font-weight:400;margin-top:6px">💡 {{ help }}</div>
+                  }
                 </div>
               }
             }

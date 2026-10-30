@@ -9,3 +9,6 @@
 .wa-msg { margin-top: 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
 .wa-error { background: #fee2e2; color: #991b1b; }
 .wa-ok { background: #ecfdf5; color: #065f46; }
+.wa-warn { background: #fef3c7; color: #92400e; }
+.wa-reg-message { display: block; margin-top: 6px; color: #991b1b; line-height: 1.5; }
+.wa-reg-note { display: block; margin-top: 6px; font-size: 12px; color: var(--text-muted); }

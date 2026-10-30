@@ -21,6 +21,22 @@ export interface WhatsAppStatus {
   enabled: boolean;
 }
 
+// Whether Meta has the number registered on the WhatsApp Business Platform. `status` is Meta's own word (CONNECTED,
+// PENDING, ...) or null when it did not say; `registered` is true/false only when we know, null otherwise.
+export interface Registration { status: string | null; registered: boolean | null }
+
+// The one shared WaFlow number that customers without their own number send from.
+export interface PlatformNumber {
+  phoneIdLast4: string;
+  displayPhoneNumber: string | null;
+  verifiedName: string | null;
+  status: string | null;
+  registered: boolean | null;
+  // A plain sentence about a problem with the number, or null when there is none.
+  message: string | null;
+  checkedAt: string;
+}
+
 export interface TenantOwner { userId: string; name: string; contactMasked: string }
 
 export interface Tenant {
@@ -103,13 +119,22 @@ export class PlatformApiService {
   }
 
   // The token travels in the request body only (HTTPS, never in a URL) and is never returned.
-  setWhatsApp(id: string, body: SetWhatsAppBody): Observable<{ whatsapp: WhatsAppStatus }> {
-    return this.http.put<{ whatsapp: WhatsAppStatus }>(`${this.base}/tenants/${encodeURIComponent(id)}/whatsapp`, body);
+  // `registration` is present whenever Meta was asked; `message` is a warning worth showing (see verifyWhatsApp).
+  setWhatsApp(id: string, body: SetWhatsAppBody): Observable<{ whatsapp: WhatsAppStatus; registration?: Registration; message?: string }> {
+    return this.http.put<{ whatsapp: WhatsAppStatus; registration?: Registration; message?: string }>(`${this.base}/tenants/${encodeURIComponent(id)}/whatsapp`, body);
   }
 
-  // `message` is why a check failed (the token expired, the number was not found, ...); absent when it passed.
-  verifyWhatsApp(id: string): Observable<{ whatsapp: WhatsAppStatus; message?: string }> {
-    return this.http.post<{ whatsapp: WhatsAppStatus; message?: string }>(`${this.base}/tenants/${encodeURIComponent(id)}/whatsapp/verify`, {});
+  // `message` is why a check failed (the token expired, the number was not found, ...) or that the number is not
+  // registered with WhatsApp yet; absent when all is well.
+  verifyWhatsApp(id: string): Observable<{ whatsapp: WhatsAppStatus; registration?: Registration; message?: string }> {
+    return this.http.post<{ whatsapp: WhatsAppStatus; registration?: Registration; message?: string }>(`${this.base}/tenants/${encodeURIComponent(id)}/whatsapp/verify`, {});
+  }
+
+  // The shared platform number's state; `fresh` asks the server to look at Meta again (for "Check again").
+  platformNumber(fresh = false): Observable<{ number: PlatformNumber }> {
+    let params = new HttpParams();
+    if (fresh) params = params.set('fresh', '1');
+    return this.http.get<{ number: PlatformNumber }>(`${this.base}/whatsapp/platform-number`, { params });
   }
 
   clearWhatsApp(id: string): Observable<{ whatsapp: WhatsAppStatus }> {

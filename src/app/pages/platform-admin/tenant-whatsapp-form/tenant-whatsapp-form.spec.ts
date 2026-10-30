@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DialogService } from '../../../shared/dialog.service';
-import { WhatsAppStatus } from '../../../shared/platform-api.service';
+import { PlatformNumber, Registration, WhatsAppStatus } from '../../../shared/platform-api.service';
 import { ENCRYPTION_MESSAGE, TenantWhatsappForm } from './tenant-whatsapp-form';
 
 vi.setConfig({ testTimeout: 30000 });
@@ -25,7 +25,18 @@ async function settle(fixture: ComponentFixture<TenantWhatsappForm>) {
   }
 }
 
-async function boot(initial: WhatsAppStatus | null = status()) {
+const NOT_REGISTERED_TEXT = "Meta shows this number's status as PENDING, not CONNECTED, so it is not ready to send: WhatsApp is likely to refuse its messages with error 133010 (Account not registered). Check its status in Meta, then check again.";
+const NUMBER = (over: Partial<PlatformNumber> = {}): PlatformNumber => ({
+  phoneIdLast4: '1618', displayPhoneNumber: '+1 555-643-3808', verifiedName: 'Test Number', status: 'PENDING',
+  registered: false, message: NOT_REGISTERED_TEXT, checkedAt: '2026-10-30T09:00:00Z', ...over,
+});
+const CONNECTED = NUMBER({ status: 'CONNECTED', registered: true, message: null });
+const REG_FALSE: Registration = { status: 'PENDING', registered: false };
+const REG_TRUE: Registration = { status: 'CONNECTED', registered: true };
+const isNumber = (r: { url: string }) => /\/api\/platform\/whatsapp\/platform-number/.test(r.url);
+
+// `number` is what the shared-number request (made only in platform mode) answers; left out, it stays pending.
+async function boot(initial: WhatsAppStatus | null = status(), number?: PlatformNumber | { status: number }) {
   localStorage.clear();
   localStorage.setItem('waflow_auth_token', 'token-A');
   const dialog = { confirm: vi.fn().mockResolvedValue(true), error: vi.fn() };
@@ -38,6 +49,11 @@ async function boot(initial: WhatsAppStatus | null = status()) {
   const changes = vi.fn();
   cmp.statusChange.subscribe(changes);
   fixture.detectChanges();
+  if (number) {
+    const nr = http.expectOne((r) => isNumber(r));
+    if ('phoneIdLast4' in number) nr.flush({ number });
+    else nr.flush({ error: 'nope' }, { status: number.status, statusText: 'err' });
+  }
   await settle(fixture);
   const el = fixture.nativeElement as HTMLElement;
   const q = (sel: string) => el.querySelector(sel) as HTMLElement | null;
@@ -228,6 +244,8 @@ describe('TenantWhatsappForm: server answers', () => {
     expect(el.querySelector('[data-test=wa-validity]')?.textContent).toContain('Valid');
     expect(el.querySelector('[data-test=wa-validity]')?.textContent).toContain('Last checked');
     expect(el.querySelector('[data-test=wa-notice]')?.textContent).toContain('WhatsApp accepted the connection');
+    expect(el.querySelector('[data-test=wa-notice]')?.className).toContain('wa-ok');
+    expect(el.querySelector('[data-test=wa-notice]')?.className).not.toContain('wa-warn');
     expect(el.textContent).toContain('+966 50 000 0000');
     expect(el.textContent).toContain('MegaSun');
   });
@@ -240,6 +258,8 @@ describe('TenantWhatsappForm: server answers', () => {
     await settle(fixture);
     expect(el.querySelector('[data-test=wa-validity]')?.textContent).toContain('Rejected by WhatsApp');
     expect(el.querySelector('[data-test=wa-notice]')?.textContent).toContain('will not send until it is fixed');
+    expect(el.querySelector('[data-test=wa-notice]')?.className).toContain('wa-warn');
+    expect(el.querySelector('[data-test=wa-notice]')?.className).not.toContain('wa-ok');
   });
 
   it('unchecked result: says the connection has not been checked yet', async () => {
@@ -250,6 +270,7 @@ describe('TenantWhatsappForm: server answers', () => {
     await settle(fixture);
     expect(el.querySelector('[data-test=wa-validity]')?.textContent).toContain('Not checked yet');
     expect(el.querySelector('[data-test=wa-notice]')?.textContent).toContain('has not been checked yet');
+    expect(el.querySelector('[data-test=wa-notice]')?.className).toContain('wa-ok');
   });
 });
 
@@ -294,6 +315,7 @@ describe('TenantWhatsappForm: test connection and platform number', () => {
     expect(notice).toContain('WhatsApp says this access token is not valid or has expired.');
     expect(notice).toContain('will not send until it is fixed');
     expect(notice).not.toContain('did not accept the token'); // the specific reason replaces the generic sentence
+    expect(el.querySelector('[data-test=wa-notice]')?.className).toContain('wa-warn');
   });
 
   it('Test connection with a reason but no verdict on the token still shows the reason (e.g. the number was not found)', async () => {
@@ -305,6 +327,7 @@ describe('TenantWhatsappForm: test connection and platform number', () => {
     });
     await settle(fixture);
     expect(el.querySelector('[data-test=wa-notice]')?.textContent).toContain('belongs to a different WhatsApp business account');
+    expect(el.querySelector('[data-test=wa-notice]')?.className).toContain('wa-warn');
   });
 
   it('a "WhatsApp is busy" answer (502) is shown as an error and the saved state is left alone', async () => {
@@ -331,6 +354,8 @@ describe('TenantWhatsappForm: test connection and platform number', () => {
     expect(changes).toHaveBeenCalledWith(status());
     expect(el.textContent).toContain('This customer now uses the platform number.');
     expect(el.textContent).toContain('The shared platform WhatsApp number');
+    expect(el.querySelector('[data-test=wa-notice]')?.className).toContain('wa-ok');
+    expect(el.querySelector('[data-test=wa-notice]')?.className).not.toContain('wa-warn');
   });
 
   it('Use platform number does nothing when declined', async () => {
@@ -352,5 +377,321 @@ describe('TenantWhatsappForm: test connection and platform number', () => {
     expect(text).toContain('only need the phone number id');
     expect(text).toContain('WhatsApp Business Account id');
     expect(text).toContain('permanent access token');
+  });
+});
+
+describe('TenantWhatsappForm: is the number registered with WhatsApp?', () => {
+  afterEach(() => localStorage.clear());
+
+  const sharedRows = (el: HTMLElement) => ({
+    number: el.querySelector('[data-test=wa-shared-number]') as HTMLElement | null,
+    reg: el.querySelector('[data-test=wa-shared-registration]') as HTMLElement | null,
+  });
+  const ownReg = (el: HTMLElement) => el.querySelector('[data-test=wa-own-registration]') as HTMLElement | null;
+  const compact = (e: Element | null) => (e?.textContent || '').replace(/\s+/g, ' ').trim();
+
+  it('platform mode asks for the shared number (not fresh) and shows it next to "Sending from"', async () => {
+    const { http, el, fixture } = await boot(status());
+    const r = http.expectOne((x) => isNumber(x));
+    expect(r.request.method).toBe('GET');
+    expect(r.request.params.has('fresh')).toBe(false);
+    r.flush({ number: CONNECTED });
+    await settle(fixture);
+    expect(compact(sharedRows(el).number!.querySelector('span:not(.wa-label)'))).toBe('+1 555-643-3808 (Test Number)');
+  });
+
+  it('shows nothing about the shared number while it loads', async () => {
+    const pending = await boot(status());
+    expect(sharedRows(pending.el).number).toBeNull();
+    expect(sharedRows(pending.el).reg).toBeNull();
+    expect(pending.el.textContent).not.toContain('Could not check');
+  });
+
+  it('when the first read fails: a neutral "Could not check" Registration row with a working Check again, and no number row', async () => {
+    const { http, btn, el, fixture } = await boot(status(), { status: 502 });
+    expect(sharedRows(el).number).toBeNull();
+    const badge = sharedRows(el).reg!.querySelector('.badge')!;
+    expect(badge.className).toContain('badge-neutral');
+    expect(badge.textContent?.trim()).toBe('Could not check');
+    expect(sharedRows(el).reg!.querySelector('[data-test=wa-shared-message]')).toBeNull();
+    expect(el.querySelector('[data-test=wa-shared-failed]')).toBeNull(); // no earlier result to point at
+    expect(el.textContent).toContain('The shared platform WhatsApp number');
+    expect(el.querySelector('[data-test=wa-error]')).toBeNull();
+    btn('Check again').click();
+    const r = http.expectOne((x) => isNumber(x));
+    expect(r.request.params.get('fresh')).toBe('1');
+    r.flush({ number: CONNECTED });
+    await settle(fixture);
+    expect(sharedRows(el).reg!.querySelector('.badge')?.textContent?.trim()).toBe('Connected');
+    expect(sharedRows(el).number).not.toBeNull();
+    expect(btn('Check again').disabled).toBe(false);
+  });
+
+  it('a Check again that fails again after a failed first read keeps the "Could not check" row', async () => {
+    const { http, btn, el, fixture } = await boot(status(), { status: 502 });
+    btn('Check again').click();
+    http.expectOne((x) => isNumber(x)).flush({ error: 'busy' }, { status: 502, statusText: 'Bad Gateway' });
+    await settle(fixture);
+    expect(sharedRows(el).reg!.querySelector('.badge')?.textContent?.trim()).toBe('Could not check');
+    expect(btn('Check again').disabled).toBe(false);
+  });
+
+  it('own mode does not ask for the shared number at all', async () => {
+    const { http, el } = await boot(OWN);
+    http.expectNone((r) => isNumber(r));
+    expect(sharedRows(el).number).toBeNull();
+  });
+
+  it('shared number, not registered: red badge in the status word Meta gave, plus the message', async () => {
+    const { el } = await boot(status(), NUMBER());
+    const badge = sharedRows(el).reg!.querySelector('.badge')!;
+    expect(badge.className).toContain('badge-danger');
+    expect(badge.textContent?.trim()).toBe('Not connected (PENDING)');
+    expect(sharedRows(el).reg!.querySelector('[data-test=wa-shared-message]')?.textContent).toContain(NOT_REGISTERED_TEXT);
+  });
+
+  it('shared number, connected: green badge and no message', async () => {
+    const { el } = await boot(status(), CONNECTED);
+    const badge = sharedRows(el).reg!.querySelector('.badge')!;
+    expect(badge.className).toContain('badge-success');
+    expect(badge.textContent?.trim()).toBe('Connected');
+    expect(sharedRows(el).reg!.querySelector('[data-test=wa-shared-message]')).toBeNull();
+  });
+
+  it('shared number, unknown: neutral badge, and the display number falls back to the id', async () => {
+    const { el } = await boot(status(), NUMBER({ status: null, registered: null, message: null, displayPhoneNumber: null, verifiedName: null }));
+    const badge = sharedRows(el).reg!.querySelector('.badge')!;
+    expect(badge.className).toContain('badge-neutral');
+    expect(badge.textContent?.trim()).toBe('Unknown');
+    expect(compact(sharedRows(el).number!.querySelector('span:not(.wa-label)'))).toBe('Phone number id ending 1618');
+  });
+
+  it('Check again asks with fresh, is disabled meanwhile, and updates the badge', async () => {
+    const { http, btn, el, fixture } = await boot(status(), NUMBER());
+    btn('Check again').click();
+    const r = http.expectOne((x) => isNumber(x));
+    expect(r.request.params.get('fresh')).toBe('1');
+    await settle(fixture);
+    expect(btn('Checking').disabled).toBe(true);
+    r.flush({ number: CONNECTED });
+    await settle(fixture);
+    expect(sharedRows(el).reg!.querySelector('.badge')?.textContent?.trim()).toBe('Connected');
+    expect(btn('Check again').disabled).toBe(false);
+  });
+
+  it('a failed Check again keeps the earlier result and adds a muted line saying so', async () => {
+    const { http, btn, el, fixture } = await boot(status(), NUMBER());
+    expect(el.querySelector('[data-test=wa-shared-failed]')).toBeNull();
+    btn('Check again').click();
+    http.expectOne((x) => isNumber(x)).flush({ error: 'busy', code: 'VERIFY_UNAVAILABLE' }, { status: 502, statusText: 'Bad Gateway' });
+    await settle(fixture);
+    expect(sharedRows(el).reg!.querySelector('.badge')?.textContent?.trim()).toBe('Not connected (PENDING)');
+    expect(sharedRows(el).number).not.toBeNull();
+    expect(compact(el.querySelector('[data-test=wa-shared-failed]'))).toBe('Could not check just now; showing the earlier result.');
+    expect(btn('Check again').disabled).toBe(false);
+  });
+
+  it('the muted "could not check just now" line goes away after a good Check again', async () => {
+    const { http, btn, el, fixture } = await boot(status(), NUMBER());
+    btn('Check again').click();
+    http.expectOne((x) => isNumber(x)).flush({ error: 'busy' }, { status: 502, statusText: 'Bad Gateway' });
+    await settle(fixture);
+    expect(el.querySelector('[data-test=wa-shared-failed]')).not.toBeNull();
+    btn('Check again').click();
+    http.expectOne((x) => isNumber(x)).flush({ number: CONNECTED });
+    await settle(fixture);
+    expect(el.querySelector('[data-test=wa-shared-failed]')).toBeNull();
+    expect(sharedRows(el).reg!.querySelector('.badge')?.textContent?.trim()).toBe('Connected');
+  });
+
+  it.each([
+    ['connected', { status: 'CONNECTED', registered: true }, 'Connected', 'badge-success'],
+    ['not connected, with a status', { status: 'PENDING', registered: false }, 'Not connected (PENDING)', 'badge-danger'],
+    ['not connected, no status', { status: null, registered: false }, 'Not connected', 'badge-danger'],
+    ['unknown but Meta said a status', { status: 'RESTRICTED', registered: null }, 'Status: RESTRICTED', 'badge-neutral'],
+    ['unknown, no status', { status: null, registered: null }, 'Unknown', 'badge-neutral'],
+  ])('registration badge, %s', async (_name, reg, text, cls) => {
+    const { http, btn, el, fixture } = await boot(OWN);
+    btn('Test connection').click();
+    http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: OWN, registration: reg });
+    await settle(fixture);
+    const badge = ownReg(el)!.querySelector('.badge')!;
+    expect(badge.textContent?.trim()).toBe(text);
+    expect(badge.className).toContain(cls);
+    // the same words for the shared number
+    TestBed.resetTestingModule();
+    const shared = await boot(status(), NUMBER({ status: reg.status, registered: reg.registered, message: null }));
+    const sb = sharedRows(shared.el).reg!.querySelector('.badge')!;
+    expect(sb.textContent?.trim()).toBe(text);
+    expect(sb.className).toContain(cls);
+  });
+
+  it('a registration problem reaches the notice in amber, and an accepted connection stays green', async () => {
+    const warn = await boot(OWN);
+    warn.btn('Test connection').click();
+    warn.http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: OWN, registration: REG_FALSE, message: NOT_REGISTERED_TEXT });
+    await settle(warn.fixture);
+    const wn = warn.el.querySelector('[data-test=wa-notice]')!;
+    expect(wn.className).toContain('wa-msg');
+    expect(wn.className).toContain('wa-warn');
+    expect(wn.className).not.toContain('wa-ok');
+    expect(wn.getAttribute('role')).toBe('status');
+    TestBed.resetTestingModule();
+
+    const ok = await boot(OWN);
+    ok.btn('Test connection').click();
+    ok.http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: OWN, registration: REG_TRUE });
+    await settle(ok.fixture);
+    const on = ok.el.querySelector('[data-test=wa-notice]')!;
+    expect(on.textContent).toContain('WhatsApp accepted the connection');
+    expect(on.className).toContain('wa-ok');
+    expect(on.className).not.toContain('wa-warn');
+  });
+
+  it('a warning notice turns green again after the next clean result', async () => {
+    const { http, btn, el, fixture } = await boot(OWN);
+    btn('Test connection').click();
+    http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: { ...OWN, tokenIsValid: false } });
+    await settle(fixture);
+    expect(el.querySelector('[data-test=wa-notice]')?.className).toContain('wa-warn');
+    btn('Test connection').click();
+    http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: OWN, registration: REG_TRUE });
+    await settle(fixture);
+    expect(el.querySelector('[data-test=wa-notice]')?.className).toContain('wa-ok');
+    expect(el.querySelector('[data-test=wa-notice]')?.className).not.toContain('wa-warn');
+  });
+
+  it('a different customer opened in the same component keeps nothing of the previous customer\'s registration', async () => {
+    const { http, btn, el, fixture, cmp } = await boot(OWN);
+    btn('Test connection').click();
+    http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: OWN, registration: REG_FALSE });
+    await settle(fixture);
+    expect(ownReg(el)).not.toBeNull();
+    // another customer with the same mode and the same last four digits
+    fixture.componentRef.setInput('tenantId', 't2');
+    fixture.componentRef.setInput('status', { ...OWN });
+    await settle(fixture);
+    expect(cmp.registration).toBeNull();
+    expect(ownReg(el)).toBeNull();
+  });
+
+  it('a different customer on the platform number asks for the shared number again', async () => {
+    const { http, el, fixture } = await boot(status(), NUMBER());
+    http.expectNone((x) => isNumber(x));
+    fixture.componentRef.setInput('tenantId', 't2');
+    fixture.componentRef.setInput('status', status());
+    await settle(fixture);
+    http.expectOne((x) => isNumber(x)).flush({ number: CONNECTED });
+    await settle(fixture);
+    expect(sharedRows(el).reg!.querySelector('.badge')?.textContent?.trim()).toBe('Connected');
+  });
+
+  it('own mode shows no Registration row before the first check', async () => {
+    const { el } = await boot(OWN);
+    expect(ownReg(el)).toBeNull();
+  });
+
+  it('own mode: Test connection shows the Registration badge, and the warning reaches the notice', async () => {
+    const { http, btn, el, fixture } = await boot(OWN);
+    btn('Test connection').click();
+    http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: OWN, registration: REG_FALSE, message: NOT_REGISTERED_TEXT });
+    await settle(fixture);
+    const badge = ownReg(el)!.querySelector('.badge')!;
+    expect(badge.className).toContain('badge-danger');
+    expect(badge.textContent?.trim()).toBe('Not connected (PENDING)');
+    expect(el.querySelector('[data-test=wa-notice]')?.textContent).toContain(NOT_REGISTERED_TEXT);
+  });
+
+  it('own mode: Verify and save shows the badge and the warning in the notice even though the token is valid', async () => {
+    const { http, type, btn, el, fixture } = await boot(status());
+    await type('wa-phone-id', '555666777');
+    btn('Verify and save').click();
+    http.expectOne((x) => PUT(x)).flush({ whatsapp: OWN, registration: REG_FALSE, message: NOT_REGISTERED_TEXT });
+    await settle(fixture);
+    const notice = el.querySelector('[data-test=wa-notice]')?.textContent || '';
+    expect(notice).toContain('Saved.');
+    expect(notice).toContain(NOT_REGISTERED_TEXT);
+    expect(notice).not.toContain('WhatsApp accepted the connection');
+    expect(ownReg(el)!.querySelector('.badge')?.textContent?.trim()).toBe('Not connected (PENDING)');
+    expect(el.querySelector('[data-test=wa-validity]')?.textContent).toContain('Valid');
+  });
+
+  it('own mode: a registered number gets the green badge and the usual success sentence', async () => {
+    const { http, btn, el, fixture } = await boot(OWN);
+    btn('Test connection').click();
+    http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: OWN, registration: REG_TRUE });
+    await settle(fixture);
+    expect(ownReg(el)!.querySelector('.badge')?.className).toContain('badge-success');
+    expect(el.querySelector('[data-test=wa-notice]')?.textContent).toContain('WhatsApp accepted the connection');
+  });
+
+  it('own mode: an unknown registration shows a neutral badge', async () => {
+    const { http, btn, el, fixture } = await boot(OWN);
+    btn('Test connection').click();
+    http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: OWN, registration: { status: null, registered: null } });
+    await settle(fixture);
+    expect(ownReg(el)!.querySelector('.badge')?.className).toContain('badge-neutral');
+    expect(ownReg(el)!.querySelector('.badge')?.textContent?.trim()).toBe('Unknown');
+  });
+
+  it('switching back to the platform number drops the own registration and shows the shared number rows', async () => {
+    const { http, btn, el, fixture, cmp } = await boot(OWN);
+    btn('Test connection').click();
+    http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: OWN, registration: REG_FALSE });
+    await settle(fixture);
+    expect(ownReg(el)).not.toBeNull();
+    btn('Use platform number').click();
+    await Promise.resolve();
+    await Promise.resolve();
+    http.expectOne((x) => x.url.endsWith('/api/platform/tenants/t1/whatsapp') && x.method === 'DELETE').flush({ whatsapp: status() });
+    await settle(fixture);
+    expect(cmp.registration).toBeNull();
+    expect(ownReg(el)).toBeNull();
+    http.expectOne((x) => isNumber(x)).flush({ number: CONNECTED });
+    await settle(fixture);
+    expect(sharedRows(el).reg!.querySelector('.badge')?.textContent?.trim()).toBe('Connected');
+  });
+
+  it('when the parent changes the status to another mode, the rows follow (no stale registration, shared number asked for)', async () => {
+    const { http, btn, el, fixture } = await boot(OWN);
+    btn('Test connection').click();
+    http.expectOne((x) => x.url.endsWith('/whatsapp/verify')).flush({ whatsapp: OWN, registration: REG_TRUE });
+    await settle(fixture);
+    expect(ownReg(el)).not.toBeNull();
+    fixture.componentRef.setInput('status', status());
+    await settle(fixture);
+    expect(ownReg(el)).toBeNull();
+    http.expectOne((x) => isNumber(x)).flush({ number: NUMBER() });
+    await settle(fixture);
+    expect(sharedRows(el).reg).not.toBeNull();
+    // and back to an own number: the shared rows go away and nothing is claimed about the new own number yet
+    fixture.componentRef.setInput('status', OWN);
+    await settle(fixture);
+    expect(sharedRows(el).reg).toBeNull();
+    expect(ownReg(el)).toBeNull();
+  });
+
+  it('the parent echoing our own saved status back does not wipe the registration we just learned', async () => {
+    const { http, type, btn, el, fixture } = await boot(status());
+    await type('wa-phone-id', '555666777');
+    btn('Verify and save').click();
+    http.expectOne((x) => PUT(x)).flush({ whatsapp: OWN, registration: REG_TRUE });
+    await settle(fixture);
+    fixture.componentRef.setInput('status', OWN); // what tenant-detail does with the statusChange event
+    await settle(fixture);
+    expect(ownReg(el)).not.toBeNull();
+  });
+
+  it('the token stays write-only when a registration warning comes back', async () => {
+    const { cmp, http, type, btn, el, fixture } = await boot(status());
+    await type('wa-phone-id', '555666777');
+    await type('wa-waba-id', '111222333');
+    await type('wa-token', SECRET);
+    btn('Verify and save').click();
+    expect(cmp.accessToken).toBe('');
+    http.expectOne((x) => PUT(x)).flush({ whatsapp: OWN, registration: REG_FALSE, message: NOT_REGISTERED_TEXT });
+    await settle(fixture);
+    expect(el.innerHTML).not.toContain(SECRET);
+    expect(cmp.accessToken).toBe('');
   });
 });

@@ -16,6 +16,26 @@
       <div class="wa-grid" data-test="wa-status">
         @if (!isOwn) {
           <div class="wa-row"><span class="wa-label">Sending from</span><span>The shared platform WhatsApp number</span></div>
+          @if (sharedNumber || sharedFailed) {
+            @if (sharedNumber) {
+              <div class="wa-row" data-test="wa-shared-number"><span class="wa-label">Shared number</span><span>{{ sharedLabel }}</span></div>
+            }
+            <div class="wa-row" data-test="wa-shared-registration">
+              <span class="wa-label">Registration</span>
+              <span>
+                @if (sharedNumber) {
+                  <span class="badge {{ registrationBadge(sharedRegistration) }}">{{ registrationText(sharedRegistration) }}</span>
+                  @if (sharedNumber.message) { <span class="wa-reg-message" data-test="wa-shared-message">{{ sharedNumber.message }}</span> }
+                } @else {
+                  <span class="badge badge-neutral">Could not check</span>
+                }
+                <button type="button" class="btn btn-outline btn-sm" style="margin-left:8px" [disabled]="checkingShared" (click)="checkShared()">
+                  {{ checkingShared ? 'Checking...' : 'Check again' }}
+                </button>
+                @if (sharedNumber && sharedFailed) { <span class="wa-reg-note" data-test="wa-shared-failed">Could not check just now; showing the earlier result.</span> }
+              </span>
+            </div>
+          }
         } @else {
           @if (status.displayPhoneNumber) {
             <div class="wa-row"><span class="wa-label">Number</span><span>{{ status.displayPhoneNumber }}@if (status.verifiedName) { ({{ status.verifiedName }}) }</span></div>
@@ -41,6 +61,12 @@
               @if (status.checkedAt) { <span class="text-muted" style="margin-left:8px">Last checked {{ status.checkedAt | date:'d MMM y, HH:mm' }}</span> }
             </span>
           </div>
+          @if (registration) {
+            <div class="wa-row" data-test="wa-own-registration">
+              <span class="wa-label">Registration</span>
+              <span class="badge {{ registrationBadge(registration) }}">{{ registrationText(registration) }}</span>
+            </div>
+          }
           @if (!status.enabled) {
             <div class="wa-row"><span class="wa-label">Status</span><span class="badge badge-warning">Switched off</span></div>
           }
@@ -82,6 +108,6 @@
     </form>
 
     @if (error) { <div class="wa-msg wa-error" role="alert" data-test="wa-error">{{ error }}</div> }
-    @if (notice) { <div class="wa-msg wa-ok" role="status" data-test="wa-notice">{{ notice }}</div> }
+    @if (notice) { <div class="wa-msg {{ noticeIsWarning ? 'wa-warn' : 'wa-ok' }}" role="status" data-test="wa-notice">{{ notice }}</div> }
   </div>
 </div>

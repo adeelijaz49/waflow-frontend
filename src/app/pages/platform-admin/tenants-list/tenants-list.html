@@ -7,6 +7,29 @@
     <button type="button" class="btn btn-primary" (click)="showCreate = true">+ Add a customer</button>
   </div>
 
+  @if (numberCheckFailed) {
+    <div class="number-check-failed" data-test="number-check-failed">
+      Could not check the shared WhatsApp number just now.
+      <button type="button" class="btn btn-outline btn-sm" [disabled]="checkingNumber" (click)="loadNumber(true)">Try again</button>
+    </div>
+  }
+
+  @if (sharedNumber && hasNumberProblem) {
+    <div class="number-warning" data-test="number-warning">
+      <div class="number-warning-text" role="alert" data-test="number-warning-text">
+        <div class="number-warning-title">{{ sharedNumber.registered === false ? 'The shared WaFlow number is not connected to WhatsApp' : 'WaFlow cannot use its shared WhatsApp number' }}</div>
+        <div class="number-warning-number">{{ numberLabel }}</div>
+        @if (sharedNumber.message) { <p data-test="number-warning-message">{{ sharedNumber.message }}</p> }
+        <p data-test="number-warning-effect">{{ sharedNumber.registered === false
+          ? 'Customers that send from the shared number are likely to see (#133010) Account not registered while the number is in this state.'
+          : 'Customers that send from the shared number are likely to have their messages refused until this is fixed.' }}</p>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" [disabled]="checkingNumber" (click)="loadNumber(true)">
+        {{ checkingNumber ? 'Checking...' : 'Check again' }}
+      </button>
+    </div>
+  }
+
   <div class="search-bar">
     <input type="search" name="search" [(ngModel)]="search" (ngModelChange)="onSearchInput()" (keydown.enter)="runSearch()"
            placeholder="Search customers by name" aria-label="Search customers by name" autocomplete="off" />

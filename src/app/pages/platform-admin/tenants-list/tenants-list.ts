@@ -4,9 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../shared/auth.service';
 import { DialogService } from '../../../shared/dialog.service';
-import { PlatformApiService, Tenant } from '../../../shared/platform-api.service';
+import { PlatformApiService, PlatformNumber, Tenant } from '../../../shared/platform-api.service';
 import { TenantCreateDialog } from '../tenant-create-dialog/tenant-create-dialog';
-import { ownerLabel, whatsappLabel } from '../platform-format';
+import { ownerLabel, platformNumberLabel, whatsappLabel } from '../platform-format';
 
 // Platform console home: every customer (workspace) on this deployment, with search, "Add a customer",
 // and the two things a super admin does most: open a customer's settings, or step inside it.
@@ -14,6 +14,7 @@ import { ownerLabel, whatsappLabel } from '../platform-format';
   selector: 'app-tenants-list',
   imports: [FormsModule, DatePipe, RouterLink, TenantCreateDialog],
   templateUrl: './tenants-list.html',
+  styleUrl: './tenants-list.css',
 })
 export class TenantsList implements OnInit, OnDestroy {
   tenants: Tenant[] = [];
@@ -22,6 +23,11 @@ export class TenantsList implements OnInit, OnDestroy {
   search = '';
   showCreate = false;
   enteringId: string | null = null;
+  // The shared WaFlow number, read next to the customers so a number WhatsApp refuses is the first thing seen here.
+  sharedNumber: PlatformNumber | null = null;
+  checkingNumber = false;
+  // The last read of the shared number failed: say so, because no banner would otherwise look like "all fine".
+  numberCheckFailed = false;
 
   readonly ownerLabel = ownerLabel;
   readonly whatsappLabel = whatsappLabel;
@@ -38,6 +44,7 @@ export class TenantsList implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.load();
+    this.loadNumber(false);
   }
 
   ngOnDestroy(): void {
@@ -72,6 +79,34 @@ export class TenantsList implements OnInit, OnDestroy {
           : (err?.error?.error || 'Could not load customers. Please try again.');
       },
     });
+  }
+
+  // A failed read is shown as a small line with a retry (not as a banner, which is for a number that is known to be bad).
+  // A failed "Check again" keeps what was already known rather than hiding a warning that may still be true.
+  loadNumber(fresh: boolean): void {
+    if (this.checkingNumber) return;
+    this.checkingNumber = true;
+    this.api.platformNumber(fresh).subscribe({
+      next: (res) => {
+        this.checkingNumber = false;
+        this.numberCheckFailed = false;
+        this.sharedNumber = res?.number || null;
+      },
+      error: () => {
+        this.checkingNumber = false;
+        this.numberCheckFailed = true;
+      },
+    });
+  }
+
+  // Not connected, or the server could not use the number at all (expired token, number unreadable): both stop sends.
+  get hasNumberProblem(): boolean {
+    const n = this.sharedNumber;
+    return !!n && (n.registered === false || !!n.message);
+  }
+
+  get numberLabel(): string {
+    return this.sharedNumber ? platformNumberLabel(this.sharedNumber) : '';
   }
 
   planLabel(t: Tenant): string {

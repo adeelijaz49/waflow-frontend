@@ -8,6 +8,13 @@ export function whatsappLabel(w: WhatsAppStatus | null | undefined): string {
   return w.phoneIdLast4 ? `Own number ending ${w.phoneIdLast4}` : 'Own number';
 }
 
+// The shared WaFlow number, named the same way on the list banner and in the customer card:
+// "+1 555-643-3808 (Test Number)", with whichever parts Meta gave.
+export function platformNumberLabel(n: { displayPhoneNumber: string | null; verifiedName: string | null; phoneIdLast4: string }): string {
+  const shown = n.displayPhoneNumber || `Phone number id ending ${n.phoneIdLast4}`;
+  return n.verifiedName ? `${shown} (${n.verifiedName})` : shown;
+}
+
 export function ownerLabel(t: Pick<Tenant, 'owners'>): string {
   const first = t.owners?.[0];
   if (!first) return 'No owner yet';

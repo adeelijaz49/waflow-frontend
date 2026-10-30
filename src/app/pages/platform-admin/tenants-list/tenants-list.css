@@ -1,0 +1,6 @@
+.number-warning { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; margin-bottom: 16px; padding: 14px 16px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; color: #92400e; font-size: 13px; line-height: 1.6; }
+.number-warning-text { flex: 1 1 320px; min-width: 0; }
+.number-warning-title { font-size: 14px; font-weight: 700; }
+.number-warning-number { font-weight: 600; }
+.number-warning p { margin-top: 4px; }
+.number-check-failed { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; font-size: 13px; color: var(--text-muted); }
